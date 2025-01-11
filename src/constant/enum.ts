@@ -5,9 +5,14 @@ export enum UserVerifyStatus {
 }
 
 export enum GenderType {
-  MALE = "male",
-  FEMALE = "female",
-  OTHER = "other"
+  MALE = "Male",
+  FEMALE = "Female",
+  OTHER = "Other"
+}
+
+export enum RoleType {
+  ADMIN = "Admin",
+  USER = "User"
 }
 
 export enum TokenType {

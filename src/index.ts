@@ -13,7 +13,9 @@ app.use(express.json()) // biến request từ object thành json
 app.use(cors())
 app.use("/users", userRoute)
 
-databaseServices.connect()
+databaseServices.connect().then(() => {
+  databaseServices.indexRefreshToken()
+})
 
 app.use(defaultErrorHandler)
 

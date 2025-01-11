@@ -24,6 +24,21 @@ class DatabaseServices {
     }
   }
 
+  async indexRefreshToken() {
+    const exists = await this.refreshToken.indexExists(["token_1", "exp_1"])
+    if (!exists) {
+      this.refreshToken.createIndex({ token: 1 }),
+        this.refreshToken.createIndex(
+          {
+            exp: 1
+          },
+          {
+            expireAfterSeconds: 0 // expireAfterSeconds được sử dụng để tạo TTL (Time-To-Live) Index, cho phép tự động xóa các document sau một khoảng thời gian nhất định // xóa các token hết hạn
+          }
+        )
+    }
+  }
+
   // Tạo getter để truy cập vào collection (như 1 thuộc tính)
   get users(): Collection<User> {
     return this.db.collection(process.env.COLLECTION_USERS as string)

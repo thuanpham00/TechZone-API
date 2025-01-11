@@ -14,7 +14,7 @@ export const defaultErrorHandler = (err: any, req: Request, res: Response, next:
         !Object.getOwnPropertyDescriptor(err, key)?.enumerable ||
         !Object.getOwnPropertyDescriptor(err, key)?.writable
       ) {
-        return
+        return // trường hợp inActive từ aws (key: "isInactive")
       }
       finalError[key] = err[key]
     })
