@@ -17,9 +17,26 @@ export type LoginReqBody = {
 }
 
 export interface TokenPayload extends JwtPayload {
-  user_id: string,
+  user_id: string
   tokenType: TokenType
   verify: UserVerifyStatus
   exp: number
   iat: number
+}
+
+export type LogoutReqBody = {
+  refresh_token: string
+}
+
+export type EmailVerifyTokenReqBody = {
+  email_verify_token: string
+}
+
+export type ForgotPasswordTokenReqBody = {
+  forgot_password_token: string
+}
+
+export interface ResetPasswordReqBody extends ForgotPasswordTokenReqBody {
+  password: string
+  confirm_password: string
 }
