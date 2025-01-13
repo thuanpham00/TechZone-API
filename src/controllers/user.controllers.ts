@@ -156,3 +156,24 @@ export const resetPasswordController = async (
     message: result.message
   })
 }
+
+export const changePasswordController = async (
+  req: Request<ParamsDictionary, any, ResetPasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { password } = req.body
+  const { user_id } = req.decode_authorization as TokenPayload
+  const result = await userServices.changePassword({ user_id: user_id, password: password })
+  res.json({
+    message: result.message
+  })
+}
+
+export const getMeController = async (req: Request<ParamsDictionary, any, any>, res: Response, next: NextFunction) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const result = await userServices.getMe(user_id)
+  res.json({
+    result
+  })
+}

@@ -1,6 +1,8 @@
 import { Router } from "express"
 import {
+  changePasswordController,
   forgotPasswordController,
+  getMeController,
   loginController,
   logoutController,
   registerController,
@@ -11,13 +13,15 @@ import {
 } from "~/controllers/user.controllers"
 import {
   accessTokenValidator,
+  changePasswordValidator,
   emailVerifyValidator,
   forgotPasswordValidator,
   loginValidator,
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
-  verifyForgotPasswordValidator
+  verifyForgotPasswordValidator,
+  verifyUserValidator
 } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -87,5 +91,32 @@ userRoute.post("/verify-forgot-password", verifyForgotPasswordValidator, wrapReq
  * Body: { forgot_password_token: string, password: string, confirm_password: string }
  */
 userRoute.post("/reset-password", resetPasswordValidator, wrapRequestHandler(resetPasswordController))
+
+/**
+ * Description: Change password
+ * Path: /change-password
+ * Method: POST
+ * Headers: { Authorization: Bearer <access_token> }
+ * Body: { old_password: string, password: string, confirm_password: string }
+ */
+userRoute.post(
+  "/change-password",
+  accessTokenValidator,
+  verifyUserValidator,
+  changePasswordValidator,
+  wrapRequestHandler(changePasswordController)
+)
+
+/**
+ * Description: get me 
+ * Path: /me
+ * Method: GET
+ * Headers: { Authorization: Bearer <access_token> }
+ */
+userRoute.get(
+  "/me",
+  accessTokenValidator,
+  wrapRequestHandler(getMeController)
+)
 
 export default userRoute

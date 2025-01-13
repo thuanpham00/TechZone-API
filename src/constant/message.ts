@@ -36,11 +36,14 @@ export const UserMessage = {
 
   USER_NOT_FOUND: "Người dùng không tồn tại!",
   USER_IS_VERIFIED: "Người dùng đã được xác thực!",
+  USER_IS_NOT_VERIFIED: "Người dùng chưa xác thực!",
   VERIFY_EMAIL_IS_SUCCESS: "Xác thực email thành công!",
   RESEND_VERIFY_EMAIL_IS_SUCCESS: "Gửi lại email xác thực thành công!",
   CHECK_EMAIL_TO_RESET_PASSWORD: "Kiểm tra email để đặt lại mật khẩu!",
   FORGOT_PASSWORD_TOKEN_IS_REQUIRED: "ForgotPasswordToken không được để trống!",
   FORGOT_PASSWORD_TOKEN_IS_INVALID: "ForgotPasswordToken không hợp lệ!",
   FORGOT_PASSWORD_TOKEN_IS_SUCCESS: "Xác thực forgotPassword thành công!",
-  RESET_PASSWORD_IS_SUCCESS: "Đặt lại mật khẩu thành công!"
+  RESET_PASSWORD_IS_SUCCESS: "Đặt lại mật khẩu thành công!",
+  OLD_PASSWORD_IS_INCORRECT: "Mật khẩu cũ không chính xác!",
+  CHANGE_PASSWORD_IS_SUCCESS: "Đổi mật khẩu thành công!"
 }

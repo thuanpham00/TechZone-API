@@ -146,7 +146,7 @@ class UserServices {
 
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     // tạo cặp AccessToken và RefreshToken mới
-    const [accessToken, refreshToken] = await this.signAccessTokenAndRefreshToken({ user_id, verify })
+    const [accessToken, refreshToken] = await this.signAccessTokenAndRefreshToken({ user_id: user_id, verify: verify })
     const { iat, exp } = await this.decodeRefreshToken(refreshToken)
     const [user] = await Promise.all([
       databaseServices.users.findOne(
@@ -223,7 +223,10 @@ class UserServices {
   }
 
   async resendEmailVerify(user_id: string) {
-    const emailVerifyToken = await this.signEmailVerifyToken({ user_id: user_id, verify: UserVerifyStatus.Unverified })
+    const emailVerifyToken = await this.signEmailVerifyToken({
+      user_id: user_id,
+      verify: UserVerifyStatus.Unverified
+    })
     await databaseServices.users.updateOne(
       {
         _id: new ObjectId(user_id)
@@ -243,7 +246,10 @@ class UserServices {
   }
 
   async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
-    const forgotPasswordToken = await this.signForgotPasswordToken({ user_id: user_id, verify: verify })
+    const forgotPasswordToken = await this.signForgotPasswordToken({
+      user_id: user_id,
+      verify: verify
+    })
     await databaseServices.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
@@ -280,8 +286,46 @@ class UserServices {
       message: UserMessage.RESET_PASSWORD_IS_SUCCESS
     }
   }
+
+  async changePassword({ user_id, password }: { user_id: string; password: string }) {
+    await databaseServices.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        $set: {
+          password: hashPassword(password)
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    )
+    return {
+      message: UserMessage.CHANGE_PASSWORD_IS_SUCCESS
+    }
+  }
+
+  async getMe(user_id: string) {
+    const user = await databaseServices.users.findOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0
+        }
+      }
+    )
+    return user
+  }
 }
 
 export const userServices = new UserServices()
 
 // chỉ có register, login ra tạo cặp AT và RT mới và lưu RT xuống DB
+// findOne trả về document
+// updateOne chỉ cập nhật và không trả về document
+// findOneAndUpdate vừa tìm và cập nhật và có trả về document

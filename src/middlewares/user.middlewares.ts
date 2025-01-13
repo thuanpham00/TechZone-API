@@ -1,18 +1,21 @@
 import { checkSchema, ParamSchema } from "express-validator"
-import { GenderType, RoleType } from "~/constant/enum"
+import { GenderType, RoleType, UserVerifyStatus } from "~/constant/enum"
 import { UserMessage } from "~/constant/message"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
 import { convertEnumToArray } from "~/utils/common"
 import { hashPassword } from "~/utils/scripto"
 import { validate } from "~/utils/validations"
-import { NextFunction, Request } from "express"
+import { NextFunction, Request, Response } from "express"
 import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
 import { verifyToken } from "~/utils/jwt"
 import { config } from "dotenv"
 import { JsonWebTokenError } from "jsonwebtoken"
 import { ObjectId } from "mongodb"
+import { TokenPayload } from "~/models/requests/user.requests"
+import { ParamsDictionary } from "express-serve-static-core"
+
 config()
 
 const Gender = convertEnumToArray(GenderType)
@@ -122,7 +125,7 @@ const forgotPasswordToken: ParamSchema = {
         if (!user) {
           throw new ErrorWithStatus({
             message: UserMessage.USER_NOT_FOUND,
-            status: httpStatus.UNAUTHORIZED
+            status: httpStatus.NOTFOUND
           })
         }
 
@@ -366,7 +369,7 @@ export const forgotPasswordValidator = validate(
             if (!user) {
               throw new ErrorWithStatus({
                 message: UserMessage.USER_NOT_FOUND,
-                status: httpStatus.UNAUTHORIZED
+                status: httpStatus.NOTFOUND
               })
             }
             req.user = user
@@ -392,6 +395,57 @@ export const resetPasswordValidator = validate(
   checkSchema(
     {
       forgot_password_token: forgotPasswordToken,
+      password: passwordSchema,
+      confirm_password: confirmPasswordSchema
+    },
+    ["body"]
+  )
+)
+
+export const verifyUserValidator = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (user?.verify !== UserVerifyStatus.Verified) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_IS_NOT_VERIFIED,
+      status: httpStatus.UNAUTHORIZED
+    })
+  }
+  next()
+}
+
+export const changePasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: {
+        ...passwordSchema,
+        custom: {
+          options: async (value, { req }) => {
+            const { user_id } = req.decode_authorization as TokenPayload
+            const user = await databaseServices.users.findOne({
+              _id: new ObjectId(user_id)
+            })
+            if (!user) {
+              throw new ErrorWithStatus({
+                message: UserMessage.USER_NOT_FOUND,
+                status: httpStatus.NOTFOUND
+              })
+            }
+            const isMatch = hashPassword(value) === user.password
+            if (!isMatch) {
+              throw new ErrorWithStatus({
+                message: UserMessage.OLD_PASSWORD_IS_INCORRECT,
+                status: httpStatus.UNAUTHORIZED
+              })
+            }
+            return true
+          }
+        }
+      },
       password: passwordSchema,
       confirm_password: confirmPasswordSchema
     },
