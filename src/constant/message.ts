@@ -45,5 +45,9 @@ export const UserMessage = {
   FORGOT_PASSWORD_TOKEN_IS_SUCCESS: "Xác thực forgotPassword thành công!",
   RESET_PASSWORD_IS_SUCCESS: "Đặt lại mật khẩu thành công!",
   OLD_PASSWORD_IS_INCORRECT: "Mật khẩu cũ không chính xác!",
-  CHANGE_PASSWORD_IS_SUCCESS: "Đổi mật khẩu thành công!"
+  CHANGE_PASSWORD_IS_SUCCESS: "Đổi mật khẩu thành công!",
+
+  NUMBER_PHONE_LENGTH_MIN_10_MAX_11: "Số điện thoại tối thiểu 10 kí tự và tối đa 11 kí tự",
+  NUMBER_PHONE_IS_INVALID: "Số điện thoại không hợp lệ!",
+  UPDATE_PROFILE_IS_SUCCESS: "Cập nhật profile thành công!"
 }

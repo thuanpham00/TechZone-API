@@ -2,7 +2,7 @@ import { config } from "dotenv"
 import { TokenType, UserVerifyStatus } from "~/constant/enum"
 import { signToken, verifyToken } from "~/utils/jwt"
 import databaseServices from "./database.services"
-import { RegisterReqBody } from "~/models/requests/user.requests"
+import { RegisterReqBody, updateMeReqBody } from "~/models/requests/user.requests"
 import { ObjectId } from "mongodb"
 import { User } from "~/models/schema/users.schema"
 import { hashPassword } from "~/utils/scripto"
@@ -316,6 +316,28 @@ class UserServices {
           password: 0,
           email_verify_token: 0,
           forgot_password_token: 0
+        }
+      }
+    )
+    return user
+  }
+
+  async updateMe({ user_id, body }: { user_id: string; body: updateMeReqBody }) {
+    const payload = body.date_of_birth ? { ...body, date_of_birth: new Date(body.date_of_birth) } : { ...body }
+    const user = await databaseServices.users.findOneAndUpdate(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: { ...(payload as updateMeReqBody & { date_of_birth?: Date }) },
+        $currentDate: {
+          updated_at: true
+        }
+      },
+      {
+        returnDocument: "after", // cập nhật postman liền
+        projection: {
+          forgot_password_token: 0,
+          email_verify_token: 0,
+          password: 0
         }
       }
     )

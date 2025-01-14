@@ -11,6 +11,13 @@ export type RegisterReqBody = {
   role?: RoleType
 }
 
+export type updateMeReqBody = {
+  name?: string
+  date_of_birth?: string
+  sex?: GenderType
+  numberPhone?: string
+}
+
 export type LoginReqBody = {
   email: string
   password: string

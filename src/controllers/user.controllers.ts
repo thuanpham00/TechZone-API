@@ -12,7 +12,8 @@ import {
   LogoutReqBody,
   RegisterReqBody,
   ResetPasswordReqBody,
-  TokenPayload
+  TokenPayload,
+  updateMeReqBody
 } from "~/models/requests/user.requests"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
@@ -175,5 +176,18 @@ export const getMeController = async (req: Request<ParamsDictionary, any, any>, 
   const result = await userServices.getMe(user_id)
   res.json({
     result
+  })
+}
+
+export const updateMeController = async (
+  req: Request<ParamsDictionary, any, updateMeReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const result = await userServices.updateMe({ user_id: user_id, body: req.body })
+  res.json({
+    message: UserMessage.UPDATE_PROFILE_IS_SUCCESS,
+    result: result
   })
 }

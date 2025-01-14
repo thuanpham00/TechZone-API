@@ -104,6 +104,16 @@ const dateOfBirthSchema: ParamSchema = {
   } // new Date().toISOString()
 }
 
+const sexSchema: ParamSchema = {
+  notEmpty: {
+    errorMessage: UserMessage.SEX_IS_REQUIRED
+  },
+  isIn: {
+    options: [Gender],
+    errorMessage: UserMessage.SEX_IS_INVALID
+  }
+}
+
 const forgotPasswordToken: ParamSchema = {
   custom: {
     options: async (value, { req }) => {
@@ -178,15 +188,7 @@ export const registerValidator = validate(
       confirm_password: confirmPasswordSchema,
       name: nameSchema,
       date_of_birth: dateOfBirthSchema,
-      sex: {
-        notEmpty: {
-          errorMessage: UserMessage.SEX_IS_REQUIRED
-        },
-        isIn: {
-          options: [Gender],
-          errorMessage: UserMessage.SEX_IS_INVALID
-        }
-      },
+      sex: sexSchema,
       role: {
         optional: true, // không bắt buộc
         isIn: {
@@ -448,6 +450,45 @@ export const changePasswordValidator = validate(
       },
       password: passwordSchema,
       confirm_password: confirmPasswordSchema
+    },
+    ["body"]
+  )
+)
+
+export const updateMeValidator = validate(
+  checkSchema(
+    {
+      name: {
+        ...nameSchema,
+        optional: true
+      },
+      date_of_birth: {
+        ...dateOfBirthSchema,
+        optional: true
+      },
+      sex: {
+        ...sexSchema,
+        optional: true
+      },
+      numberPhone: {
+        optional: true,
+        isLength: {
+          options: {
+            min: 10,
+            max: 11
+          },
+          errorMessage: UserMessage.NUMBER_PHONE_LENGTH_MIN_10_MAX_11
+        },
+        custom: {
+          options: (value) => {
+            const regex = /^\d+$/
+            if (!regex.test(value)) {
+              throw new Error(UserMessage.NUMBER_PHONE_IS_INVALID)
+            }
+            return true
+          }
+        }
+      }
     },
     ["body"]
   )
