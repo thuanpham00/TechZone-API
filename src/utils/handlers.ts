@@ -26,3 +26,5 @@ export const wrapRequestHandler = <P>(func: RequestHandler<P, any, any, any>) =>
    => Xử lý logic bất đồng bộ dễ dàng với async/await.
    => Đóng gói logic để tái sử dụng cho nhiều route và middleware khác nhau. 
 */
+
+// (middleware: (req: Request, res: Response, next: NextFunction) => void)

@@ -53,6 +53,24 @@ export const loginController = async (
   })
 }
 
+export const loginGoogleController = async (req: Request, res: Response) => {
+  const { code } = req.query
+  const { accessToken, refreshToken, newUser, verify, name } = await userServices.loginGoogle(code as string)
+  const url = `${process.env.CLIENT_REDIRECT_CALLBACK}?access_token=${accessToken}&newUser=${newUser}&verify=${verify}&name=${name}`
+
+  // RT luu cookie tại backEnd
+  // AT luu localStorage tại frontEnd
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
+    path: "/"
+  })
+
+  res.redirect(url)
+}
+
 export const logoutController = async (
   req: Request<ParamsDictionary, any, LogoutReqBody>,
   res: Response,

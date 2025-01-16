@@ -1,5 +1,5 @@
 import { config } from "dotenv"
-import { TokenType, UserVerifyStatus } from "~/constant/enum"
+import { GenderType, TokenType, UserVerifyStatus } from "~/constant/enum"
 import { signToken, verifyToken } from "~/utils/jwt"
 import databaseServices from "./database.services"
 import { RegisterReqBody, updateMeReqBody } from "~/models/requests/user.requests"
@@ -8,6 +8,9 @@ import { User } from "~/models/schema/users.schema"
 import { hashPassword } from "~/utils/scripto"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { UserMessage } from "~/constant/message"
+import axios from "axios"
+import { ErrorWithStatus } from "~/models/errors"
+import httpStatus from "~/constant/httpStatus"
 config()
 
 class UserServices {
@@ -168,6 +171,98 @@ class UserServices {
       accessToken,
       refreshToken,
       user
+    }
+  }
+
+  private async getGoogleToken(code: string) {
+    const body = {
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      grant_type: "authorization_code"
+    }
+
+    const { data } = await axios.post("https://oauth2.googleapis.com/token", body, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    })
+
+    return data as {
+      access_token: string
+      id_token: string
+    }
+  }
+
+  private async getGoogleInfo({ id_token, access_token }: { id_token: string; access_token: string }) {
+    const { data } = await axios.get("https://www.googleapis.com/oauth2/v1/userinfo", {
+      params: {
+        access_token,
+        alt: "json"
+      },
+      headers: {
+        Authorization: `Bearer ${id_token}`
+      }
+    })
+    return data as {
+      id: string
+      email: string
+      verified_email: boolean
+      name: string
+    }
+  }
+
+  async loginGoogle(code: string) {
+    const { access_token, id_token } = await this.getGoogleToken(code)
+    const userInfo = await this.getGoogleInfo({ id_token, access_token })
+    if (!userInfo.verified_email) {
+      throw new ErrorWithStatus({
+        message: UserMessage.EMAIL_NOT_VERIFY,
+        status: httpStatus.UNAUTHORIZED
+      })
+    }
+    const findEmail = await databaseServices.users.findOne({ email: userInfo.email })
+    // đã tồn tại email trong db thì đăng nhập vào
+    // còn chưa tồn tại thì tạo mới
+    if (findEmail) {
+      const user_id = findEmail._id
+      const verify_user = findEmail.verify
+      const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken({
+        user_id: user_id.toString(),
+        verify: verify_user
+      })
+
+      const { iat, exp } = await this.decodeRefreshToken(refresh_token)
+      await databaseServices.refreshToken.insertOne(
+        new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat: iat, exp: exp })
+      )
+
+      return {
+        accessToken: access_token,
+        refreshToken: refresh_token,
+        name: userInfo.name,
+        newUser: 0,
+        verify: userInfo.verified_email
+      }
+    } else {
+      // trong method register có xử lý sign token và lưu vào db
+      const random = Math.random().toString(36).substring(2, 15)
+      const { accessToken: accessToken_1, refreshToken: refreshToken_1 } = await this.register({
+        email: userInfo.email,
+        name: userInfo.name,
+        date_of_birth: new Date().toISOString(),
+        sex: GenderType.MALE,
+        password: random,
+        confirm_password: random
+      })
+      return {
+        accessToken: accessToken_1,
+        refreshToken: refreshToken_1,
+        name: userInfo.name,
+        newUser: 1,
+        verify: UserVerifyStatus.Unverified
+      }
     }
   }
 

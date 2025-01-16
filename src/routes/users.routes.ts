@@ -4,6 +4,7 @@ import {
   forgotPasswordController,
   getMeController,
   loginController,
+  loginGoogleController,
   logoutController,
   registerController,
   resendEmailVerifyController,
@@ -46,6 +47,13 @@ userRoute.post("/register", registerValidator, wrapRequestHandler(registerContro
  * Body: { email: string, password: string}
  */
 userRoute.post("/login", loginValidator, wrapRequestHandler(loginController))
+
+/**
+ * Description: Login google user
+ * Path: /oauth/google
+ * Method: POST
+ */
+userRoute.get("/oauth/google", wrapRequestHandler(loginGoogleController))
 
 /**
  * Description: Logout user
@@ -130,9 +138,15 @@ userRoute.patch(
   "/me",
   accessTokenValidator,
   verifyUserValidator,
-  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "sex"]),
   updateMeValidator,
+  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "sex"]),
   wrapRequestHandler(updateMeController)
 )
 
 export default userRoute
+
+/**
+ *  accessTokenValidator,
+ *  verifyUserValidator
+ * 2 middlewares dành cho kiểm tra đã đăng nhập và xác thực tài khoản chưa?
+ */
