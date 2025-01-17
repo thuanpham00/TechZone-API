@@ -10,7 +10,12 @@ const app = express()
 const PORT = process.env.PORT
 
 app.use(express.json()) // biến request từ object thành json
-app.use(cors())
+app.use(
+  cors({
+    origin: "http://localhost:3500", // URL client
+    credentials: true // Cho phép gửi cookie lên client
+  })
+)
 app.use("/users", userRoute)
 
 databaseServices.connect().then(() => {

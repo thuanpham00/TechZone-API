@@ -1,5 +1,5 @@
 import { config } from "dotenv"
-import { GenderType, TokenType, UserVerifyStatus } from "~/constant/enum"
+import { GenderType, RoleType, TokenType, UserVerifyStatus } from "~/constant/enum"
 import { signToken, verifyToken } from "~/utils/jwt"
 import databaseServices from "./database.services"
 import { RegisterReqBody, updateMeReqBody } from "~/models/requests/user.requests"
@@ -14,11 +14,12 @@ import httpStatus from "~/constant/httpStatus"
 config()
 
 class UserServices {
-  private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  private signAccessToken({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
     return signToken({
       payload: {
         user_id,
         verify,
+        role,
         tokenType: TokenType.AccessToken
       },
       privateKey: process.env.SECRET_KEY_ACCESS_TOKEN as string,
@@ -28,12 +29,23 @@ class UserServices {
     })
   }
 
-  private signRefreshToken({ user_id, verify, exp }: { user_id: string; verify: UserVerifyStatus; exp?: number }) {
+  private signRefreshToken({
+    user_id,
+    verify,
+    role,
+    exp
+  }: {
+    user_id: string
+    verify: UserVerifyStatus
+    role: RoleType
+    exp?: number
+  }) {
     if (exp) {
       return signToken({
         payload: {
           user_id,
           verify,
+          role,
           tokenType: TokenType.RefreshToken,
           exp: exp // tạo RT mới và vẫn giữ nguyên exp của RT cũ
         },
@@ -44,6 +56,7 @@ class UserServices {
       payload: {
         user_id,
         verify,
+        role,
         tokenType: TokenType.RefreshToken
       },
       privateKey: process.env.SECRET_KEY_REFRESH_TOKEN as string,
@@ -53,11 +66,20 @@ class UserServices {
     })
   }
 
-  private signEmailVerifyToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  private signEmailVerifyToken({
+    user_id,
+    verify,
+    role
+  }: {
+    user_id: string
+    verify: UserVerifyStatus
+    role: RoleType
+  }) {
     return signToken({
       payload: {
         user_id,
         verify,
+        role,
         tokenType: TokenType.EmailVerifyToken
       },
       privateKey: process.env.SECRET_KEY_EMAIL_VERIFY_TOKEN as string,
@@ -67,11 +89,20 @@ class UserServices {
     })
   }
 
-  private signForgotPasswordToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  private signForgotPasswordToken({
+    user_id,
+    verify,
+    role
+  }: {
+    user_id: string
+    verify: UserVerifyStatus
+    role: RoleType
+  }) {
     return signToken({
       payload: {
         user_id,
         verify,
+        role,
         tokenType: TokenType.ForgotPasswordToken
       },
       privateKey: process.env.SECRET_KEY_FORGOT_PASSWORD_TOKEN as string,
@@ -81,8 +112,19 @@ class UserServices {
     })
   }
 
-  private signAccessTokenAndRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
-    return Promise.all([this.signAccessToken({ user_id, verify }), this.signRefreshToken({ user_id, verify })])
+  private signAccessTokenAndRefreshToken({
+    user_id,
+    verify,
+    role
+  }: {
+    user_id: string
+    verify: UserVerifyStatus
+    role: RoleType
+  }) {
+    return Promise.all([
+      this.signAccessToken({ user_id, verify, role }),
+      this.signRefreshToken({ user_id, verify, role })
+    ])
   }
 
   async checkEmailExist(email: string) {
@@ -98,7 +140,8 @@ class UserServices {
     const user_id = new ObjectId()
     const emailVerifyToken = await this.signEmailVerifyToken({
       user_id: user_id.toString(),
-      verify: UserVerifyStatus.Unverified // mới tạo tài khoản thì chưa xác thực
+      verify: UserVerifyStatus.Unverified, // mới tạo tài khoản thì chưa xác thực
+      role: payload.role ? payload.role : RoleType.USER
     })
     const body = {
       ...payload,
@@ -123,7 +166,8 @@ class UserServices {
       // tạo cặp AccessToken và RefreshToken mới
       this.signAccessTokenAndRefreshToken({
         user_id: user_id.toString(),
-        verify: UserVerifyStatus.Unverified // mới tạo tài khoản thì chưa xác thực
+        verify: UserVerifyStatus.Unverified, // mới tạo tài khoản thì chưa xác thực
+        role: payload.role ? payload.role : RoleType.USER
       })
     ])
     const [accessToken, refreshToken] = token
@@ -147,9 +191,13 @@ class UserServices {
     }
   }
 
-  async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  async login({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
     // tạo cặp AccessToken và RefreshToken mới
-    const [accessToken, refreshToken] = await this.signAccessTokenAndRefreshToken({ user_id: user_id, verify: verify })
+    const [accessToken, refreshToken] = await this.signAccessTokenAndRefreshToken({
+      user_id: user_id,
+      verify: verify,
+      role: role
+    })
     const { iat, exp } = await this.decodeRefreshToken(refreshToken)
     const [user] = await Promise.all([
       databaseServices.users.findOne(
@@ -230,7 +278,8 @@ class UserServices {
       const verify_user = findEmail.verify
       const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken({
         user_id: user_id.toString(),
-        verify: verify_user
+        verify: verify_user,
+        role: RoleType.USER
       })
 
       const { iat, exp } = await this.decodeRefreshToken(refresh_token)
@@ -276,12 +325,47 @@ class UserServices {
     }
   }
 
-  async verifyEmail(user_id: string) {
+  async refreshToken({
+    token,
+    user_id,
+    verify,
+    exp,
+    role
+  }: {
+    token: string
+    user_id: string
+    verify: UserVerifyStatus
+    exp: number
+    role: RoleType
+  }) {
+    const [accessTokenNew, refreshTokenNew] = await Promise.all([
+      this.signAccessToken({ user_id: user_id, verify: verify, role: role }),
+      this.signRefreshToken({ user_id: user_id, verify: verify, role: role, exp: exp }),
+      databaseServices.refreshToken.deleteOne({ token: token })
+    ])
+
+    const decodeRefreshToken = await this.decodeRefreshToken(refreshTokenNew)
+    await databaseServices.refreshToken.insertOne(
+      new RefreshToken({
+        token: refreshTokenNew,
+        user_id: new ObjectId(user_id),
+        exp: decodeRefreshToken.exp, // vẫn giữ exp của RT cũ
+        iat: decodeRefreshToken.iat
+      })
+    )
+    return {
+      accessToken: accessTokenNew,
+      refreshToken: refreshTokenNew
+    }
+  }
+
+  async verifyEmail({ user_id, role }: { user_id: string; role: RoleType }) {
     const [token] = await Promise.all([
       // tạo cặp AccessToken và RefreshToken mới
       this.signAccessTokenAndRefreshToken({
         user_id: user_id,
-        verify: UserVerifyStatus.Verified
+        verify: UserVerifyStatus.Verified,
+        role: role
       }),
       databaseServices.users.updateOne(
         {
@@ -317,10 +401,11 @@ class UserServices {
     }
   }
 
-  async resendEmailVerify(user_id: string) {
+  async resendEmailVerify({ user_id, role }: { user_id: string; role: RoleType }) {
     const emailVerifyToken = await this.signEmailVerifyToken({
       user_id: user_id,
-      verify: UserVerifyStatus.Unverified
+      verify: UserVerifyStatus.Unverified,
+      role: role
     })
     await databaseServices.users.updateOne(
       {
@@ -340,10 +425,11 @@ class UserServices {
     }
   }
 
-  async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  async forgotPassword({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
     const forgotPasswordToken = await this.signForgotPasswordToken({
       user_id: user_id,
-      verify: verify
+      verify: verify,
+      role
     })
     await databaseServices.users.updateOne(
       { _id: new ObjectId(user_id) },

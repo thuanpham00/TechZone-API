@@ -50,5 +50,6 @@ export const UserMessage = {
   NUMBER_PHONE_LENGTH_MIN_10_MAX_11: "Số điện thoại tối thiểu 10 kí tự và tối đa 11 kí tự",
   NUMBER_PHONE_IS_INVALID: "Số điện thoại không hợp lệ!",
   UPDATE_PROFILE_IS_SUCCESS: "Cập nhật profile thành công!",
-  EMAIL_NOT_VERIFY: "Email chưa xác thực!"
+  EMAIL_NOT_VERIFY: "Email chưa xác thực!",
+  REFRESH_TOKEN_IS_SUCCESS: "RefreshToken thành công!"
 }

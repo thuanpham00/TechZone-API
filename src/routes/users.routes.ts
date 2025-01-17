@@ -6,6 +6,7 @@ import {
   loginController,
   loginGoogleController,
   logoutController,
+  refreshTokenController,
   registerController,
   resendEmailVerifyController,
   resetPasswordController,
@@ -63,6 +64,14 @@ userRoute.get("/oauth/google", wrapRequestHandler(loginGoogleController))
  * Body: { refresh_token: string }
  */
 userRoute.post("/logout", accessTokenValidator, refreshTokenValidator, wrapRequestHandler(logoutController))
+
+/**
+ * Description: Refresh token user
+ * Path: /refresh-token
+ * Method: POST
+ * Body: { refresh_token: string }
+ */
+userRoute.post("/refresh-token", refreshTokenValidator, wrapRequestHandler(refreshTokenController))
 
 /**
  * Description: Verify email user

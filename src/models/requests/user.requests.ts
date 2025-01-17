@@ -27,6 +27,7 @@ export interface TokenPayload extends JwtPayload {
   user_id: string
   tokenType: TokenType
   verify: UserVerifyStatus
+  role: RoleType
   exp: number
   iat: number
 }

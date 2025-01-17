@@ -15,6 +15,7 @@ import {
   TokenPayload,
   updateMeReqBody
 } from "~/models/requests/user.requests"
+import { User } from "~/models/schema/users.schema"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
 
@@ -24,11 +25,19 @@ export const registerController = async (
   next: NextFunction
 ) => {
   const { accessToken, refreshToken, user } = await userServices.register(req.body)
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    // secure: true, // chỉ cho phép cookie gửi qua kết nối HTTPS
+    sameSite: "strict",
+    maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
+    path: "/"
+  })
+
   res.json({
     message: UserMessage.REGISTER_IS_SUCCESS,
     result: {
       accessToken,
-      refreshToken,
       user
     }
   })
@@ -42,12 +51,21 @@ export const loginController = async (
   const { user } = req as Request
   const user_id = (user._id as ObjectId)?.toString()
   const verify = user.verify
-  const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify })
+  const role = user.role
+  const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify, role })
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    // secure: true, // chỉ cho phép cookie gửi qua kết nối HTTPS
+    sameSite: "strict",
+    maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
+    path: "/"
+  })
+
   res.json({
     message: UserMessage.LOGIN_IS_SUCCESS,
     result: {
       accessToken,
-      refreshToken,
       userInfo
     }
   })
@@ -62,7 +80,7 @@ export const loginGoogleController = async (req: Request, res: Response) => {
   // AT luu localStorage tại frontEnd
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    secure: true,
+    secure: true, // chỉ cho phép cookie gửi qua kết nối HTTPS
     sameSite: "strict",
     maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
     path: "/"
@@ -84,12 +102,43 @@ export const logoutController = async (
   })
 }
 
+export const refreshTokenController = async (
+  req: Request<ParamsDictionary, any, LogoutReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id, verify, exp, role } = req.decode_refreshToken as TokenPayload
+  const { refresh_token } = req.body
+  const { accessToken, refreshToken } = await userServices.refreshToken({
+    token: refresh_token,
+    user_id: user_id,
+    verify: verify,
+    role: role,
+    exp: exp
+  })
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    // secure: true,
+    sameSite: "strict",
+    maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
+    path: "/"
+  })
+
+  res.json({
+    message: UserMessage.REFRESH_TOKEN_IS_SUCCESS,
+    result: {
+      accessToken
+    }
+  })
+}
+
 export const verifyEmailController = async (
   req: Request<ParamsDictionary, any, EmailVerifyTokenReqBody>,
   res: Response,
   next: NextFunction
 ) => {
-  const { user_id } = req.decode_emailVerifyToken as TokenPayload
+  const { user_id, role } = req.decode_emailVerifyToken as TokenPayload
   const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
   if (!user) {
     throw new ErrorWithStatus({
@@ -103,12 +152,20 @@ export const verifyEmailController = async (
       status: httpStatus.UNAUTHORIZED
     })
   }
-  const { accessToken, refreshToken } = await userServices.verifyEmail(user_id)
+  const { accessToken, refreshToken } = await userServices.verifyEmail({ user_id: user_id, role: role })
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    // secure: true , // chỉ cho phép cookie gửi qua kết nối HTTPS
+    sameSite: "strict",
+    maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
+    path: "/"
+  })
+
   res.json({
     message: UserMessage.VERIFY_EMAIL_IS_SUCCESS,
     result: {
-      accessToken,
-      refreshToken
+      accessToken
     }
   })
 }
@@ -118,7 +175,7 @@ export const resendEmailVerifyController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { user_id } = req.decode_authorization as TokenPayload
+  const { user_id, role } = req.decode_authorization as TokenPayload
   const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
 
   if (!user) {
@@ -134,7 +191,7 @@ export const resendEmailVerifyController = async (
       status: httpStatus.UNAUTHORIZED
     })
   }
-  const result = await userServices.resendEmailVerify(user_id)
+  const result = await userServices.resendEmailVerify({ user_id: user_id, role: role })
   res.json({
     message: result.message
   })
@@ -147,7 +204,8 @@ export const forgotPasswordController = async (
 ) => {
   const user_id = req.user._id?.toString()
   const verify = req.user.verify
-  const result = await userServices.forgotPassword({ user_id: user_id as string, verify: verify })
+  const role = req.user.role
+  const result = await userServices.forgotPassword({ user_id: user_id as string, verify: verify, role: role })
   res.json({
     message: result.message
   })
