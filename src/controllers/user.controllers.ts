@@ -55,7 +55,7 @@ export const loginController = async (
   const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify, role })
 
   res.cookie("refresh_token", refreshToken, {
-    httpOnly: true,
+    httpOnly: false,
     // secure: true, // chỉ cho phép cookie gửi qua kết nối HTTPS
     sameSite: "strict",
     maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
