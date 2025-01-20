@@ -313,7 +313,7 @@ export const refreshTokenValidator = validate(
         }
       }
     },
-    ["body"]
+    ["cookies"]
   )
 )
 
@@ -493,3 +493,9 @@ export const updateMeValidator = validate(
     ["body"]
   )
 )
+
+// body phần truyền lên
+// params là tham số định danh như id
+// query là tham số truy vấn ví dụ page, limit, type ...
+// cookie là lưu refresh_token
+// headers là nơi check Authorization (chứa accessToken)

@@ -55,12 +55,14 @@ export const loginController = async (
   const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify, role })
 
   res.cookie("refresh_token", refreshToken, {
-    httpOnly: false,
+    httpOnly: true, // chặn client javascript không thể truy cập
     // secure: true, // chỉ cho phép cookie gửi qua kết nối HTTPS
     sameSite: "strict",
     maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
     path: "/"
   })
+
+  // client gọi api xuống server và server tạo cookie trả về và lưu vào trình duyệt tự động (client phải nằm trong ds cho phép của server)
 
   res.json({
     message: UserMessage.LOGIN_IS_SUCCESS,
@@ -95,8 +97,13 @@ export const logoutController = async (
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
-  const { refresh_token } = req.body
+  const refresh_token = req.cookies.refresh_token // lấy cookie từ server
   const result = await userServices.logout({ user_id, refresh_token })
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    sameSite: "strict",
+    path: "/"
+  })
   res.json({
     message: result.message
   })

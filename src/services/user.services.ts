@@ -236,7 +236,6 @@ class UserServices {
         "Content-Type": "application/x-www-form-urlencoded"
       }
     })
-
     return data as {
       access_token: string
       id_token: string
@@ -305,6 +304,7 @@ class UserServices {
         password: random,
         confirm_password: random
       })
+      // vẫn tạo mới email-verify-token - cần thêm bước verify-email
       return {
         accessToken: accessToken_1,
         refreshToken: refreshToken_1,
