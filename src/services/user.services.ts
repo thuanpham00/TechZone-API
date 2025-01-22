@@ -349,8 +349,8 @@ class UserServices {
       new RefreshToken({
         token: refreshTokenNew,
         user_id: new ObjectId(user_id),
-        exp: decodeRefreshToken.exp, // vẫn giữ exp của RT cũ
-        iat: decodeRefreshToken.iat
+        exp: decodeRefreshToken.exp, // vẫn giữ exp của RT cũ // time hết hạn
+        iat: decodeRefreshToken.iat // vẫn giữ iat của RT cũ // time tạo mới
       })
     )
     return {
