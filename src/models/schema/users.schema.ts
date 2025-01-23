@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb"
-import { GenderType, RoleType, UserVerifyStatus } from "~/constant/enum"
+import { RoleType, UserVerifyStatus } from "~/constant/enum"
 
 type UserType = {
   _id?: ObjectId
@@ -10,8 +10,8 @@ type UserType = {
   role?: RoleType
 
   numberPhone?: string
-  sex?: GenderType
   date_of_birth?: Date
+  avatar?: string
   email_verify_token?: string
   forgot_password_token?: string
   verify?: UserVerifyStatus
@@ -26,8 +26,8 @@ export class User {
   password: string
   role: RoleType
   numberPhone: string
-  sex: GenderType
   date_of_birth: Date
+  avatar: string
   email_verify_token: string
   forgot_password_token: string
   verify: UserVerifyStatus
@@ -42,8 +42,8 @@ export class User {
     this.password = user.password
     this.role = user.role || RoleType.USER // mặc định là user
     this.numberPhone = user.numberPhone || ""
-    this.sex = user.sex || GenderType.MALE
     this.date_of_birth = user.date_of_birth || new Date()
+    this.avatar = user.avatar || ""
     this.email_verify_token = user.email_verify_token || ""
     this.forgot_password_token = user.forgot_password_token || ""
     this.verify = user.verify || UserVerifyStatus.Unverified

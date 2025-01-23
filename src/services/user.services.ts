@@ -1,5 +1,5 @@
 import { config } from "dotenv"
-import { GenderType, RoleType, TokenType, UserVerifyStatus } from "~/constant/enum"
+import { RoleType, TokenType, UserVerifyStatus } from "~/constant/enum"
 import { signToken, verifyToken } from "~/utils/jwt"
 import databaseServices from "./database.services"
 import { RegisterReqBody, updateMeReqBody } from "~/models/requests/user.requests"
@@ -147,7 +147,6 @@ class UserServices {
       ...payload,
       _id: user_id,
       password: hashPassword(payload.password),
-      date_of_birth: new Date(payload.date_of_birth),
       email_verify_token: emailVerifyToken,
       role: payload.role
     }
@@ -159,7 +158,6 @@ class UserServices {
               ...payload,
               _id: user_id,
               password: hashPassword(payload.password),
-              date_of_birth: new Date(payload.date_of_birth),
               email_verify_token: emailVerifyToken
             })
       ),
@@ -299,8 +297,6 @@ class UserServices {
       const { accessToken: accessToken_1, refreshToken: refreshToken_1 } = await this.register({
         email: userInfo.email,
         name: userInfo.name,
-        date_of_birth: new Date().toISOString(),
-        sex: GenderType.MALE,
         password: random,
         confirm_password: random
       })

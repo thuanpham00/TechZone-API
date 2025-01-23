@@ -1,5 +1,5 @@
 import { checkSchema, ParamSchema } from "express-validator"
-import { GenderType, RoleType, UserVerifyStatus } from "~/constant/enum"
+import { RoleType, UserVerifyStatus } from "~/constant/enum"
 import { UserMessage } from "~/constant/message"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
@@ -18,7 +18,6 @@ import { ParamsDictionary } from "express-serve-static-core"
 
 config()
 
-const Gender = convertEnumToArray(GenderType)
 const Role = convertEnumToArray(RoleType)
 
 const passwordSchema: ParamSchema = {
@@ -104,16 +103,6 @@ const dateOfBirthSchema: ParamSchema = {
   } // new Date().toISOString()
 }
 
-const sexSchema: ParamSchema = {
-  notEmpty: {
-    errorMessage: UserMessage.SEX_IS_REQUIRED
-  },
-  isIn: {
-    options: [Gender],
-    errorMessage: UserMessage.SEX_IS_INVALID
-  }
-}
-
 const forgotPasswordToken: ParamSchema = {
   custom: {
     options: async (value, { req }) => {
@@ -187,8 +176,6 @@ export const registerValidator = validate(
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
       name: nameSchema,
-      date_of_birth: dateOfBirthSchema,
-      sex: sexSchema,
       role: {
         optional: true, // không bắt buộc
         isIn: {
@@ -466,8 +453,7 @@ export const updateMeValidator = validate(
         ...dateOfBirthSchema,
         optional: true
       },
-      sex: {
-        ...sexSchema,
+      avatar: {
         optional: true
       },
       numberPhone: {

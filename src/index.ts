@@ -21,7 +21,7 @@ app.use(
 app.use("/users", userRoute)
 
 databaseServices.connect().then(() => {
-  databaseServices.indexRefreshToken()
+  databaseServices.indexRefreshToken(), databaseServices.indexUser()
 })
 
 app.use(defaultErrorHandler)

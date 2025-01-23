@@ -4,12 +4,6 @@ export enum UserVerifyStatus {
   Banned
 }
 
-export enum GenderType {
-  MALE = "Male",
-  FEMALE = "Female",
-  OTHER = "Other"
-}
-
 export enum RoleType {
   ADMIN = "Admin",
   USER = "User"
@@ -20,4 +14,9 @@ export enum TokenType {
   RefreshToken,
   EmailVerifyToken,
   ForgotPasswordToken
+}
+
+export enum MediaType {
+  Image,
+  Video
 }

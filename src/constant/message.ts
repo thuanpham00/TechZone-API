@@ -22,8 +22,7 @@ export const UserMessage = {
   NAME_IS_NOT_NUMBER: "Tên không được chứa số!",
   DATE_OF_BIRTH_IS_ISO8601: "Ngày sinh phải theo định dạng ISO 8601!",
 
-  SEX_IS_REQUIRED: "Giới tính không được để trống!",
-  SEX_IS_INVALID: "Giới tính không hợp lệ!",
+  AVATAR_IS_REQUIRED: "Avatar không được để trống!",
   ROLE_IS_INVALID: "Vai trò không hợp lệ!",
 
   EMAIL_OR_PASSWORD_IS_INCORRECT: "Email hoặc mật khẩu không chính xác!",

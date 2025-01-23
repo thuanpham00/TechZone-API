@@ -39,6 +39,14 @@ class DatabaseServices {
     }
   }
 
+  async indexUser() {
+    const exists = await this.users.indexExists(["email_1_password_1", "email_1"])
+    if (!exists) {
+      this.users.createIndex({ email: 1, password: 1 })
+      this.users.createIndex({ email: 1 }, { unique: true })
+    }
+  }
+
   // Tạo getter để truy cập vào collection (như 1 thuộc tính)
   get users(): Collection<User> {
     return this.db.collection(process.env.COLLECTION_USERS as string)

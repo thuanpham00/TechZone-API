@@ -37,7 +37,7 @@ const userRoute = Router()
  * Description: Register a new user
  * Path: /register
  * Method: POST
- * Body: { name: string, email: string, password: string, confirm_password: string, data_of_birth: ISO8601, sex: string, role?: string }
+ * Body: { email: string, password: string, confirm_password: string, name: string, role?: string }
  */
 userRoute.post("/register", registerValidator, wrapRequestHandler(registerController))
 
@@ -148,7 +148,7 @@ userRoute.patch(
   accessTokenValidator,
   verifyUserValidator,
   updateMeValidator,
-  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "sex"]),
+  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
   wrapRequestHandler(updateMeController)
 )
 

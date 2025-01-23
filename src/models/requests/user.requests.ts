@@ -1,4 +1,4 @@
-import { GenderType, RoleType, TokenType, UserVerifyStatus } from "~/constant/enum"
+import { RoleType, TokenType, UserVerifyStatus } from "~/constant/enum"
 import { JwtPayload } from "jsonwebtoken"
 
 export type RegisterReqBody = {
@@ -6,15 +6,13 @@ export type RegisterReqBody = {
   password: string
   confirm_password: string
   name: string
-  date_of_birth: string
-  sex: GenderType
   role?: RoleType
 }
 
 export type updateMeReqBody = {
   name?: string
   date_of_birth?: string
-  sex?: GenderType
+  avatar?: string
   numberPhone?: string
 }
 
