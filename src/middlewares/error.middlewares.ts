@@ -6,6 +6,7 @@ import httpStatus from "~/constant/httpStatus"
 export const defaultErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof ErrorWithStatus) {
     res.status(err.status).json(omit(err, ["status"]))
+    return
   }
   try {
     const finalError: any = {}
@@ -18,10 +19,12 @@ export const defaultErrorHandler = (err: any, req: Request, res: Response, next:
       }
       finalError[key] = err[key]
     })
-    res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      message: "Internal server error",
-      errorInfo: omit(finalError, ["stack"])
-    })
+    if (finalError !== null) {
+      res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        message: "Internal server error",
+        errorInfo: omit(finalError, ["stack"])
+      })
+    }
   } catch (error) {
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       message: "Internal server error",

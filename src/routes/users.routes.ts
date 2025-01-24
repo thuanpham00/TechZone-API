@@ -1,4 +1,5 @@
 import { Router } from "express"
+import { RoleType } from "~/constant/enum"
 import {
   changePasswordController,
   forgotPasswordController,
@@ -18,6 +19,7 @@ import { filterMiddleware } from "~/middlewares/common.middlewares"
 import {
   accessTokenValidator,
   changePasswordValidator,
+  checkRole,
   emailVerifyValidator,
   forgotPasswordValidator,
   loginValidator,

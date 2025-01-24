@@ -391,18 +391,15 @@ export const resetPasswordValidator = validate(
   )
 )
 
-export const verifyUserValidator = async (
-  req: Request<ParamsDictionary, any, any>,
-  res: Response,
-  next: NextFunction
-) => {
-  const { user_id } = req.decode_authorization as TokenPayload
-  const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
-  if (user?.verify !== UserVerifyStatus.Verified) {
-    throw new ErrorWithStatus({
-      message: UserMessage.USER_IS_NOT_VERIFIED,
-      status: httpStatus.UNAUTHORIZED
-    })
+export const verifyUserValidator = (req: Request, res: Response, next: NextFunction) => {
+  const { verify } = req.decode_authorization as TokenPayload
+  if (verify !== UserVerifyStatus.Verified) {
+    return next(
+      new ErrorWithStatus({
+        message: UserMessage.USER_IS_NOT_VERIFIED,
+        status: httpStatus.UNAUTHORIZED
+      })
+    )
   }
   next()
 }
@@ -485,3 +482,18 @@ export const updateMeValidator = validate(
 // query là tham số truy vấn ví dụ page, limit, type ...
 // cookie là lưu refresh_token
 // headers là nơi check Authorization (chứa accessToken)
+
+export const checkRole = (roleCheck: RoleType[] | RoleType) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const { role } = req.decode_authorization as TokenPayload
+    if (roleCheck.includes(role)) {
+      return next()
+    }
+    next(
+      new ErrorWithStatus({
+        message: UserMessage.PERMISSION_DENIED,
+        status: httpStatus.FORBIDDEN
+      })
+    )
+  }
+}

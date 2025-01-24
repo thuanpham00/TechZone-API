@@ -5,6 +5,7 @@ import databaseServices from "./services/database.services"
 import { config } from "dotenv"
 import userRoute from "./routes/users.routes"
 import { defaultErrorHandler } from "./middlewares/error.middlewares"
+import productRoute from "./routes/product.routes"
 config()
 
 const app = express()
@@ -19,6 +20,7 @@ app.use(
   })
 )
 app.use("/users", userRoute)
+app.use("/products", productRoute)
 
 databaseServices.connect().then(() => {
   databaseServices.indexRefreshToken(), databaseServices.indexUser()

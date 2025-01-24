@@ -50,5 +50,6 @@ export const UserMessage = {
   NUMBER_PHONE_IS_INVALID: "Số điện thoại không hợp lệ!",
   UPDATE_PROFILE_IS_SUCCESS: "Cập nhật profile thành công!",
   EMAIL_NOT_VERIFY: "Email chưa xác thực!",
-  REFRESH_TOKEN_IS_SUCCESS: "RefreshToken thành công!"
+  REFRESH_TOKEN_IS_SUCCESS: "RefreshToken thành công!",
+  PERMISSION_DENIED: "Không có quyền truy cập!"
 }
