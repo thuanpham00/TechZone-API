@@ -2,6 +2,8 @@ import { Collection, Db, MongoClient } from "mongodb"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { User } from "~/models/schema/users.schema"
 import { config } from "dotenv"
+import Product from "~/models/schema/product.schema"
+import { Brand, Category } from "~/models/schema/brand_category.schema"
 config()
 
 const URI = `mongodb+srv://${process.env.USERNAME_MONGODB}:${process.env.PASSWORD_MONGODB}@cluster0.1nx8m.mongodb.net/`
@@ -47,6 +49,20 @@ class DatabaseServices {
     }
   }
 
+  async indexBrand() {
+    const exists = await this.brand.indexExists(["name_1"])
+    if (!exists) {
+      this.brand.createIndex({ name: 1})
+    }
+  }
+
+  async indexCategory() {
+    const exists = await this.category.indexExists(["name_1"])
+    if (!exists) {
+      this.category.createIndex({ name: 1})
+    }
+  }
+
   // Tạo getter để truy cập vào collection (như 1 thuộc tính)
   get users(): Collection<User> {
     return this.db.collection(process.env.COLLECTION_USERS as string)
@@ -54,6 +70,18 @@ class DatabaseServices {
 
   get refreshToken(): Collection<RefreshToken> {
     return this.db.collection(process.env.COLLECTION_REFRESH_TOKEN as string)
+  }
+
+  get product(): Collection<Product> {
+    return this.db.collection(process.env.COLLECTION_PRODUCT as string)
+  }
+
+  get brand(): Collection<Brand> {
+    return this.db.collection(process.env.COLLECTION_BRAND as string)
+  }
+
+  get category(): Collection<Category> {
+    return this.db.collection(process.env.COLLECTION_CATEGORY as string)
   }
 }
 

@@ -6,6 +6,8 @@ import { config } from "dotenv"
 import userRoute from "./routes/users.routes"
 import { defaultErrorHandler } from "./middlewares/error.middlewares"
 import productRoute from "./routes/product.routes"
+import mediasRoute from "./routes/medias.routes"
+import { initFolder } from "./utils/file"
 config()
 
 const app = express()
@@ -21,10 +23,16 @@ app.use(
 )
 app.use("/users", userRoute)
 app.use("/products", productRoute)
+app.use("/medias", mediasRoute)
 
 databaseServices.connect().then(() => {
-  databaseServices.indexRefreshToken(), databaseServices.indexUser()
+  databaseServices.indexRefreshToken(),
+    databaseServices.indexUser(),
+    databaseServices.indexBrand(),
+    databaseServices.indexCategory()
 })
+
+initFolder()
 
 app.use(defaultErrorHandler)
 

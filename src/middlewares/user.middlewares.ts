@@ -477,12 +477,6 @@ export const updateMeValidator = validate(
   )
 )
 
-// body phần truyền lên
-// params là tham số định danh như id
-// query là tham số truy vấn ví dụ page, limit, type ...
-// cookie là lưu refresh_token
-// headers là nơi check Authorization (chứa accessToken)
-
 export const checkRole = (roleCheck: RoleType[] | RoleType) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const { role } = req.decode_authorization as TokenPayload
@@ -497,3 +491,9 @@ export const checkRole = (roleCheck: RoleType[] | RoleType) => {
     )
   }
 }
+
+// body phần truyền lên
+// params là tham số định danh như id
+// query là tham số truy vấn ví dụ page, limit, type ...
+// cookie là lưu refresh_token
+// headers là nơi check Authorization (chứa accessToken)

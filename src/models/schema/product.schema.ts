@@ -7,15 +7,15 @@ interface ProductType {
   category: ObjectId // thể loại
   brand: ObjectId // thương hiệu
   price: number // giá sản phẩm
+  description: string // Mô tả sản phẩm chi tiết
+  medias?: Media[] // hình ảnh
   discount?: number // % giảm giá (nếu có)
   stock?: number // số lượng tồn kho
   sold?: number // số lượng đã bán
   viewCount?: number // Số lượt xem
-  description: string // Mô tả sản phẩm chi tiết
   isFeatured?: boolean // Sản phẩm nổi bật
   specifications?: ObjectId[]
   gifts?: ObjectId[]
-  medias?: Media[] // hình ảnh
   reviews?: ObjectId[]
   averageRating?: number // trung bình đánh giá
   created_at?: Date
@@ -48,15 +48,15 @@ class Product {
     this.category = product.category
     this.brand = product.brand
     this.price = product.price
+    this.description = product.description
+    this.medias = product.medias || []
     this.discount = product.discount || 0
     this.stock = product.stock || 0
     this.sold = product.sold || 0
     this.viewCount = product.viewCount || 0
-    this.description = product.description
     this.isFeatured = product.isFeatured || false
     this.specifications = product.specifications || []
     this.gifts = product.gifts || []
-    this.medias = product.medias || []
     this.reviews = product.reviews || []
     this.averageRating = product.averageRating || 0
     this.created_at = product.created_at || date

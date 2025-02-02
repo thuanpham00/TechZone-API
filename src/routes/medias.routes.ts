@@ -1,26 +1,24 @@
 import { Router } from "express"
 import { RoleType } from "~/constant/enum"
-import { createProductController } from "~/controllers/product.controllers"
-import { createProductValidator } from "~/middlewares/product.middlewares"
+import { uploadImageController } from "~/controllers/media.controllers"
 import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
-const productRoute = Router()
+const mediasRoute = Router()
 
 /**
- * Description: Create product
+ * Description: Upload medias
  * Path: /
  * Method: POST
  * Header: { Authorization: Bearer <accessToken> }
- * Body: { body: CreateProductBodyReq }
+ * Body: { body: file }
  */
-productRoute.post(
-  "/",
+mediasRoute.post(
+  "/upload-image",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
-  createProductValidator,
-  wrapRequestHandler(createProductController)
+  wrapRequestHandler(uploadImageController)
 )
 
-export default productRoute
+export default mediasRoute

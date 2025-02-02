@@ -52,4 +52,46 @@ export const UserMessage = {
   EMAIL_NOT_VERIFY: "Email chưa xác thực!",
   REFRESH_TOKEN_IS_SUCCESS: "RefreshToken thành công!",
   PERMISSION_DENIED: "Không có quyền truy cập!"
+} as const
+
+export const ProductMessage = {
+  NAME_IS_REQUIRED: "Tên sản phẩm không được để trống!",
+  NAME_MUST_BE_STRING: "Tên sản phẩm phải là chuỗi!",
+
+  CATEGORY_IS_REQUIRED: "Thể loại không được để trống!",
+  CATEGORY_MUST_BE_STRING: "Thể loại phải là chuỗi!",
+
+  BRAND_IS_REQUIRED: "Thương hiệu không được để trống!",
+  BRAND_MUST_BE_STRING: "Thương hiệu phải là chuỗi!",
+
+  PRICE_IS_REQUIRED: "Giá sản phẩm không được để trống!",
+  PRICE_MUST_BE_NUMBER: "Giá sản phẩm phải là số!",
+  PRICE_IS_INVALID: "Giá sản phẩm không hợp lệ!",
+
+  DISCOUNT_MUST_BE_NUMBER: "Giảm giá phải là số!",
+  DISCOUNT_IS_INVALID: "Giảm giá không hợp lệ!",
+
+  STOCK_MUST_BE_NUMBER: "Số lượng tồn kho phải là số!",
+  STOCK_IS_INVALID: "Số lượng tồn kho không hợp lệ!",
+
+  SOLD_MUST_BE_NUMBER: "Số lượng đã bán phải là số!",
+  SOLD_IS_INVALID: "Số lượng đã bán không hợp lệ!",
+
+  DESCRIPTION_IS_REQUIRED: "Mô tả sản phẩm không được để trống!",
+  DESCRIPTION_MUST_BE_STRING: "Mô tả sản phẩm phải là chuỗi!",
+
+  IS_FEATURED_MUST_BE_BOOLEAN: "Sản phẩm nổi bật phải là boolean!",
+  SPECIFICATIONS_MUST_BE_AN_ARRAY_OF_USER_ID: "Các thông số kỹ thuật phải là mảng các id!",
+
+  MEDIAS_MUST_BE_AN_ARRAY_OF_MEDIA: "Hình ảnh phải là mảng các media!",
+  MEDIAS_IS_REQUIRED: "Hình ảnh không được để trống!",
+
+  GIFTS_MUST_BE_AN_ARRAY_OF_USER_ID: "Quà tặng phải là mảng các id!",
+  
+  CREATE_PRODUCT_SUCCESS: "Tạo sản phẩm thành công!",
+} as const
+
+export const MediaMessage = {
+  UPLOAD_IMAGE_IS_SUCCESS: "Tải ảnh lên thành công!",
+  UPLOAD_IMAGE_IS_FAILED: "Tải ảnh lên thất bại!",
 }
