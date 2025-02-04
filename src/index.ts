@@ -8,6 +8,7 @@ import { defaultErrorHandler } from "./middlewares/error.middlewares"
 import productRoute from "./routes/product.routes"
 import mediasRoute from "./routes/medias.routes"
 import { initFolder } from "./utils/file"
+import collectionsRoute from "./routes/collections.routes"
 config()
 
 const app = express()
@@ -24,6 +25,7 @@ app.use(
 app.use("/users", userRoute)
 app.use("/products", productRoute)
 app.use("/medias", mediasRoute)
+app.use("/collections", collectionsRoute)
 
 databaseServices.connect().then(() => {
   databaseServices.indexRefreshToken(),

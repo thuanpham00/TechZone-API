@@ -1,5 +1,3 @@
-import { Media } from "~/constant/common"
-
 export type CreateProductBodyReq = {
   name: string
   category: string
@@ -8,4 +6,9 @@ export type CreateProductBodyReq = {
   description: string
   discount: number
   isFeatured: boolean
+}
+
+export type GetCollectionReq = {
+  limit: string
+  page: string
 }

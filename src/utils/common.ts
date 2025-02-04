@@ -9,3 +9,7 @@ export const convertEnumToArrayNumber = (enumObject: { [key: string]: string | n
 export const getNameImage = (fileName: string) => {
   return fileName.split(".")[0]
 }
+
+export const getValueObject = (object: { [key: string]: { [x: string]: any } }) => {
+  return Object.keys(object) as string[]
+}

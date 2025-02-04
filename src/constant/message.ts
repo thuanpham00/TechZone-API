@@ -87,11 +87,19 @@ export const ProductMessage = {
   MEDIAS_IS_REQUIRED: "Hình ảnh không được để trống!",
 
   GIFTS_MUST_BE_AN_ARRAY_OF_USER_ID: "Quà tặng phải là mảng các id!",
-  
-  CREATE_PRODUCT_SUCCESS: "Tạo sản phẩm thành công!",
+
+  CREATE_PRODUCT_SUCCESS: "Tạo sản phẩm thành công!"
 } as const
 
 export const MediaMessage = {
   UPLOAD_IMAGE_IS_SUCCESS: "Tải ảnh lên thành công!",
-  UPLOAD_IMAGE_IS_FAILED: "Tải ảnh lên thất bại!",
+  UPLOAD_IMAGE_IS_FAILED: "Tải ảnh lên thất bại!"
+}
+
+export const CollectionMessage = {
+  GET_COLLECTION_IS_SUCCESS: "Lấy danh sách sản phẩm thành công!"
+}
+
+export const Path = {
+  PathNotFound: "Không tìm thấy trang!"
 }

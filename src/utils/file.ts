@@ -16,8 +16,8 @@ export const handleUploadImage = async (req: Request) => {
     uploadDir: UPLOAD_IMAGE_TEMP_DIR, // đường dẫn trỏ tới thư mục lưu
     maxFiles: 4, // up tối đa 4 file
     keepExtensions: true, // hiển thị đuôi file mở rộng
-    maxFileSize: 300 * 1024, // 300KB
-    maxTotalFileSize: 300 * 1024 * 4,
+    maxFileSize: 500 * 1024, // 300KB
+    maxTotalFileSize: 500 * 1024 * 4,
     filter: function ({ name, originalFilename, mimetype }) {
       const valid = name === "image" && Boolean(mimetype?.includes("image/"))
 
