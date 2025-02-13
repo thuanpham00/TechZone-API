@@ -81,7 +81,7 @@ export const ProductMessage = {
   DESCRIPTION_MUST_BE_STRING: "Mô tả sản phẩm phải là chuỗi!",
 
   IS_FEATURED_MUST_BE_BOOLEAN: "Sản phẩm nổi bật phải là boolean!",
-  SPECIFICATIONS_MUST_BE_AN_ARRAY_OF_USER_ID: "Các thông số kỹ thuật phải là mảng các id!",
+  SPECIFICATIONS_IS_INVALID: "Các thông số kỹ thuật phải là mảng các object!",
 
   MEDIAS_MUST_BE_AN_ARRAY_OF_MEDIA: "Hình ảnh phải là mảng các media!",
   MEDIAS_IS_REQUIRED: "Hình ảnh không được để trống!",

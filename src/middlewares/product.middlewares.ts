@@ -69,6 +69,27 @@ export const createProductValidator = validate(
           options: [[true, false]],
           errorMessage: ProductMessage.IS_FEATURED_MUST_BE_BOOLEAN
         }
+      },
+      specifications: {
+        isArray: true,
+        custom: {
+          options: (value) => {
+            if (
+              value.some(
+                (item: any) =>
+                  typeof item !== "object" ||
+                  item === null ||
+                  !("name" in item) ||
+                  !("value" in item) ||
+                  typeof item.name !== "string" ||
+                  (typeof item.value !== "string" && typeof item.value !== "number")
+              )
+            ) {
+              throw new Error(ProductMessage.SPECIFICATIONS_IS_INVALID)
+            }
+            return true
+          }
+        }
       }
     },
     ["body"]
@@ -76,23 +97,9 @@ export const createProductValidator = validate(
 )
 
 // 18 thuộc tính
-// 7 bắt buộc: name, category, brand, price, description, medias, discount, isFeatured
+// 9 bắt buộc: name, category, brand, price, description, discount, isFeatured, specifications, gifts
 // 1 bắt buộc: medias (chia ra 2 api)
-// 10 ko truyền (tự cập nhật): id, created_at, updated_at, viewCount, averageRating, reviews, sold, stock, specifications, gifts,
-
-// specifications: {
-//   optional: true,
-//   isArray: true,
-//   custom: {
-//     // `specifications` phải là mảng các string dạng id
-//     options: (value) => {
-//       if (value.some((item: any) => !ObjectId.isValid(item))) {
-//         throw new Error(ProductMessage.SPECIFICATIONS_MUST_BE_AN_ARRAY_OF_USER_ID)
-//       }
-//       return true
-//     }
-//   }
-// },
+// 8 ko truyền (tự cập nhật): id, created_at, updated_at, viewCount, reviews, sold, stock, averageRating
 
 // medias: {
 //   notEmpty: {

@@ -71,7 +71,6 @@ userRoute.post("/logout", accessTokenValidator, refreshTokenValidator, wrapReque
  * Description: Refresh token user
  * Path: /refresh-token
  * Method: POST
- * Body: { refresh_token: string }
  */
 userRoute.post("/refresh-token", refreshTokenValidator, wrapRequestHandler(refreshTokenController))
 

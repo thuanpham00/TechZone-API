@@ -8,6 +8,9 @@ import { getValueObject } from "~/utils/common"
 export const slugConditionMap = {
   "laptop-asus-hoc-tap-va-lam-viec": { brand: "ASUS", category: "Laptop" },
   "laptop-acer-hoc-tap-va-lam-viec": { brand: "ACER", category: "Laptop" },
+  "laptop-msi-hoc-tap-va-lam-viec": { brand: "MSI", category: "Laptop" },
+  "laptop-lenovo-hoc-tap-va-lam-viec": { brand: "LENOVO", category: "Laptop" },
+
   "laptop-duoi-15-trieu": { price: { $lt: 15000000 }, category: "Laptop" },
   "laptop-tu-15-den-20-trieu": { price: { $gte: 15000000, $lt: 20000000 }, category: "Laptop" },
   "laptop-tren-20-trieu": { price: { $gte: 20000000 }, category: "Laptop" }

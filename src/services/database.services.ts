@@ -4,6 +4,9 @@ import { User } from "~/models/schema/users.schema"
 import { config } from "dotenv"
 import Product from "~/models/schema/product.schema"
 import { Brand, Category } from "~/models/schema/brand_category.schema"
+import Review from "~/models/schema/review.schema"
+import Specification from "~/models/schema/specification.schema"
+import Gift from "~/models/schema/gift.schema"
 config()
 
 const URI = `mongodb+srv://${process.env.USERNAME_MONGODB}:${process.env.PASSWORD_MONGODB}@cluster0.1nx8m.mongodb.net/`
@@ -82,6 +85,18 @@ class DatabaseServices {
 
   get category(): Collection<Category> {
     return this.db.collection(process.env.COLLECTION_CATEGORY as string)
+  }
+
+  get specification(): Collection<Specification> {
+    return this.db.collection(process.env.COLLECTION_SPECIFICATION as string)
+  }
+
+  get gift(): Collection<Gift> {
+    return this.db.collection(process.env.COLLECTION_GIFT as string)
+  }
+
+  get review(): Collection<Review> {
+    return this.db.collection(process.env.COLLECTION_REVIEW as string)
   }
 }
 

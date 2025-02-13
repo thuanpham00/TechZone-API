@@ -115,7 +115,7 @@ export const refreshTokenController = async (
   next: NextFunction
 ) => {
   const { user_id, verify, exp, role } = req.decode_refreshToken as TokenPayload
-  const { refresh_token } = req.body
+  const { refresh_token } = req.cookies
   const { accessToken, refreshToken } = await userServices.refreshToken({
     token: refresh_token,
     user_id: user_id,
