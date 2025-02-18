@@ -15,7 +15,6 @@ class CollectionServices {
       $match["brand"] = brandId
     }
     if (condition.price) {
-      console.log(condition.price)
       $match["$expr"] = {
         $and: [] // Dùng $and vì cần đồng thời kiểm tra cả $gte và $lt nếu có.
       }
