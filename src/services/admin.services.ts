@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb"
 import databaseServices from "./database.services"
+import { updateMeReqBody } from "~/models/requests/user.requests"
 
 class AdminServices {
   async getStatistical() {
@@ -108,6 +109,49 @@ class AdminServices {
       }
     )
     return result
+  }
+
+  async getCategories(limit?: number, page?: number) {
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.category
+        .aggregate([
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          }
+        ])
+        .toArray(),
+      databaseServices.category
+        .aggregate([
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+      databaseServices.category
+        .aggregate([
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
+    }
   }
 }
 

@@ -1,7 +1,15 @@
 import { Router } from "express"
 import { RoleType } from "~/constant/enum"
-import { getCustomerController, getCustomersController, getStatisticalController } from "~/controllers/admin.controllers"
+import {
+  getCategoriesController,
+  getCustomerController,
+  getCustomersController,
+  getStatisticalController,
+  updateCustomerController
+} from "~/controllers/admin.controllers"
+import { filterMiddleware } from "~/middlewares/common.middlewares"
 import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
+import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const adminRouter = Router()
@@ -25,6 +33,7 @@ adminRouter.get(
  * Path: /customers
  * Method: GET
  * Headers: {Authorization: AT}
+ * Params: {limit: number, skip: number}
  */
 adminRouter.get(
   "/customers",
@@ -39,6 +48,7 @@ adminRouter.get(
  * Path: /customers/:id
  * Method: GET
  * Headers: {Authorization: AT}
+ *
  */
 adminRouter.get(
   "/customers/:id",
@@ -46,6 +56,37 @@ adminRouter.get(
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getCustomerController)
+)
+
+/**
+ * Description: update profile customer id
+ * Path: /customers/:id
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: updateMeReqBody
+ */
+adminRouter.patch(
+  "/customers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone"]),
+  wrapRequestHandler(updateCustomerController)
+)
+
+/**
+ * Description: get list category
+ * Path: /categories
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Params: {limit: number, skip: number}
+ */
+adminRouter.get(
+  "/categories",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(getCategoriesController)
 )
 
 export default adminRouter

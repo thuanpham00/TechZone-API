@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from "express"
 import adminServices from "~/services/admin.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { AdminMessage } from "~/constant/message"
+import { AdminMessage, UserMessage } from "~/constant/message"
+import { updateMeReqBody } from "~/models/requests/user.requests"
+import { userServices } from "~/services/user.services"
 
 export const getStatisticalController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { totalCustomer, totalProduct } = await adminServices.getStatistical()
@@ -51,5 +53,39 @@ export const getCustomerController = async (
     result: {
       result
     }
+  })
+}
+
+export const getCategoriesController = async (
+  req: Request<ParamsDictionary, any, any, { limit: string; page: string }>,
+  res: Response
+) => {
+  const { limit, page } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCategories(
+    Number(limit),
+    Number(page)
+  )
+
+  res.json({
+    message: AdminMessage.GET_CATEGORIES,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
+
+export const updateCustomerController = async (
+  req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
+  res: Response
+) => {
+  const { id } = req.params
+  const result = await userServices.updateMe({ user_id: id, body: req.body })
+  res.json({
+    message: UserMessage.UPDATE_PROFILE_IS_SUCCESS,
+    result
   })
 }

@@ -12,7 +12,6 @@ export type RegisterReqBody = {
 export type updateMeReqBody = {
   name?: string
   date_of_birth?: string
-  avatar?: string
   numberPhone?: string
 }
 

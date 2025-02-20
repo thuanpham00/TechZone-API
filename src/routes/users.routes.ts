@@ -149,7 +149,7 @@ userRoute.patch(
   accessTokenValidator,
   verifyUserValidator,
   updateMeValidator,
-  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
+  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone"]),
   wrapRequestHandler(updateMeController)
 )
 

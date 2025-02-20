@@ -51,6 +51,35 @@ class MediaServices {
     )
     return result
   }
+
+  async uploadImageProfile(file: File, userId: string) {
+    const newName = getNameImage(file.newFilename)
+    const newFullName = `${newName}.jpg`
+    const newPath = path.resolve(UPLOAD_IMAGE_DIR, newFullName)
+    sharp.cache(false)
+    await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
+    const mime = (await import("mime")).default
+    const s3Result = await uploadFileToS3({
+      fileName: "avatar/" + userId + "/" + newFullName,
+      filePath: newPath,
+      ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
+    })
+    fs.unlinkSync(file.filepath) // xóa ảnh tạm
+    fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
+
+    const result = databaseServices.users.updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          avatar: (s3Result as CompleteMultipartUploadCommandOutput).Location as string
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    )
+    return result
+  }
 }
 
 export const mediaServices = new MediaServices()

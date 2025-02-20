@@ -11,6 +11,7 @@ import { UserMessage } from "~/constant/message"
 import axios from "axios"
 import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
+import { sendVerifyRegisterEmail } from "~/utils/ses"
 config()
 
 class UserServices {
@@ -182,6 +183,8 @@ class UserServices {
       )
     ])
 
+    await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
+
     return {
       accessToken,
       refreshToken,
@@ -349,6 +352,7 @@ class UserServices {
         iat: decodeRefreshToken.iat // vẫn giữ iat của RT cũ // time tạo mới
       })
     )
+
     return {
       accessToken: accessTokenNew,
       refreshToken: refreshTokenNew
