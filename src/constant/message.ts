@@ -108,5 +108,6 @@ export const AdminMessage = {
   GET_STATISTICAL: "Lấy số liệu thống kê thành công",
   GET_CUSTOMERS: "Lấy danh sách khách hàng thành công",
   GET_CUSTOMER: "Lấy thông tin khách hàng thành công",
-  GET_CATEGORIES: "Lấy danh mục thể loại thành công"
+  GET_CATEGORIES: "Lấy danh mục thể loại thành công",
+  DELETE_CUSTOMER: "Xóa profile khách hàng thành công",
 }

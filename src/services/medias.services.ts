@@ -67,18 +67,22 @@ class MediaServices {
     fs.unlinkSync(file.filepath) // xóa ảnh tạm
     fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
 
-    const result = databaseServices.users.updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          avatar: (s3Result as CompleteMultipartUploadCommandOutput).Location as string
-        },
-        $currentDate: {
-          updated_at: true
-        }
-      }
-    )
-    return result
+    return {
+      url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
+      type: MediaType.Image
+    }
+    // const result = databaseServices.users.updateOne(
+    //   { _id: new ObjectId(userId) },
+    //   {
+    //     $set: {
+    //       avatar: (s3Result as CompleteMultipartUploadCommandOutput).Location as string
+    //     },
+    //     $currentDate: {
+    //       updated_at: true
+    //     }
+    //   }
+    // )
+    // return result
   }
 }
 

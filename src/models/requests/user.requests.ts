@@ -13,6 +13,7 @@ export type updateMeReqBody = {
   name?: string
   date_of_birth?: string
   numberPhone?: string
+  avatar?: string
 }
 
 export type LoginReqBody = {

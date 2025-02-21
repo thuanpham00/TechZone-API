@@ -56,6 +56,30 @@ export const getCustomerController = async (
   })
 }
 
+export const updateCustomerController = async (
+  req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
+  res: Response
+) => {
+  const { id } = req.params
+  const result = await userServices.updateMe({ user_id: id, body: req.body })
+  res.json({
+    message: UserMessage.UPDATE_PROFILE_IS_SUCCESS,
+    result
+  })
+}
+
+export const deleteCustomerController = async (
+  req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
+  res: Response
+) => {
+  const { id } = req.params
+  const result = await adminServices.deleteCustomer(id)
+  res.json({
+    message: AdminMessage.DELETE_CUSTOMER,
+    result
+  })
+}
+
 export const getCategoriesController = async (
   req: Request<ParamsDictionary, any, any, { limit: string; page: string }>,
   res: Response
@@ -75,17 +99,5 @@ export const getCategoriesController = async (
       total,
       totalOfPage
     }
-  })
-}
-
-export const updateCustomerController = async (
-  req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
-  res: Response
-) => {
-  const { id } = req.params
-  const result = await userServices.updateMe({ user_id: id, body: req.body })
-  res.json({
-    message: UserMessage.UPDATE_PROFILE_IS_SUCCESS,
-    result
   })
 }

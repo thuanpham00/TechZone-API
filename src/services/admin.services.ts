@@ -111,6 +111,11 @@ class AdminServices {
     return result
   }
 
+  async deleteCustomer(id: string) {
+    const result = await databaseServices.users.findOneAndDelete({ _id: new ObjectId(id) })
+    return result
+  }
+
   async getCategories(limit?: number, page?: number) {
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.category

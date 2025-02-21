@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { RoleType } from "~/constant/enum"
 import {
+  deleteCustomerController,
   getCategoriesController,
   getCustomerController,
   getCustomersController,
@@ -61,7 +62,7 @@ adminRouter.get(
 /**
  * Description: update profile customer id
  * Path: /customers/:id
- * Method: GET
+ * Method: PATCH
  * Headers: {Authorization: AT}
  * Body: updateMeReqBody
  */
@@ -70,8 +71,23 @@ adminRouter.patch(
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
-  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone"]),
+  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
   wrapRequestHandler(updateCustomerController)
+)
+
+/**
+ * Description: delete profile customer id
+ * Path: /customers/:id
+ * Method: DELETE
+ * Headers: {Authorization: AT}
+ * Body: updateMeReqBody
+ */
+adminRouter.delete(
+  "/customers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(deleteCustomerController)
 )
 
 /**
