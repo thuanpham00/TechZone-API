@@ -149,8 +149,8 @@ class UserServices {
       _id: user_id,
       password: hashPassword(payload.password),
       email_verify_token: emailVerifyToken,
-      role: payload.role,
-      numberPhone: payload.phone
+      numberPhone: payload.phone,
+      role: payload.role
     }
     const [, token] = await Promise.all([
       databaseServices.users.insertOne(
@@ -160,8 +160,8 @@ class UserServices {
               ...payload,
               _id: user_id,
               password: hashPassword(payload.password),
-              numberPhone: payload.phone,
-              email_verify_token: emailVerifyToken
+              email_verify_token: emailVerifyToken,
+              numberPhone: payload.phone
             })
       ),
       // tạo cặp AccessToken và RefreshToken mới
@@ -304,7 +304,7 @@ class UserServices {
         name: userInfo.name,
         password: random,
         confirm_password: random,
-        phone: "",
+        phone: ""
       })
       // vẫn tạo mới email-verify-token - cần thêm bước verify-email
       return {
@@ -531,7 +531,7 @@ class UserServices {
 
 export const userServices = new UserServices()
 
-// chỉ có register, login ra tạo cặp AT và RT mới và lưu RT xuống DB
+// chỉ có register, login, loginGoogle, refresh-token, verify-email tạo cặp AT và RT mới và lưu RT xuống DB
 // findOne trả về document
 // updateOne chỉ cập nhật và không trả về document
 // findOneAndUpdate vừa tìm và cập nhật và có trả về document

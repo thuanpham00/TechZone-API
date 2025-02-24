@@ -32,14 +32,22 @@ class AdminServices {
     }
   }
 
-  async getCustomers(limit?: number, page?: number) {
+  async getCustomers(limit?: number, page?: number, email?: string, name?: string, phone?: string) {
+    const $match: any = { role: "User" }
+    if (email) {
+      $match["email"] = { $regex: email, $options: "i" }
+    }
+    if (name) {
+      $match["name"] = { $regex: name, $options: "i" }
+    }
+    if (email) {
+      $match["numberPhone"] = { $regex: phone, $options: "i" }
+    }
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.users
         .aggregate([
           {
-            $match: {
-              role: "User"
-            }
+            $match
           },
           {
             $project: {
@@ -59,9 +67,7 @@ class AdminServices {
       databaseServices.users
         .aggregate([
           {
-            $match: {
-              role: "User"
-            }
+            $match
           },
           {
             $count: "total"
@@ -71,9 +77,7 @@ class AdminServices {
       databaseServices.users
         .aggregate([
           {
-            $match: {
-              role: "User"
-            }
+            $match
           },
           {
             $skip: limit && page ? limit * (page - 1) : 0

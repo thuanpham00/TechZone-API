@@ -49,20 +49,21 @@ class DatabaseServices {
     if (!exists) {
       this.users.createIndex({ email: 1, password: 1 })
       this.users.createIndex({ email: 1 }, { unique: true })
+      this.users.createIndex({ name: "text", email: "text", numberPhone: "text" })
     }
   }
 
   async indexBrand() {
     const exists = await this.brand.indexExists(["name_1"])
     if (!exists) {
-      this.brand.createIndex({ name: 1})
+      this.brand.createIndex({ name: 1 })
     }
   }
 
   async indexCategory() {
     const exists = await this.category.indexExists(["name_1"])
     if (!exists) {
-      this.category.createIndex({ name: 1})
+      this.category.createIndex({ name: 1 })
     }
   }
 

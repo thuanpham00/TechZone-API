@@ -148,6 +148,25 @@ const forgotPasswordToken: ParamSchema = {
   }
 }
 
+const numberPhoneSchema: ParamSchema = {
+  isLength: {
+    options: {
+      min: 10,
+      max: 11
+    },
+    errorMessage: UserMessage.NUMBER_PHONE_LENGTH_MIN_10_MAX_11
+  },
+  custom: {
+    options: (value) => {
+      const regex = /^\d+$/
+      if (!regex.test(value)) {
+        throw new Error(UserMessage.NUMBER_PHONE_IS_INVALID)
+      }
+      return true
+    }
+  }
+}
+
 export const registerValidator = validate(
   checkSchema(
     {
@@ -176,6 +195,9 @@ export const registerValidator = validate(
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
       name: nameSchema,
+      phone: {
+        ...numberPhoneSchema
+      },
       role: {
         optional: true, // không bắt buộc
         isIn: {
@@ -454,23 +476,37 @@ export const updateMeValidator = validate(
         optional: true
       },
       numberPhone: {
-        optional: true,
-        isLength: {
-          options: {
-            min: 10,
-            max: 11
-          },
-          errorMessage: UserMessage.NUMBER_PHONE_LENGTH_MIN_10_MAX_11
-        },
+        // ...numberPhoneSchema,
         custom: {
-          options: (value) => {
+          options: async (value, { req }) => {
+            // console.log(req.body)
+            const { id } = req.params as Record<string, string>
+            const user = await databaseServices.users.findOne({ _id: new ObjectId(id) })
+            if (!user) {
+              throw new ErrorWithStatus({
+                message: UserMessage.USER_NOT_FOUND,
+                status: httpStatus.NOTFOUND
+              })
+            }
+            // nếu số điện thoại trống thì bỏ qua
+            // nếu đã từng có số điện thoại thì bắt buộc có
+            if (user.numberPhone !== "" && value === "") {
+              throw new Error(UserMessage.NUMBER_PHONE_IS_REQUIRED)
+            }
+            if (value === "") {
+              return true
+            }
             const regex = /^\d+$/
             if (!regex.test(value)) {
               throw new Error(UserMessage.NUMBER_PHONE_IS_INVALID)
             }
+            if(value.length < 10 || value.length > 11) {
+              throw new Error(UserMessage.NUMBER_PHONE_LENGTH_MIN_10_MAX_11)
+            }
             return true
           }
-        }
+        },
+        optional: true
       }
     },
     ["body"]

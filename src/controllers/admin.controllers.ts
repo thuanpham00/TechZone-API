@@ -20,13 +20,16 @@ export const getStatisticalController = async (req: Request<ParamsDictionary, an
 }
 
 export const getCustomersController = async (
-  req: Request<ParamsDictionary, any, any, { limit: string; page: string }>,
+  req: Request<ParamsDictionary, any, any, { limit: string; page: string; email: string; name: string; phone: string }>,
   res: Response
 ) => {
-  const { limit, page } = req.query
+  const { limit, page, email, name, phone } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCustomers(
     Number(limit),
-    Number(page)
+    Number(page),
+    email,
+    name,
+    phone
   )
 
   res.json({
