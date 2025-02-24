@@ -40,9 +40,10 @@ class AdminServices {
     if (name) {
       $match["name"] = { $regex: name, $options: "i" }
     }
-    if (email) {
+    if (phone) {
       $match["numberPhone"] = { $regex: phone, $options: "i" }
     }
+    console.log($match)
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.users
         .aggregate([
@@ -91,7 +92,7 @@ class AdminServices {
         ])
         .toArray()
     ])
-
+    console.log(result)
     return {
       result,
       limitRes: limit || 5,
