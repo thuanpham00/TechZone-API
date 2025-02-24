@@ -42,7 +42,7 @@ export class User {
     this.password = user.password
     this.role = user.role || RoleType.USER // mặc định là user
     this.numberPhone = user.numberPhone || ""
-    this.date_of_birth = user.date_of_birth || new Date()
+    this.date_of_birth = user.date_of_birth || new Date(1990, 0, 1)
     this.avatar = user.avatar || ""
     this.email_verify_token = user.email_verify_token || ""
     this.forgot_password_token = user.forgot_password_token || ""

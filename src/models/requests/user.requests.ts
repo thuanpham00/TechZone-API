@@ -6,6 +6,7 @@ export type RegisterReqBody = {
   password: string
   confirm_password: string
   name: string
+  phone: string
   role?: RoleType
 }
 

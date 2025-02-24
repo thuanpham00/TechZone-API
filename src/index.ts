@@ -19,9 +19,8 @@ app.use(express.json()) // biến request từ object thành json
 app.use(cookieParse())
 app.use(
   cors({
-    origin: ["http://localhost:3500", "https://tech-zone-shop.vercel.app/"], // URL client
+    origin: ["http://localhost:3500"], // URL client
     credentials: true, // Cho phép gửi cookie lên client
-    methods: ["GET", "POST", "PUT", "DELETE"] // Cho phép tất cả method
   })
 )
 // client

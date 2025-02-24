@@ -149,7 +149,8 @@ class UserServices {
       _id: user_id,
       password: hashPassword(payload.password),
       email_verify_token: emailVerifyToken,
-      role: payload.role
+      role: payload.role,
+      numberPhone: payload.phone
     }
     const [, token] = await Promise.all([
       databaseServices.users.insertOne(
@@ -159,6 +160,7 @@ class UserServices {
               ...payload,
               _id: user_id,
               password: hashPassword(payload.password),
+              numberPhone: payload.phone,
               email_verify_token: emailVerifyToken
             })
       ),
@@ -301,7 +303,8 @@ class UserServices {
         email: userInfo.email,
         name: userInfo.name,
         password: random,
-        confirm_password: random
+        confirm_password: random,
+        phone: "",
       })
       // vẫn tạo mới email-verify-token - cần thêm bước verify-email
       return {

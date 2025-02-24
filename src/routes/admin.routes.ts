@@ -9,7 +9,7 @@ import {
   updateCustomerController
 } from "~/controllers/admin.controllers"
 import { filterMiddleware } from "~/middlewares/common.middlewares"
-import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
+import { accessTokenValidator, checkRole, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -71,6 +71,7 @@ adminRouter.patch(
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
+  updateMeValidator,
   filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
   wrapRequestHandler(updateCustomerController)
 )
