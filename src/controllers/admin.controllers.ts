@@ -4,6 +4,7 @@ import { ParamsDictionary } from "express-serve-static-core"
 import { AdminMessage, UserMessage } from "~/constant/message"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
+import { UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 
 export const getStatisticalController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { totalCustomer, totalProduct } = await adminServices.getStatistical()
@@ -44,12 +45,12 @@ export const getCustomersController = async (
   })
 }
 
-export const getCustomerController = async (
+export const getCustomerDetailController = async (
   req: Request<ParamsDictionary, any, any, { limit: string; page: string }>,
   res: Response
 ) => {
   const { id } = req.params
-  const result = await adminServices.getCustomer(id)
+  const result = await adminServices.getCustomerDetail(id)
 
   res.json({
     message: AdminMessage.GET_CUSTOMER,
@@ -59,7 +60,7 @@ export const getCustomerController = async (
   })
 }
 
-export const updateCustomerController = async (
+export const updateCustomerDetailController = async (
   req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
   res: Response
 ) => {
@@ -84,13 +85,14 @@ export const deleteCustomerController = async (
 }
 
 export const getCategoriesController = async (
-  req: Request<ParamsDictionary, any, any, { limit: string; page: string }>,
+  req: Request<ParamsDictionary, any, any, { limit: string; page: string; name: string }>,
   res: Response
 ) => {
-  const { limit, page } = req.query
-  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCategories(
+  const { limit, page, name } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes, listTotalBrand } = await adminServices.getCategories(
     Number(limit),
-    Number(page)
+    Number(page),
+    name
   )
 
   res.json({
@@ -100,7 +102,66 @@ export const getCategoriesController = async (
       limit: limitRes,
       page: pageRes,
       total,
-      totalOfPage
+      totalOfPage,
+      listTotalBrand
+    }
+  })
+}
+
+export const getCategoryDetailController = async (
+  req: Request<{ id: string }, any, any, { limit: string; page: string }>,
+  res: Response
+) => {
+  const { id } = req.params
+  const result = await adminServices.getCategoryDetail(id)
+
+  res.json({
+    message: AdminMessage.GET_CATEGORY_DETAIL,
+    result: {
+      result
+    }
+  })
+}
+
+export const updateCategoryDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const result = await adminServices.updateCategory(id, req.body)
+
+  res.json({
+    message: AdminMessage.UPDATE_CATEGORY_DETAIL,
+    result: {
+      result
+    }
+  })
+}
+
+export const createCategoryController = async (
+  req: Request<ParamsDictionary, any, UpdateCategoryBodyReq>,
+  res: Response
+) => {
+  const { name } = req.body
+  const result = await adminServices.createCategory(name)
+
+  res.json({
+    message: AdminMessage.UPDATE_CATEGORY_DETAIL,
+    result: {
+      result
+    }
+  })
+}
+
+export const getBrandsController = async (
+  req: Request<ParamsDictionary, any, any, { limit: string; page: string; name: string }>,
+  res: Response
+) => {
+  const { id } = req.params
+  const { listBrand, listTotalProduct } = await adminServices.getBrands(id)
+
+  res.json({
+    message: AdminMessage.GET_BRANDS,
+    result: {
+      listBrand,
+      listTotalProduct
     }
   })
 }

@@ -265,7 +265,7 @@ export const accessTokenValidator = validate(
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
-                  message: error.message,
+                  message: "AccessToken expired",
                   status: httpStatus.UNAUTHORIZED
                 })
               }
@@ -311,7 +311,7 @@ export const refreshTokenValidator = validate(
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
-                  message: error.message,
+                  message: "RefreshToken expired",
                   status: httpStatus.UNAUTHORIZED
                 })
               }
@@ -373,7 +373,7 @@ export const forgotPasswordValidator = validate(
             if (!value) {
               throw new ErrorWithStatus({
                 message: UserMessage.EMAIL_IS_REQUIRED,
-                status: httpStatus.UNAUTHORIZED
+                status: httpStatus.BAD_REQUESTED
               })
             }
             const user = await databaseServices.users.findOne({ email: value })
@@ -447,7 +447,7 @@ export const changePasswordValidator = validate(
             if (!isMatch) {
               throw new ErrorWithStatus({
                 message: UserMessage.OLD_PASSWORD_IS_INCORRECT,
-                status: httpStatus.UNAUTHORIZED
+                status: httpStatus.BAD_REQUESTED
               })
             }
             return true

@@ -5,7 +5,7 @@ export type CreateProductBodyReq = {
   price: number
   description: string
   discount: number
-  isFeatured: boolean,
+  isFeatured: boolean
   specifications: specificationType[]
 }
 

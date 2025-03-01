@@ -10,6 +10,8 @@ import mediasRoute from "./routes/medias.routes"
 import { initFolder } from "./utils/file"
 import collectionsRoute from "./routes/collections.routes"
 import adminRouter from "./routes/admin.routes"
+import path from "path"
+import staticRoute from "./routes/static.routes"
 config()
 
 const app = express()
@@ -20,7 +22,7 @@ app.use(cookieParse())
 app.use(
   cors({
     origin: ["http://localhost:3500"], // URL client
-    credentials: true, // Cho phép gửi cookie lên client
+    credentials: true // Cho phép gửi cookie lên client
   })
 )
 // client
@@ -28,6 +30,7 @@ app.use("/users", userRoute)
 app.use("/products", productRoute)
 app.use("/medias", mediasRoute)
 app.use("/collections", collectionsRoute)
+app.use("/static", staticRoute)
 
 // admin
 app.use("/admin", adminRouter)

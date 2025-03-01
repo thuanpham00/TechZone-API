@@ -14,7 +14,7 @@ const mediasRoute = Router()
  * Body: { body: file }
  */
 mediasRoute.post(
-  "/upload-image",
+  "/upload-image-product",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),

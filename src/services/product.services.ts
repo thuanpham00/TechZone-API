@@ -7,11 +7,11 @@ import { ProductMessage } from "~/constant/message"
 import Specification from "~/models/schema/specification.schema"
 
 class ProductServices {
-  private async checkBrandExist(brand: string) {
+  private async checkBrandExist(brand: string, category_id: string) {
     const brandCheck = await databaseServices.brand.findOneAndUpdate(
       { name: brand },
       {
-        $setOnInsert: new Brand({ name: brand })
+        $setOnInsert: new Brand({ name: brand, category_id: new ObjectId(category_id) })
       },
       {
         upsert: true,
@@ -68,10 +68,8 @@ class ProductServices {
   }
 
   async createProduct(payload: CreateProductBodyReq) {
-    const [brandId, categoryId] = await Promise.all([
-      this.checkBrandExist(payload.brand),
-      this.checkCategoryExist(payload.category)
-    ])
+    const categoryId = await this.checkCategoryExist(payload.category)
+    const brandId = await this.checkBrandExist(payload.brand, payload.category)
     const specificationList = await this.checkSpecificationExist(categoryId, payload.specifications)
     const productId = new ObjectId()
     const result = await databaseServices.product.findOneAndUpdate(

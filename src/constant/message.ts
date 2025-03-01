@@ -109,6 +109,12 @@ export const AdminMessage = {
   GET_STATISTICAL: "Lấy số liệu thống kê thành công",
   GET_CUSTOMERS: "Lấy danh sách khách hàng thành công",
   GET_CUSTOMER: "Lấy thông tin khách hàng thành công",
-  GET_CATEGORIES: "Lấy danh mục thể loại thành công",
-  DELETE_CUSTOMER: "Xóa profile khách hàng thành công"
+  GET_CATEGORIES: "Lấy danh sách danh mục thành công",
+  GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công",
+  UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công",
+  CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công",
+  DELETE_CUSTOMER: "Xóa profile khách hàng thành công",
+
+  CATEGORY_IS_ALREADY: "Danh mục đã tồn tại",
+  GET_BRANDS: "Lấy danh sách các thương hiệu thành công"
 }
