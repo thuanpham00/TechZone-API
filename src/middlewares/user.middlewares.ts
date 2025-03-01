@@ -82,7 +82,7 @@ const confirmPasswordSchema: ParamSchema = {
   }
 }
 
-const nameSchema: ParamSchema = {
+export const nameSchema: ParamSchema = {
   notEmpty: {
     errorMessage: UserMessage.NAME_IS_REQUIRED // truyền lỗi này vào msg và là lỗi 422 - msg là string
   },
