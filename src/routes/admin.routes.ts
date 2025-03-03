@@ -3,6 +3,7 @@ import { RoleType } from "~/constant/enum"
 import {
   createCategoryController,
   deleteCustomerController,
+  getBrandDetailController,
   getBrandsController,
   getCategoriesController,
   getCategoryDetailController,
@@ -12,7 +13,7 @@ import {
   updateCategoryDetailController,
   updateCustomerDetailController
 } from "~/controllers/admin.controllers"
-import { checkCategoryValidator, checkIdValidator, getBrandsValidator, updateCategoryValidator } from "~/middlewares/admin.middlewares"
+import { checkBrandValidator, checkCategoryValidator, checkIdValidator, getBrandsValidator, updateCategoryValidator } from "~/middlewares/admin.middlewares"
 import { filterMiddleware } from "~/middlewares/common.middlewares"
 import { accessTokenValidator, checkRole, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
@@ -55,7 +56,7 @@ adminRouter.get(
  * Path: /customers/:id
  * Method: GET
  * Headers: {Authorization: AT}
- *
+ * Params: {id: string}
  */
 adminRouter.get(
   "/customers/:id",
@@ -71,6 +72,7 @@ adminRouter.get(
  * Path: /customers/:id
  * Method: PATCH
  * Headers: {Authorization: AT}
+ * Params: {id: string}
  * Body: updateMeReqBody
  */
 adminRouter.patch(
@@ -89,6 +91,7 @@ adminRouter.patch(
  * Path: /customers/:id
  * Method: DELETE
  * Headers: {Authorization: AT}
+ * Params: {id: string}
  */
 adminRouter.delete(
   "/customers/:id",
@@ -104,7 +107,7 @@ adminRouter.delete(
  * Path: /categories
  * Method: GET
  * Headers: {Authorization: AT}
- * Query: {limit: number, skip: number}
+ * Query: {limit: number, skip: number, name: string}
  */
 adminRouter.get(
   "/categories",
@@ -119,7 +122,7 @@ adminRouter.get(
  * Path: /categories
  * Method: POST
  * Headers: {Authorization: AT}
- * Body: UpdateCategoryBodyReq
+ * Body: createCategoryBodyReq
  */
 adminRouter.post(
   "/categories",
@@ -135,6 +138,7 @@ adminRouter.post(
  * Path: /categories/:id
  * Method: GET
  * Headers: {Authorization: AT}
+ * Params: {id: string}
  */
 adminRouter.get(
   "/categories/:id",
@@ -150,6 +154,7 @@ adminRouter.get(
  * Path: /categories/:id
  * Method: patch
  * Headers: {Authorization: AT}
+ * Params: {id: string}
  * body: UpdateCategoryBodyReq
  */
 adminRouter.patch(
@@ -169,14 +174,51 @@ adminRouter.patch(
  * Path: /categories/:id
  * Method: get
  * Headers: {Authorization: AT}
+ * Query: {limit: number, skip: number, name: string, id: string}
+ */
+adminRouter.get(
+  "/brands",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  getBrandsValidator,
+  wrapRequestHandler(getBrandsController)
+)
+
+/**
+ * Description: get brand detail
+ * Path: /brands/:id
+ * Method: get
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
  */
 adminRouter.get(
   "/brands/:id",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
-  getBrandsValidator,
-  wrapRequestHandler(getBrandsController)
+  checkIdValidator,
+  wrapRequestHandler(getBrandDetailController)
+)
+
+/**
+ * Description: update brand detail
+ * Path: /brands/:id
+ * Method: patch
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ * body: UpdateBrandsBodyReq
+ */
+adminRouter.patch(
+  "/brands/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  updateCategoryValidator,
+  checkBrandValidator,
+  filterMiddleware<UpdateCategoryBodyReq>(["name"]),
+  wrapRequestHandler(updateCategoryDetailController)
 )
 
 // nếu category này đã có các thương hiệu thì không thể thực hiện xóa

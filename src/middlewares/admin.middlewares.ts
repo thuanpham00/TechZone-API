@@ -61,6 +61,28 @@ export const checkCategoryValidator = validate(
   )
 )
 
+export const checkBrandValidator = validate(
+  checkSchema(
+    {
+      name: {
+        custom: {
+          options: async (value) => {
+            const findBrand = await databaseServices.brand.findOne({ name: value })
+            if (findBrand) {
+              throw new ErrorWithStatus({
+                message: AdminMessage.BRAND_IS_ALREADY,
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            return true
+          }
+        }
+      }
+    },
+    ["body"]
+  )
+)
+
 export const getBrandsValidator = validate(
   checkSchema(
     {
@@ -78,6 +100,6 @@ export const getBrandsValidator = validate(
         }
       }
     },
-    ["params"]
+    ["query"]
   )
 )

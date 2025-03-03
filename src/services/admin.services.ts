@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb"
 import databaseServices from "./database.services"
-import { UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import { Category } from "~/models/schema/brand_category.schema"
 
 class AdminServices {
@@ -218,11 +218,55 @@ class AdminServices {
     return result
   }
 
-  async getBrands(id: string) {
-    const listBrand = await databaseServices.brand.find({ category_id: new ObjectId(id) }).toArray()
+  async getBrands(id: string, limit?: number, page?: number, name?: string) {
+    const $match: any = { category_id: new ObjectId(id) }
+    if (name) {
+      $match["name"] = { $regex: name, $options: "i" }
+    }
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.brand
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          }
+        ])
+        .toArray(),
+      databaseServices.brand
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+      databaseServices.brand
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray()
+    ])
 
     // tìm các brand có chung category_id (các brand thuộc danh mục này)
-    const listId = listBrand.map((item) => item._id)
+    const listId = result.map((item) => item._id)
 
     const listTotalProduct = await Promise.all(
       listId.map(async (item) => {
@@ -245,7 +289,28 @@ class AdminServices {
         }
       })
     )
-    return { listBrand, listTotalProduct }
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0,
+      listTotalProduct
+    }
+  }
+
+  async getBrandDetail(id: string) {
+    const result = await databaseServices.brand.findOne({ _id: new ObjectId(id) })
+    return result
+  }
+
+  async updateBrand(id: string, body: UpdateBrandBodyReq) {
+    const result = await databaseServices.brand.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: body, $currentDate: { updated_at: true } },
+      { returnDocument: "after" }
+    )
+    return result
   }
 }
 

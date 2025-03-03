@@ -116,5 +116,7 @@ export const AdminMessage = {
   DELETE_CUSTOMER: "Xóa profile khách hàng thành công",
 
   CATEGORY_IS_ALREADY: "Danh mục đã tồn tại",
-  GET_BRANDS: "Lấy danh sách các thương hiệu thành công"
+  BRAND_IS_ALREADY: "Thương hiệu đã tồn tại",
+  GET_BRANDS: "Lấy danh sách các thương hiệu thành công",
+  UPDATE_BRAND_DETAIL: "Cập nhật thông tin chi tiết thương hiệu thành công",
 }

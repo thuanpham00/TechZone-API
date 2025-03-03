@@ -49,3 +49,22 @@ app.use(defaultErrorHandler)
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })
+
+// import { Resend } from "resend"
+
+// const resend = new Resend("re_6sHF3LRw_7zRXgUyQKbf6WngZeVjfpkZ3")
+
+// ;(async function () {
+//   const { data, error } = await resend.emails.send({
+//     from: "phamminhthuan912@gmail.com",
+//     to: ["phamminhthuan91222@gmail.com"],
+//     subject: "Hello World",
+//     html: "<strong>It works!</strong>"
+//   })
+
+//   if (error) {
+//     return console.error({ error })
+//   }
+
+//   console.log({ data })
+// })()
