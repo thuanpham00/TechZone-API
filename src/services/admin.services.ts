@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb"
 import databaseServices from "./database.services"
 import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import { Category } from "~/models/schema/brand_category.schema"
+import { AdminMessage } from "~/constant/message"
 
 class AdminServices {
   async getStatistical() {
@@ -218,6 +219,13 @@ class AdminServices {
     return result
   }
 
+  async deleteCategory(id: string) {
+    await databaseServices.category.deleteOne({ _id: new ObjectId(id) })
+    return {
+      message: AdminMessage.DELETE_CATEGORY
+    }
+  }
+
   async getBrands(id: string, limit?: number, page?: number, name?: string) {
     const $match: any = { category_id: new ObjectId(id) }
     if (name) {
@@ -311,6 +319,82 @@ class AdminServices {
       { returnDocument: "after" }
     )
     return result
+  }
+
+  async deleteBrand(id: string) {
+    await databaseServices.brand.deleteOne({ _id: new ObjectId(id) })
+    return {
+      message: AdminMessage.DELETE_BRAND
+    }
+  }
+
+  async getProducts(limit?: number, page?: number, name?: string) {
+    const $match: any = {}
+    if (name) {
+      $match["name"] = { $regex: name, $options: "i" }
+    }
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.product
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $project: {
+              reviews: 0,
+              specifications: 0,
+              viewCount: 0,
+              gifts: 0,
+              description: 0,
+              sold: 0,
+              isFeatured: 0,
+              averageRating: 0,
+              discount: 0
+            }
+          }
+        ])
+        .toArray(),
+      databaseServices.product
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+      databaseServices.product
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
+    }
   }
 }
 

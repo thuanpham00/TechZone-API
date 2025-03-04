@@ -7,9 +7,9 @@ import { ProductMessage } from "~/constant/message"
 import Specification from "~/models/schema/specification.schema"
 
 class ProductServices {
-  private async checkBrandExist(brand: string, category_id: string) {
+  private async checkBrandExist(brand: string, category_id: ObjectId) {
     const brandCheck = await databaseServices.brand.findOneAndUpdate(
-      { name: brand },
+      { name: brand, category_id: new ObjectId(category_id) },
       {
         $setOnInsert: new Brand({ name: brand, category_id: new ObjectId(category_id) })
       },
@@ -21,11 +21,11 @@ class ProductServices {
     return (brandCheck as WithId<Brand>)._id
   } // truyền vào giá trị "asus" => nó check coi có tồn tại name này không, nếu có thì thôi, không thì tạo mới => lấy ra ObjectID
 
-  private async checkCategoryExist(brand: string) {
+  private async checkCategoryExist(category: string) {
     const categoryCheck = await databaseServices.category.findOneAndUpdate(
-      { name: brand },
+      { name: category },
       {
-        $setOnInsert: new Category({ name: brand })
+        $setOnInsert: new Category({ name: category })
       },
       {
         upsert: true,
@@ -69,7 +69,7 @@ class ProductServices {
 
   async createProduct(payload: CreateProductBodyReq) {
     const categoryId = await this.checkCategoryExist(payload.category)
-    const brandId = await this.checkBrandExist(payload.brand, payload.category)
+    const brandId = await this.checkBrandExist(payload.brand, categoryId)
     const specificationList = await this.checkSpecificationExist(categoryId, payload.specifications)
     const productId = new ObjectId()
     const result = await databaseServices.product.findOneAndUpdate(

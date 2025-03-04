@@ -106,17 +106,22 @@ export const Path = {
 }
 
 export const AdminMessage = {
-  GET_STATISTICAL: "Lấy số liệu thống kê thành công",
-  GET_CUSTOMERS: "Lấy danh sách khách hàng thành công",
-  GET_CUSTOMER: "Lấy thông tin khách hàng thành công",
-  GET_CATEGORIES: "Lấy danh sách danh mục thành công",
-  GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công",
-  UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công",
-  CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công",
-  DELETE_CUSTOMER: "Xóa profile khách hàng thành công",
+  GET_STATISTICAL: "Lấy số liệu thống kê thành công!",
+  GET_CUSTOMERS: "Lấy danh sách khách hàng thành công!",
+  GET_CUSTOMER: "Lấy thông tin khách hàng thành công!",
+  GET_CATEGORIES: "Lấy danh sách danh mục thành công!",
+  GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
+  UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công!",
+  CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công!",
+  DELETE_CUSTOMER: "Xóa profile khách hàng thành công!",
 
-  CATEGORY_IS_ALREADY: "Danh mục đã tồn tại",
-  BRAND_IS_ALREADY: "Thương hiệu đã tồn tại",
-  GET_BRANDS: "Lấy danh sách các thương hiệu thành công",
-  UPDATE_BRAND_DETAIL: "Cập nhật thông tin chi tiết thương hiệu thành công",
+  CATEGORY_IS_ALREADY: "Danh mục đã tồn tại!",
+  BRAND_IS_ALREADY: "Thương hiệu đã tồn tại!",
+  GET_BRANDS: "Lấy danh sách các thương hiệu thành công!",
+  UPDATE_BRAND_DETAIL: "Cập nhật thông tin chi tiết thương hiệu thành công!",
+  CATEGORY_CANNOT_BE_DELETED: "Danh mục đang sử dụng không thể xóa!",
+  BRAND_CANNOT_BE_DELETED: "Thương hiệu đang sử dụng không thể xóa!",
+  DELETE_CATEGORY: "Xóa danh mục thành công!",
+  DELETE_BRAND: "Xóa thương hiệu thành công!",
+  GET_PRODUCTS: "Lấy danh sách các sản phẩm thành công!"
 }

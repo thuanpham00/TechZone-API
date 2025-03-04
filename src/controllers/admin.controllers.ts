@@ -120,18 +120,6 @@ export const getCategoryDetailController = async (req: Request, res: Response) =
   })
 }
 
-export const updateCategoryDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
-  const { id } = req.params
-  const result = await adminServices.updateCategory(id, req.body)
-
-  res.json({
-    message: AdminMessage.UPDATE_CATEGORY_DETAIL,
-    result: {
-      result
-    }
-  })
-}
-
 export const createCategoryController = async (
   req: Request<ParamsDictionary, any, UpdateCategoryBodyReq>,
   res: Response
@@ -144,6 +132,27 @@ export const createCategoryController = async (
     result: {
       result
     }
+  })
+}
+
+export const updateCategoryDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const result = await adminServices.updateCategory(id, req.body)
+
+  res.json({
+    message: AdminMessage.UPDATE_CATEGORY_DETAIL,
+    result: {
+      result
+    }
+  })
+}
+
+export const deleteCategoryController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const { message } = await adminServices.deleteCategory(id)
+
+  res.json({
+    message: message
   })
 }
 
@@ -192,6 +201,38 @@ export const updateBrandDetailController = async (req: Request<{ id: string }, a
     message: AdminMessage.UPDATE_BRAND_DETAIL,
     result: {
       result
+    }
+  })
+}
+
+export const deleteBrandController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const { message } = await adminServices.deleteBrand(id)
+
+  res.json({
+    message: message
+  })
+}
+
+export const getProductController = async (
+  req: Request<ParamsDictionary, any, any, { limit: string; page: string; name: string }>,
+  res: Response
+) => {
+  const { limit, page, name } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getProducts(
+    Number(limit),
+    Number(page),
+    name
+  )
+
+  res.json({
+    message: AdminMessage.GET_PRODUCTS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
     }
   })
 }
