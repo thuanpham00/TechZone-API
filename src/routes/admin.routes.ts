@@ -13,6 +13,7 @@ import {
   getCustomersController,
   getProductController,
   getStatisticalController,
+  updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController
 } from "~/controllers/admin.controllers"
@@ -53,7 +54,7 @@ adminRouter.get(
  * Path: /customers
  * Method: GET
  * Headers: {Authorization: AT}
- * Query: {limit: number, skip: number, name: string, email: string, phone: string}
+ * Query: {limit: number, page: number, name?: string, email?: string, phone?: string}
  */
 adminRouter.get(
   "/customers",
@@ -65,7 +66,7 @@ adminRouter.get(
 )
 
 /**
- * Description: get customer detail
+ * Description: get customer
  * Path: /customers/:id
  * Method: GET
  * Headers: {Authorization: AT}
@@ -81,7 +82,7 @@ adminRouter.get(
 )
 
 /**
- * Description: update customer detail
+ * Description: update customer
  * Path: /customers/:id
  * Method: PATCH
  * Headers: {Authorization: AT}
@@ -100,7 +101,7 @@ adminRouter.patch(
 )
 
 /**
- * Description: delete profile customer id
+ * Description: delete customer
  * Path: /customers/:id
  * Method: DELETE
  * Headers: {Authorization: AT}
@@ -113,22 +114,6 @@ adminRouter.delete(
   checkRole([RoleType.ADMIN]),
   checkIdValidator,
   wrapRequestHandler(deleteCustomerController)
-)
-
-/**
- * Description: get list category
- * Path: /categories
- * Method: GET
- * Headers: {Authorization: AT}
- * Query: {limit: number, skip: number, name: string}
- */
-adminRouter.get(
-  "/categories",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
-  queryValidator,
-  wrapRequestHandler(getCategoriesController)
 )
 
 /**
@@ -148,7 +133,23 @@ adminRouter.post(
 )
 
 /**
- * Description: get category detail
+ * Description: get list category
+ * Path: /categories
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Query: {limit: number, page: number, name?: string}
+ */
+adminRouter.get(
+  "/categories",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  queryValidator,
+  wrapRequestHandler(getCategoriesController)
+)
+
+/**
+ * Description: get category
  * Path: /categories/:id
  * Method: GET
  * Headers: {Authorization: AT}
@@ -178,8 +179,8 @@ adminRouter.patch(
   checkRole([RoleType.ADMIN]),
   checkIdValidator,
   updateCategoryValidator,
-  checkCategoryValidator,
   filterMiddleware<UpdateCategoryBodyReq>(["name"]),
+  checkCategoryValidator,
   wrapRequestHandler(updateCategoryDetailController)
 )
 
@@ -201,11 +202,11 @@ adminRouter.delete(
 )
 
 /**
- * Description: get brands
+ * Description: get list brand
  * Path: /categories/:id
  * Method: get
  * Headers: {Authorization: AT}
- * Query: {limit: number, skip: number, name: string, id: string}
+ * Query: {limit: number, page: number, id: string, name?: string}
  */
 adminRouter.get(
   "/brands",
@@ -218,7 +219,7 @@ adminRouter.get(
 )
 
 /**
- * Description: get brand detail
+ * Description: get brand 
  * Path: /brands/:id
  * Method: get
  * Headers: {Authorization: AT}
@@ -248,9 +249,9 @@ adminRouter.patch(
   checkRole([RoleType.ADMIN]),
   checkIdValidator,
   updateCategoryValidator,
-  checkBrandValidator,
   filterMiddleware<UpdateCategoryBodyReq>(["name"]),
-  wrapRequestHandler(updateCategoryDetailController)
+  checkBrandValidator,
+  wrapRequestHandler(updateBrandDetailController)
 )
 
 /**
@@ -275,7 +276,7 @@ adminRouter.delete(
  * Path: /products
  * Method: GET
  * Headers: {Authorization: AT}
- * Query: {limit: number, skip: number}
+ * Query: {limit: number, page: number}
  */
 adminRouter.get(
   "/products",

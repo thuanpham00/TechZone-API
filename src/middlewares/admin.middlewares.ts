@@ -89,7 +89,7 @@ export const deleteCategoryValidator = validate(
       id: {
         custom: {
           options: async (value) => {
-            const findBrand = await databaseServices.brand.findOne({ category_id: new ObjectId(value) })
+            const findBrand = await databaseServices.brand.findOne({ category_ids: { $in: [new ObjectId(value)] } })
             // check coi có thương hiệu nào thuộc về danh mục này ko (tham chiếu id - category_id)
             if (findBrand) {
               throw new ErrorWithStatus({

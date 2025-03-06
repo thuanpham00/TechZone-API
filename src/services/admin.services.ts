@@ -121,6 +121,11 @@ class AdminServices {
     return result
   }
 
+  async createCategory(name: string) {
+    const result = await databaseServices.category.insertOne(new Category({ name }))
+    return result
+  }
+
   async getCategories(limit?: number, page?: number, name?: string) {
     const $match: any = {}
     if (name) {
@@ -168,42 +173,19 @@ class AdminServices {
         .toArray()
     ])
 
-    const listId = result.map((item) => item._id)
-    const listTotalBrand = await Promise.all(
-      listId.map(async (item) => {
-        const countBrand = await databaseServices.brand
-          .aggregate([
-            {
-              $match: {
-                category_id: item
-              }
-            },
-            {
-              $count: "total" // đếm số thương hiệu thuộc 1 danh mục -> tạo thành 1 list | chạy theo từng id của category
-            }
-          ])
-          .toArray()
-
-        return {
-          category_id: item,
-          total: countBrand.length > 0 ? countBrand[0].total : 0
-        }
-      })
-    )
     return {
       result,
       limitRes: limit || 5,
       pageRes: page || 1,
       total: total[0]?.total || 0,
-      totalOfPage: totalOfPage[0]?.total || 0,
-      listTotalBrand
+      totalOfPage: totalOfPage[0]?.total || 0
     }
-  }
+  } // đã sửa (lk category & brand)
 
   async getCategoryDetail(id: string) {
     const result = await databaseServices.category.findOne({ _id: new ObjectId(id) })
     return result
-  }
+  } // ok
 
   async updateCategory(id: string, body: UpdateCategoryBodyReq) {
     const result = await databaseServices.category.findOneAndUpdate(
@@ -212,22 +194,17 @@ class AdminServices {
       { returnDocument: "after" }
     )
     return result
-  }
-
-  async createCategory(name: string) {
-    const result = await databaseServices.category.insertOne(new Category({ name }))
-    return result
-  }
+  } // ok
 
   async deleteCategory(id: string) {
     await databaseServices.category.deleteOne({ _id: new ObjectId(id) })
     return {
       message: AdminMessage.DELETE_CATEGORY
     }
-  }
+  } // ok
 
   async getBrands(id: string, limit?: number, page?: number, name?: string) {
-    const $match: any = { category_id: new ObjectId(id) }
+    const $match: any = { category_ids: new ObjectId(id) }
     if (name) {
       $match["name"] = { $regex: name, $options: "i" }
     }
@@ -275,7 +252,6 @@ class AdminServices {
 
     // tìm các brand có chung category_id (các brand thuộc danh mục này)
     const listId = result.map((item) => item._id)
-
     const listTotalProduct = await Promise.all(
       listId.map(async (item) => {
         const countProduct = await databaseServices.product
@@ -305,7 +281,7 @@ class AdminServices {
       totalOfPage: totalOfPage[0]?.total || 0,
       listTotalProduct
     }
-  }
+  } // đã sửa (lk category & brand)
 
   async getBrandDetail(id: string) {
     const result = await databaseServices.brand.findOne({ _id: new ObjectId(id) })
@@ -321,8 +297,43 @@ class AdminServices {
     return result
   }
 
-  async deleteBrand(id: string) {
-    await databaseServices.brand.deleteOne({ _id: new ObjectId(id) })
+  async deleteBrand(categoryId: string, brandId: string) {
+    // 1. Xóa brandId khỏi mảng brand_ids của danh mục (Category)
+    await databaseServices.category.updateOne(
+      {
+        _id: new ObjectId(categoryId),
+        brand_ids: {
+          $in: [new ObjectId(brandId)]
+        }
+      },
+      {
+        $pull: {
+          brand_ids: new ObjectId(brandId)
+        }
+      }
+    )
+
+    // 2. Xóa categoryId khỏi mảng category_ids của thương hiệu (Brand)
+    await databaseServices.brand.updateOne(
+      {
+        _id: new ObjectId(brandId),
+        category_ids: {
+          $in: [new ObjectId(categoryId)]
+        }
+      },
+      {
+        $pull: {
+          category_ids: new ObjectId(categoryId)
+        }
+      }
+    )
+
+    const brand = await databaseServices.brand.findOne({ _id: new ObjectId(brandId) })
+    if (brand && brand.category_ids.length === 0) {
+      // Nếu không còn liên kết với bất kỳ danh mục nào, xóa thương hiệu
+      await databaseServices.brand.deleteOne({ _id: new ObjectId(brandId) })
+    }
+
     return {
       message: AdminMessage.DELETE_BRAND
     }
@@ -344,6 +355,48 @@ class AdminServices {
           },
           {
             $limit: limit ? limit : 5
+          },
+          {
+            $lookup: {
+              from: "brand",
+              localField: "brand",
+              foreignField: "_id",
+              as: "brand"
+            }
+          }, // tham chiếu đến brand
+          {
+            $addFields: {
+              brand: {
+                $map: {
+                  input: "$brand",
+                  as: "brandItem",
+                  in: {
+                    name: "$$brandItem.name"
+                  }
+                }
+              }
+            }
+          }, // ghi đè lại giá trị brand sẵn có
+          {
+            $lookup: {
+              from: "category",
+              localField: "category",
+              foreignField: "_id",
+              as: "category"
+            }
+          },// tham chiếu đến category
+          {
+            $addFields: {
+              category: {
+                $map: {
+                  input: "$category",
+                  as: "categoryItem",
+                  in: {
+                    name: "$$categoryItem.name"
+                  }
+                }
+              }
+            }
           },
           {
             $project: {
@@ -387,7 +440,7 @@ class AdminServices {
         ])
         .toArray()
     ])
-
+    console.log(result)
     return {
       result,
       limitRes: limit || 5,

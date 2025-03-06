@@ -89,7 +89,7 @@ export const getCategoriesController = async (
   res: Response
 ) => {
   const { limit, page, name } = req.query
-  const { result, total, totalOfPage, limitRes, pageRes, listTotalBrand } = await adminServices.getCategories(
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCategories(
     Number(limit),
     Number(page),
     name
@@ -102,8 +102,7 @@ export const getCategoriesController = async (
       limit: limitRes,
       page: pageRes,
       total,
-      totalOfPage,
-      listTotalBrand
+      totalOfPage
     }
   })
 }
@@ -138,7 +137,6 @@ export const createCategoryController = async (
 export const updateCategoryDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
   const { id } = req.params
   const result = await adminServices.updateCategory(id, req.body)
-
   res.json({
     message: AdminMessage.UPDATE_CATEGORY_DETAIL,
     result: {
@@ -205,9 +203,13 @@ export const updateBrandDetailController = async (req: Request<{ id: string }, a
   })
 }
 
-export const deleteBrandController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+export const deleteBrandController = async (
+  req: Request<{ id: string }, any, any, { categoryId: string }>,
+  res: Response
+) => {
   const { id } = req.params
-  const { message } = await adminServices.deleteBrand(id)
+  const { categoryId } = req.query
+  const { message } = await adminServices.deleteBrand(categoryId as string, id)
 
   res.json({
     message: message
