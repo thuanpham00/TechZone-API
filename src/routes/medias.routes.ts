@@ -1,24 +1,43 @@
 import { Router } from "express"
 import { RoleType } from "~/constant/enum"
-import { uploadImageController, uploadImageUserController } from "~/controllers/media.controllers"
+import {
+  uploadBannerProductController,
+  uploadImageListProductController,
+  uploadImageUserController
+} from "~/controllers/media.controllers"
 import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const mediasRoute = Router()
 
 /**
- * Description: Upload image cho 1 sản phẩm
+ * Description: Upload list image product
  * Path: /
  * Method: POST
  * Header: { Authorization: Bearer <accessToken> }
- * Body: { body: file }
+ * Body: { body: file[]; nameCategory: string; idProduct: string }
  */
 mediasRoute.post(
   "/upload-image-product",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
-  wrapRequestHandler(uploadImageController)
+  wrapRequestHandler(uploadImageListProductController)
+)
+
+/**
+ * Description: Upload banner product
+ * Path: /
+ * Method: POST
+ * Header: { Authorization: Bearer <accessToken> }
+ * Body: { body: file; nameCategory: string; idProduct: string }
+ */
+mediasRoute.post(
+  "/upload-banner-product",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(uploadBannerProductController)
 )
 
 /**

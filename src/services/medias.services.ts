@@ -14,7 +14,7 @@ import { ArrayOperator, ObjectId } from "mongodb"
 config()
 
 class MediaServices {
-  async uploadImage(files: File[], nameCategory: string, idProduct: string) {
+  async uploadImageList(files: File[], nameCategory: string, idProduct: string) {
     const upload: Media[] = await Promise.all(
       files.map(async (file) => {
         const newName = getNameImage(file.newFilename)
@@ -24,7 +24,7 @@ class MediaServices {
         await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
         const mime = (await import("mime")).default
         const s3Result = await uploadFileToS3({
-          fileName: "image/" + nameCategory + "/" + idProduct + "/" + newFullName,
+          fileName: "image/" + nameCategory + "/" + idProduct + "/medias/" + newFullName,
           filePath: newPath,
           ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
         })
@@ -46,6 +46,41 @@ class MediaServices {
         },
         $currentDate: {
           updated_at: true
+        }
+      }
+    )
+    return result
+  }
+
+  async uploadBanner(file: File, nameCategory: string, idProduct: string) {
+    const newName = getNameImage(file.newFilename)
+    const newFullName = `${newName}.jpg`
+    const newPath = path.resolve(UPLOAD_IMAGE_DIR, newFullName)
+    sharp.cache(false)
+    await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
+    const mime = (await import("mime")).default
+    const s3Result = await uploadFileToS3({
+      fileName: "image/" + nameCategory + "/" + idProduct + "/banner/" + newFullName,
+      filePath: newPath,
+      ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
+    })
+    fs.unlinkSync(file.filepath) // xóa ảnh tạm
+    fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
+
+    // return {
+    //   url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
+    //   type: MediaType.Image
+    // }
+    const result = await databaseServices.product.updateOne(
+      {
+        _id: new ObjectId(idProduct)
+      },
+      {
+        $set: {
+          banner: {
+            type: MediaType.Image,
+            url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string
+          }
         }
       }
     )

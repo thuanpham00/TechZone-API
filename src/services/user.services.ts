@@ -531,21 +531,3 @@ class UserServices {
 
 export const userServices = new UserServices()
 
-// chỉ có register, login, loginGoogle, refresh-token, verify-email tạo cặp AT và RT mới và lưu RT xuống DB
-// insertOne chỉ thêm và không trả về document
-// updateOne chỉ cập nhật và không trả về document
-// findOne trả về document
-
-/**
- * findOneAndUpdate	✔ Nếu tìm thấy → trả về document đó.
-                    ✔ Nếu không tìm thấy → tạo mới document.
-   findOneAndDelete	✔ Nếu tìm thấy → xoá document đó.
-                    ✔ Nếu không tìm thấy → không làm gì, trả về null.
- */
-
-/**
- * updateOne thì 
- * $set có nghĩa là gán lại giá trị còn 
- * $addToSet - each là Thêm giá trị vào mảng nếu chưa có
- * $setOnInsert là Chỉ thiết lập giá trị khi chèn (insert) document mới, không ảnh hưởng đến update
- */

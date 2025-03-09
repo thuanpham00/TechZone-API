@@ -258,7 +258,8 @@ class AdminServices {
           .aggregate([
             {
               $match: {
-                brand: item
+                brand: item,
+                category: new ObjectId(id)
               }
             },
             {
@@ -339,10 +340,19 @@ class AdminServices {
     }
   }
 
-  async getProducts(limit?: number, page?: number, name?: string) {
+  async getProducts(limit?: number, page?: number, name?: string, brand?: string, category?: string) {
     const $match: any = {}
     if (name) {
       $match["name"] = { $regex: name, $options: "i" }
+    }
+    if (brand) {
+      const nameUpperCase = brand?.split("").map(item => item.toUpperCase()).join("")
+      const findBrand = await databaseServices.brand.findOne({ name: nameUpperCase })
+      $match["brand"] = findBrand?._id
+    }
+    if (category) {
+      const findCategory = await databaseServices.category.findOne({ name: category })
+      $match["category"] = findCategory?._id
     }
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.product
@@ -384,7 +394,7 @@ class AdminServices {
               foreignField: "_id",
               as: "category"
             }
-          },// tham chiếu đến category
+          }, // tham chiếu đến category
           {
             $addFields: {
               category: {
@@ -440,7 +450,6 @@ class AdminServices {
         ])
         .toArray()
     ])
-    console.log(result)
     return {
       result,
       limitRes: limit || 5,

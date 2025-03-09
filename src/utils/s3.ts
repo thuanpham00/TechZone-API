@@ -24,7 +24,7 @@ export const uploadFileToS3 = ({
   const parallelUploads3 = new Upload({
     client: s3,
     params: {
-      Bucket: "tech-zone",
+      Bucket: "tech-zone-dev-ap-southeast-1",
       Key: fileName,
       Body: fs.readFileSync(filePath),
       ContentType: ContentType

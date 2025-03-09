@@ -29,7 +29,7 @@ export const handleUploadImage = async (req: Request) => {
       return valid
     }
   })
-  // tạo promise và trả về
+
   return new Promise<{ files: File[]; fields: formidable.Fields }>((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
       if (err) {

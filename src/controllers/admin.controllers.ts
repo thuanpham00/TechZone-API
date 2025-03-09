@@ -217,16 +217,22 @@ export const deleteBrandController = async (
 }
 
 export const getProductController = async (
-  req: Request<ParamsDictionary, any, any, { limit: string; page: string; name: string }>,
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    { limit: string; page: string; name_product: string; brand_product: string; category_product: string }
+  >,
   res: Response
 ) => {
-  const { limit, page, name } = req.query
+  const { limit, page, name_product, brand_product, category_product } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getProducts(
     Number(limit),
     Number(page),
-    name
+    name_product,
+    brand_product,
+    category_product
   )
-
   res.json({
     message: AdminMessage.GET_PRODUCTS,
     result: {
