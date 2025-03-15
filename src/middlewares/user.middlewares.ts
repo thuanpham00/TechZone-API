@@ -127,7 +127,6 @@ const forgotPasswordToken: ParamSchema = {
             status: httpStatus.NOTFOUND
           })
         }
-
         if (user.forgot_password_token !== value) {
           throw new ErrorWithStatus({
             message: UserMessage.FORGOT_PASSWORD_TOKEN_IS_INVALID,
@@ -500,7 +499,7 @@ export const updateMeValidator = validate(
             if (!regex.test(value)) {
               throw new Error(UserMessage.NUMBER_PHONE_IS_INVALID)
             }
-            if(value.length < 10 || value.length > 11) {
+            if (value.length < 10 || value.length > 11) {
               throw new Error(UserMessage.NUMBER_PHONE_LENGTH_MIN_10_MAX_11)
             }
             return true

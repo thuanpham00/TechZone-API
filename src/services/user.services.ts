@@ -11,7 +11,7 @@ import { UserMessage } from "~/constant/message"
 import axios from "axios"
 import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
-import { sendVerifyRegisterEmail } from "~/utils/ses"
+import { sendForgotPasswordToken, sendVerifyRegisterEmail } from "~/utils/ses"
 config()
 
 class UserServices {
@@ -428,7 +428,17 @@ class UserServices {
     }
   }
 
-  async forgotPassword({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
+  async forgotPassword({
+    user_id,
+    verify,
+    role,
+    email
+  }: {
+    user_id: string
+    verify: UserVerifyStatus
+    role: RoleType
+    email: string
+  }) {
     const forgotPasswordToken = await this.signForgotPasswordToken({
       user_id: user_id,
       verify: verify,
@@ -445,6 +455,7 @@ class UserServices {
         }
       }
     )
+    await sendForgotPasswordToken(email, forgotPasswordToken)
     return {
       message: UserMessage.CHECK_EMAIL_TO_RESET_PASSWORD
     }
@@ -530,4 +541,3 @@ class UserServices {
 }
 
 export const userServices = new UserServices()
-

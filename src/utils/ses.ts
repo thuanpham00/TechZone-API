@@ -80,3 +80,21 @@ export const sendVerifyRegisterEmail = (
       .replace("{{link}}", `${process.env.CLIENT_URL}/verify-email?token=${emailVerifyToken}`)
   )
 }
+
+export const sendForgotPasswordToken = (
+  toAddress: string,
+  forgotPasswordToken: string,
+  template: string = verifyEmailTemplate
+) => {
+  return sendVerifyEmail(
+    toAddress,
+    "Verify your email",
+    template
+      .replace("{{title}}", "Please reset your password")
+      .replace("{{content}}", "Click the button below to reset your password")
+      .replace("{{titleLink}}", "Reset")
+      .replace("{{link}}", `${process.env.CLIENT_URL}/forgot-password?token=${forgotPasswordToken}`)
+  )
+}
+
+// gửi email lên form -> gửi mail về email đó -> từ email navigate qua web với url "/forgot-password" -> lấy ra token -> chạy vào "/verify-forgot-password" -> để kiểm tra -> cuối cùng reset password với "/reset-password"
