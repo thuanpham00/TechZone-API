@@ -99,6 +99,7 @@ export const logoutController = async (
   const { user_id } = req.decode_authorization as TokenPayload
   const refresh_token = req.cookies.refresh_token // lấy cookie từ server
   const result = await userServices.logout({ user_id, refresh_token })
+
   res.clearCookie("refresh_token", {
     httpOnly: true,
     sameSite: "strict",
@@ -114,9 +115,10 @@ export const refreshTokenController = async (
   res: Response,
   next: NextFunction
 ) => {
+  // lấy exp (thời gian hết hạn của Token cũ) -> tạo token mới (giữ exp của token cũ)
   const { user_id, verify, exp, role } = req.decode_refreshToken as TokenPayload
   const { refresh_token } = req.cookies
-  const { accessToken, refreshToken } = await userServices.refreshToken({
+  const { accessToken, refreshToken: refresh_token_new } = await userServices.refreshToken({
     token: refresh_token,
     user_id: user_id,
     verify: verify,
@@ -124,7 +126,7 @@ export const refreshTokenController = async (
     exp: exp
   })
 
-  res.cookie("refresh_token", refreshToken, {
+  res.cookie("refresh_token", refresh_token_new, {
     httpOnly: true,
     // secure: true,
     sameSite: "strict",

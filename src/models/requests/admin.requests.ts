@@ -4,4 +4,5 @@ export type UpdateCategoryBodyReq = {
 
 export type UpdateBrandBodyReq = {
   name: string
+  categoryId: string
 }

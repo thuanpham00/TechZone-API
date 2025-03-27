@@ -1,7 +1,7 @@
-import { ObjectId } from "mongodb"
+import { ObjectId, WithId } from "mongodb"
 import databaseServices from "./database.services"
 import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
-import { Category } from "~/models/schema/brand_category.schema"
+import { Brand, Category } from "~/models/schema/brand_category.schema"
 import { AdminMessage } from "~/constant/message"
 
 class AdminServices {
@@ -289,6 +289,54 @@ class AdminServices {
     return result
   }
 
+  async createBrand(name: string, categoryId: string) {
+    try {
+      let brand = await databaseServices.brand.findOne({ name: name })
+      let brandId: ObjectId | undefined
+
+      // Nếu không tìm thấy brand, tiến hành tạo mới
+      if (!brand) {
+        const insertBrand = await databaseServices.brand.insertOne(
+          new Brand({
+            name: name,
+            category_ids: [new ObjectId(categoryId)]
+          })
+        )
+        brandId = insertBrand.insertedId
+      } else {
+        // Nếu đã tồn tại brand, tiến hành cập nhật
+        brandId = brand._id
+        await databaseServices.brand.updateOne(
+          { name: name },
+          {
+            $addToSet: {
+              category_ids: new ObjectId(categoryId)
+            }
+          }
+        )
+      }
+
+      // Cập nhật vào category
+      await databaseServices.category.updateOne(
+        { _id: new ObjectId(categoryId) },
+        {
+          $addToSet: { brand_ids: brandId }, // Thêm brandId vào category
+          $currentDate: { updated_at: true } // Cập nhật thời gian
+        }
+      )
+
+      return {
+        message: AdminMessage.CREATE_BRAND_DETAIL
+      }
+    } catch (error) {
+      console.error("Error in createBrand:", error)
+      return {
+        message: "Internal server error",
+        errorInfo: error
+      }
+    }
+  }
+
   async updateBrand(id: string, body: UpdateBrandBodyReq) {
     const result = await databaseServices.brand.findOneAndUpdate(
       { _id: new ObjectId(id) },
@@ -346,7 +394,10 @@ class AdminServices {
       $match["name"] = { $regex: name, $options: "i" }
     }
     if (brand) {
-      const nameUpperCase = brand?.split("").map(item => item.toUpperCase()).join("")
+      const nameUpperCase = brand
+        ?.split("")
+        .map((item) => item.toUpperCase())
+        .join("")
       const findBrand = await databaseServices.brand.findOne({ name: nameUpperCase })
       $match["brand"] = findBrand?._id
     }

@@ -4,7 +4,7 @@ import { ParamsDictionary } from "express-serve-static-core"
 import { AdminMessage, UserMessage } from "~/constant/message"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
-import { UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 
 export const getStatisticalController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { totalCustomer, totalProduct } = await adminServices.getStatistical()
@@ -112,7 +112,7 @@ export const getCategoryDetailController = async (req: Request, res: Response) =
   const result = await adminServices.getCategoryDetail(id)
 
   res.json({
-    message: AdminMessage.GET_CATEGORY_DETAIL,
+    message: AdminMessage.GET_BRAND_DETAIL,
     result: {
       result
     }
@@ -127,7 +127,7 @@ export const createCategoryController = async (
   const result = await adminServices.createCategory(name)
 
   res.json({
-    message: AdminMessage.UPDATE_CATEGORY_DETAIL,
+    message: AdminMessage.CREATE_CATEGORY_DETAIL,
     result: {
       result
     }
@@ -188,6 +188,15 @@ export const getBrandDetailController = async (req: Request, res: Response) => {
     result: {
       result
     }
+  })
+}
+
+export const createBrandController = async (req: Request<ParamsDictionary, any, UpdateBrandBodyReq>, res: Response) => {
+  const { name, categoryId } = req.body
+  const { message } = await adminServices.createBrand(name, categoryId)
+
+  res.json({
+    message: message
   })
 }
 

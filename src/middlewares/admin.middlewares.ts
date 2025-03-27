@@ -66,8 +66,13 @@ export const checkBrandValidator = validate(
     {
       name: {
         custom: {
-          options: async (value) => {
-            const findBrand = await databaseServices.brand.findOne({ name: value })
+          options: async (value, { req }) => {
+            const findBrand = await databaseServices.brand.findOne({
+              name: value,
+              category_ids: {
+                $in: [new ObjectId(req.body.categoryId)]
+              }
+            })
             if (findBrand) {
               throw new ErrorWithStatus({
                 message: AdminMessage.BRAND_IS_ALREADY,

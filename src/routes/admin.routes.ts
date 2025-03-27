@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { RoleType } from "~/constant/enum"
 import {
+  createBrandController,
   createCategoryController,
   deleteBrandController,
   deleteCategoryController,
@@ -199,6 +200,22 @@ adminRouter.delete(
   checkIdValidator,
   deleteCategoryValidator,
   wrapRequestHandler(deleteCategoryController)
+)
+
+/**
+ * Description: create category
+ * Path: /brands
+ * Method: POST
+ * Headers: {Authorization: AT}
+ * Body: UpdateBrandBodyReq
+ */
+adminRouter.post(
+  "/brands",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkBrandValidator,
+  wrapRequestHandler(createBrandController)
 )
 
 /**
