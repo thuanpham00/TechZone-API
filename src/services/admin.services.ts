@@ -1,4 +1,4 @@
-import { ObjectId, WithId } from "mongodb"
+import { ObjectId } from "mongodb"
 import databaseServices from "./database.services"
 import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import { Brand, Category } from "~/models/schema/brand_category.schema"
@@ -34,7 +34,18 @@ class AdminServices {
     }
   }
 
-  async getCustomers(limit?: number, page?: number, email?: string, name?: string, phone?: string) {
+  async getCustomers(
+    limit?: number,
+    page?: number,
+    email?: string,
+    name?: string,
+    phone?: string,
+    verify?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
     const $match: any = { role: "User" }
     if (email) {
       $match["email"] = { $regex: email, $options: "i" }
@@ -44,6 +55,43 @@ class AdminServices {
     }
     if (phone) {
       $match["numberPhone"] = { $regex: phone, $options: "i" }
+    }
+    if (verify) {
+      console.log(verify)
+      $match["verify"] = Number(verify)
+    }
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate // >= created_at_start
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      // Nếu đã có $match["created_at"], thêm $lte vào
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate // <= created_at_end
+      } else {
+        $match["created_at"] = {
+          $lte: endDate // Nếu chưa có, chỉ tạo điều kiện này
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
     }
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.users
@@ -126,10 +174,51 @@ class AdminServices {
     return result
   }
 
-  async getCategories(limit?: number, page?: number, name?: string) {
+  async getCategories(
+    limit?: number,
+    page?: number,
+    name?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
     const $match: any = {}
     if (name) {
       $match["name"] = { $regex: name, $options: "i" }
+    }
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate // >= created_at_start
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      // Nếu đã có $match["created_at"], thêm $lte vào
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate // <= created_at_end
+      } else {
+        $match["created_at"] = {
+          $lte: endDate // Nếu chưa có, chỉ tạo điều kiện này
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
     }
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.category
@@ -203,10 +292,52 @@ class AdminServices {
     }
   } // ok
 
-  async getBrands(id: string, limit?: number, page?: number, name?: string) {
+  async getBrands(
+    id: string,
+    limit?: number,
+    page?: number,
+    name?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
     const $match: any = { category_ids: new ObjectId(id) }
     if (name) {
       $match["name"] = { $regex: name, $options: "i" }
+    }
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate // >= created_at_start
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      // Nếu đã có $match["created_at"], thêm $lte vào
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate // <= created_at_end
+      } else {
+        $match["created_at"] = {
+          $lte: endDate // Nếu chưa có, chỉ tạo điều kiện này
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
     }
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.brand
@@ -388,7 +519,17 @@ class AdminServices {
     }
   }
 
-  async getProducts(limit?: number, page?: number, name?: string, brand?: string, category?: string) {
+  async getProducts(
+    limit?: number,
+    page?: number,
+    name?: string,
+    brand?: string,
+    category?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
     const $match: any = {}
     if (name) {
       $match["name"] = { $regex: name, $options: "i" }
@@ -404,6 +545,22 @@ class AdminServices {
     if (category) {
       const findCategory = await databaseServices.category.findOne({ name: category })
       $match["category"] = findCategory?._id
+    }
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate
+      } else {
+        $match["created_at"] = {
+          $lte: endDate
+        }
+      }
     }
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.product

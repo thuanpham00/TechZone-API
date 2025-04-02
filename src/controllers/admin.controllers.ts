@@ -21,18 +21,49 @@ export const getStatisticalController = async (req: Request<ParamsDictionary, an
 }
 
 export const getCustomersController = async (
-  req: Request<ParamsDictionary, any, any, { limit: string; page: string; email: string; name: string; phone: string }>,
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      email: string
+      name: string
+      phone: string
+      verify: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+    }
+  >,
   res: Response
 ) => {
-  const { limit, page, email, name, phone } = req.query
+  const {
+    limit,
+    page,
+    email,
+    name,
+    phone,
+    verify,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCustomers(
     Number(limit),
     Number(page),
     email,
     name,
-    phone
+    phone,
+    verify,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
   )
-
   res.json({
     message: AdminMessage.GET_CUSTOMERS,
     result: {
@@ -85,14 +116,31 @@ export const deleteCustomerController = async (
 }
 
 export const getCategoriesController = async (
-  req: Request<ParamsDictionary, any, any, { limit: string; page: string; name: string }>,
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      name: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+    }
+  >,
   res: Response
 ) => {
-  const { limit, page, name } = req.query
+  const { limit, page, name, created_at_start, created_at_end, updated_at_start, updated_at_end } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCategories(
     Number(limit),
     Number(page),
-    name
+    name,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
   )
 
   res.json({
@@ -155,15 +203,33 @@ export const deleteCategoryController = async (req: Request<{ id: string }, any,
 }
 
 export const getBrandsController = async (
-  req: Request<ParamsDictionary, any, any, { limit: string; page: string; name: string; id: string }>,
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      name: string
+      id: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+    }
+  >,
   res: Response
 ) => {
-  const { limit, page, name, id } = req.query
+  const { limit, page, name, id, created_at_start, created_at_end, updated_at_start, updated_at_end } = req.query
   const { result, total, totalOfPage, limitRes, pageRes, listTotalProduct } = await adminServices.getBrands(
     id,
     Number(limit),
     Number(page),
-    name
+    name,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
   )
 
   res.json({
@@ -230,17 +296,42 @@ export const getProductController = async (
     ParamsDictionary,
     any,
     any,
-    { limit: string; page: string; name_product: string; brand_product: string; category_product: string }
+    {
+      limit: string
+      page: string
+      name_product: string
+      brand_product: string
+      category_product: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+    }
   >,
   res: Response
 ) => {
-  const { limit, page, name_product, brand_product, category_product } = req.query
+  const {
+    limit,
+    page,
+    name_product,
+    brand_product,
+    category_product,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  } = req.query
+  console.log(req.query)
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getProducts(
     Number(limit),
     Number(page),
     name_product,
     brand_product,
-    category_product
+    category_product,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
   )
   res.json({
     message: AdminMessage.GET_PRODUCTS,
