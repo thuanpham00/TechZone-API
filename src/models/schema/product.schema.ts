@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb"
 import { Media } from "~/constant/common"
-import { MediaType } from "~/constant/enum"
+import { MediaType, ProductStatus } from "~/constant/enum"
 
 interface ProductType {
   _id?: ObjectId
@@ -20,6 +20,7 @@ interface ProductType {
   gifts?: ObjectId[]
   reviews?: ObjectId[]
   averageRating?: number // trung bình đánh giá
+  status?: ProductStatus
   created_at?: Date
   updated_at?: Date
 }
@@ -42,6 +43,7 @@ class Product {
   medias: Media[] // hình ảnh
   reviews: ObjectId[] // đánh giá
   averageRating: number // trung bình đánh giá
+  status: ProductStatus // trạng thái sản phẩm (còn hàng, hết hàng, ngừng bán)
   created_at: Date
   updated_at: Date
   constructor(product: ProductType) {
@@ -63,6 +65,7 @@ class Product {
     this.gifts = product.gifts || []
     this.reviews = product.reviews || []
     this.averageRating = product.averageRating || 0
+    this.status = product.status || ProductStatus.OUT_OF_STOCK // mặc định là hết hàng
     this.created_at = product.created_at || date
     this.updated_at = product.updated_at || date
   }

@@ -7,6 +7,7 @@ import { getValueObject } from "~/utils/common"
 import { validate } from "~/utils/validations"
 
 const slugCondition = getValueObject(slugConditionMap)
+
 export const getCollectionValidator = validate(
   checkSchema(
     {

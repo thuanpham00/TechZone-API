@@ -276,6 +276,12 @@ class AdminServices {
     return result
   } // ok
 
+  async getNameCategoriesFilter() {
+    const result = await databaseServices.category.find({}).toArray()
+    const listName = result.map((item) => item.name)
+    return listName
+  }
+
   async updateCategory(id: string, body: UpdateCategoryBodyReq) {
     const result = await databaseServices.category.findOneAndUpdate(
       { _id: new ObjectId(id) },
@@ -420,6 +426,12 @@ class AdminServices {
     return result
   }
 
+  async getNameBrandsFilter() {
+    const result = await databaseServices.brand.find({}).toArray()
+    const listName = result.map((item) => item.name)
+    return listName
+  }
+
   async createBrand(name: string, categoryId: string) {
     try {
       let brand = await databaseServices.brand.findOne({ name: name })
@@ -528,7 +540,10 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+    price_min?: string,
+    price_max?: string,
+    status?: string
   ) {
     const $match: any = {}
     if (name) {
@@ -561,6 +576,41 @@ class AdminServices {
           $lte: endDate
         }
       }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
+    }
+    if (price_min) {
+      const minPrice = Number(price_min.replace(/[.,]/g, ""))
+      if (!isNaN(minPrice)) {
+        $match["price"] = { $gte: minPrice }
+      }
+    }
+    if (price_max) {
+      const maxPrice = Number(price_max.replace(/[.,]/g, ""))
+      if (!isNaN(maxPrice)) {
+        if ($match["price"]) {
+          $match["price"]["$lte"] = maxPrice
+        } else {
+          $match["price"] = { $lte: maxPrice }
+        }
+      }
+    }
+    if (status) {
+      $match["status"] = status
     }
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.product

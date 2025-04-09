@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express"
+import { Request, Response } from "express"
 import adminServices from "~/services/admin.services"
 import { ParamsDictionary } from "express-serve-static-core"
 import { AdminMessage, UserMessage } from "~/constant/message"
@@ -155,6 +155,16 @@ export const getCategoriesController = async (
   })
 }
 
+export const getNameCategoriesController = async (req: Request, res: Response) => {
+  const result = await adminServices.getNameCategoriesFilter()
+  res.json({
+    message: AdminMessage.GET_CATEGORIES,
+    result: {
+      result
+    }
+  })
+}
+
 export const getCategoryDetailController = async (req: Request, res: Response) => {
   const { id } = req.params
   const result = await adminServices.getCategoryDetail(id)
@@ -245,6 +255,16 @@ export const getBrandsController = async (
   })
 }
 
+export const getNameBrandsController = async (req: Request<ParamsDictionary, any, any, any>, res: Response) => {
+  const result = await adminServices.getNameBrandsFilter()
+  res.json({
+    message: AdminMessage.GET_BRANDS,
+    result: {
+      result
+    }
+  })
+}
+
 export const getBrandDetailController = async (req: Request, res: Response) => {
   const { id } = req.params
   const result = await adminServices.getBrandDetail(id)
@@ -299,13 +319,16 @@ export const getProductController = async (
     {
       limit: string
       page: string
-      name_product: string
-      brand_product: string
-      category_product: string
+      name: string
+      brand: string
+      category: string
       created_at_start: string
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+      price_min: string
+      price_max: string
+      status: string
     }
   >,
   res: Response
@@ -313,26 +336,31 @@ export const getProductController = async (
   const {
     limit,
     page,
-    name_product,
-    brand_product,
-    category_product,
+    name,
+    brand,
+    category,
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    price_min,
+    price_max,
+    status
   } = req.query
-  console.log(req.query)
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getProducts(
     Number(limit),
     Number(page),
-    name_product,
-    brand_product,
-    category_product,
+    name,
+    brand,
+    category,
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
-  )
+    updated_at_end,
+    price_min,
+    price_max,
+    status
+  ) 
   res.json({
     message: AdminMessage.GET_PRODUCTS,
     result: {

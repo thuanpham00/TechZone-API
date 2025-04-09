@@ -12,6 +12,8 @@ import {
   getCategoryDetailController,
   getCustomerDetailController,
   getCustomersController,
+  getNameBrandsController,
+  getNameCategoriesController,
   getProductController,
   getStatisticalController,
   updateBrandDetailController,
@@ -166,6 +168,19 @@ adminRouter.get(
 )
 
 /**
+ * Description: get name category filter
+ * Path: /name-categories
+ * Method: GET
+ */
+adminRouter.get(
+  "/name-categories",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(getNameCategoriesController)
+)
+
+/**
  * Description: update category detail
  * Path: /categories/:id
  * Method: patch
@@ -236,7 +251,7 @@ adminRouter.get(
 )
 
 /**
- * Description: get brand 
+ * Description: get brand
  * Path: /brands/:id
  * Method: get
  * Headers: {Authorization: AT}
@@ -249,6 +264,19 @@ adminRouter.get(
   checkRole([RoleType.ADMIN]),
   checkIdValidator,
   wrapRequestHandler(getBrandDetailController)
+)
+
+/**
+ * Description: get name brand filter
+ * Path: /name-brands
+ * Method: GET
+ */
+adminRouter.get(
+  "/name-brands",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(getNameBrandsController)
 )
 
 /**

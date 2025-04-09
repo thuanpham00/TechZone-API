@@ -3,11 +3,6 @@ export enum UserVerifyStatus {
   Verified
 }
 
-export enum RoleType {
-  ADMIN = "Admin",
-  USER = "User"
-}
-
 export enum TokenType {
   AccessToken,
   RefreshToken,
@@ -18,4 +13,15 @@ export enum TokenType {
 export enum MediaType {
   Image,
   Video
+}
+
+export enum RoleType {
+  ADMIN = "Admin",
+  USER = "User"
+}
+
+export enum ProductStatus {
+  AVAILABLE = "available",
+  OUT_OF_STOCK = "out_of_stock",
+  DISCONTINUED = "discontinued"
 }

@@ -89,7 +89,9 @@ export const ProductMessage = {
 
   GIFTS_MUST_BE_AN_ARRAY_OF_USER_ID: "Quà tặng phải là mảng các id!",
 
-  CREATE_PRODUCT_SUCCESS: "Tạo sản phẩm thành công!"
+  CREATE_PRODUCT_SUCCESS: "Tạo sản phẩm thành công!",
+  GET_PRODUCT_SUCCESS: "Lấy chi tiết sản phẩm thành công!",
+  GET_PRODUCT_RELATED_SUCCESS: "Lấy danh sách sản phẩm liên quan thành công!"
 } as const
 
 export const MediaMessage = {

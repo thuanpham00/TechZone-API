@@ -41,7 +41,7 @@ class MediaServices {
       {
         $push: {
           medias: {
-            $each: upload // thêm nhiều ảnh
+            $each: upload // thêm nhiều ảnh cùng 1 lúc (còn nếu 1 ảnh thì không dùng $each) ==> medias = upload
           }
         },
         $currentDate: {
