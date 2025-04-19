@@ -10,7 +10,7 @@ import { getNameImage } from "~/utils/common"
 import { config } from "dotenv"
 import { File } from "formidable"
 import databaseServices from "./database.services"
-import { ArrayOperator, ObjectId } from "mongodb"
+import { ObjectId } from "mongodb"
 config()
 
 class MediaServices {
@@ -30,26 +30,29 @@ class MediaServices {
         })
         fs.unlinkSync(file.filepath) // xóa ảnh tạm
         fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
+
         return {
           url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
           type: MediaType.Image
         }
       })
     )
-    const result = databaseServices.product.updateOne(
-      { _id: new ObjectId(idProduct) },
-      {
-        $push: {
-          medias: {
-            $each: upload // thêm nhiều ảnh cùng 1 lúc (còn nếu 1 ảnh thì không dùng $each) ==> medias = upload
-          }
-        },
-        $currentDate: {
-          updated_at: true
-        }
-      }
-    )
-    return result
+    // const result = databaseServices.product.updateOne(
+    //   { _id: new ObjectId(idProduct) },
+    //   {
+    //     $push: {
+    //       medias: {
+    //         $each: upload // thêm nhiều ảnh cùng 1 lúc (còn nếu 1 ảnh thì không dùng $each) ==> medias = upload
+    //       }
+    //     },
+    //     $currentDate: {
+    //       updated_at: true
+    //     }
+    //   }
+    // )
+    return {
+      upload
+    }
   }
 
   async uploadBanner(file: File, nameCategory: string, idProduct: string) {
@@ -67,24 +70,10 @@ class MediaServices {
     fs.unlinkSync(file.filepath) // xóa ảnh tạm
     fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
 
-    // return {
-    //   url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
-    //   type: MediaType.Image
-    // }
-    const result = await databaseServices.product.updateOne(
-      {
-        _id: new ObjectId(idProduct)
-      },
-      {
-        $set: {
-          banner: {
-            type: MediaType.Image,
-            url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string
-          }
-        }
-      }
-    )
-    return result
+    return {
+      url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
+      type: MediaType.Image
+    }
   }
 
   async uploadImageProfile(file: File, userId: string) {
@@ -106,18 +95,6 @@ class MediaServices {
       url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
       type: MediaType.Image
     }
-    // const result = databaseServices.users.updateOne(
-    //   { _id: new ObjectId(userId) },
-    //   {
-    //     $set: {
-    //       avatar: (s3Result as CompleteMultipartUploadCommandOutput).Location as string
-    //     },
-    //     $currentDate: {
-    //       updated_at: true
-    //     }
-    //   }
-    // )
-    // return result
   }
 }
 

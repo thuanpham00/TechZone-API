@@ -1,17 +1,7 @@
 import { Router } from "express"
-import { RoleType } from "~/constant/enum"
-import {
-  createProductController,
-  getProductDetailController,
-  getProductRelatedController
-} from "~/controllers/product.controllers"
+import { getProductDetailController, getProductRelatedController } from "~/controllers/product.controllers"
 import { checkIdValidator } from "~/middlewares/admin.middlewares"
-import {
-  createProductValidator,
-  getProductDetailValidator,
-  getProductRelatedValidator
-} from "~/middlewares/product.middlewares"
-import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
+import { getProductDetailValidator, getProductRelatedValidator } from "~/middlewares/product.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const productRoute = Router()
@@ -19,22 +9,6 @@ const productRoute = Router()
 /**
  * Trong Express, các route được xử lý theo thứ tự khai báo. Route cụ thể nên đặt trước, các route động như /:id nên đặt sau để tránh conflict.
  */
-
-/**
- * Description: Create product
- * Path: /
- * Method: POST
- * Header: { Authorization: Bearer <accessToken> }
- * Body: { body: CreateProductBodyReq }
- */
-productRoute.post(
-  "/",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
-  createProductValidator,
-  wrapRequestHandler(createProductController)
-)
 
 /**
  * Description: Get product related

@@ -147,7 +147,7 @@ const forgotPasswordToken: ParamSchema = {
   }
 }
 
-const numberPhoneSchema: ParamSchema = {
+export const numberPhoneSchema: ParamSchema = {
   isLength: {
     options: {
       min: 10,

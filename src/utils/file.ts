@@ -16,7 +16,7 @@ export const handleUploadImage = async (req: Request) => {
     uploadDir: UPLOAD_IMAGE_TEMP_DIR, // đường dẫn trỏ tới thư mục lưu
     maxFiles: 4, // up tối đa 4 file
     keepExtensions: true, // hiển thị đuôi file mở rộng
-    maxFileSize: 500 * 1024, // 300KB
+    maxFileSize: 500 * 1024, // 500KB
     maxTotalFileSize: 500 * 1024 * 4,
     filter: function ({ name, originalFilename, mimetype }) {
       const valid = name === "image" && Boolean(mimetype?.includes("image/"))
@@ -39,7 +39,7 @@ export const handleUploadImage = async (req: Request) => {
       if (!Boolean(files.image)) {
         return reject(new Error("File is empty"))
       }
-      console.log(files)
+      // console.log(files)
       resolve({ files: files.image as File[], fields: fields })
     })
   })

@@ -1,12 +1,27 @@
+import { File } from "formidable"
+
 export type CreateProductBodyReq = {
   name: string
   category: string
   brand: string
   price: number
-  description: string
   discount: number
-  isFeatured: boolean
+  stock: number
+  isFeatured: string
+  description: string
+  banner: File
+  medias: File[]
   specifications: specificationType[]
+}
+
+export type CreateSupplierBodyReq = {
+  name: string
+  contactName: string
+  email: string
+  phone: string
+  address: string
+  taxCode: string
+  description?: string
 }
 
 export type GetCollectionReq = {

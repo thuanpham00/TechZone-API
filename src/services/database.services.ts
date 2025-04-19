@@ -7,6 +7,7 @@ import { Brand, Category } from "~/models/schema/brand_category.schema"
 import Review from "~/models/schema/review.schema"
 import Specification from "~/models/schema/specification.schema"
 import Gift from "~/models/schema/gift.schema"
+import { Supplier, Supply } from "~/models/schema/supply_supplier.schema"
 config()
 
 const URI = `mongodb+srv://${process.env.USERNAME_MONGODB}:${process.env.PASSWORD_MONGODB}@cluster0.1nx8m.mongodb.net/`
@@ -92,13 +93,21 @@ class DatabaseServices {
     return this.db.collection(process.env.COLLECTION_SPECIFICATION as string)
   }
 
-  get gift(): Collection<Gift> {
-    return this.db.collection(process.env.COLLECTION_GIFT as string)
+  get supplier(): Collection<Supplier> {
+    return this.db.collection(process.env.COLLECTION_SUPPLIER as string)
   }
 
-  get review(): Collection<Review> {
-    return this.db.collection(process.env.COLLECTION_REVIEW as string)
+  get supply(): Collection<Supply> {
+    return this.db.collection(process.env.COLLECTION_SUPPLY as string)
   }
+
+  // get gift(): Collection<Gift> {
+  //   return this.db.collection(process.env.COLLECTION_GIFT as string)
+  // }
+
+  // get review(): Collection<Review> {
+  //   return this.db.collection(process.env.COLLECTION_REVIEW as string)
+  // }
 }
 
 const databaseServices = new DatabaseServices()

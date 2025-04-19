@@ -66,11 +66,8 @@ export const ProductMessage = {
   BRAND_MUST_BE_STRING: "Thương hiệu phải là chuỗi!",
 
   PRICE_IS_REQUIRED: "Giá sản phẩm bắt buộc!",
-  PRICE_MUST_BE_NUMBER: "Giá sản phẩm phải là số!",
-  PRICE_IS_INVALID: "Giá sản phẩm không hợp lệ!",
 
-  DISCOUNT_MUST_BE_NUMBER: "Giảm giá phải là số!",
-  DISCOUNT_IS_INVALID: "Giảm giá không hợp lệ!",
+  DISCOUNT_IS_REQUIRED: "Giảm giá bắt buộc!",
 
   STOCK_MUST_BE_NUMBER: "Số lượng tồn kho phải là số!",
   STOCK_IS_INVALID: "Số lượng tồn kho không hợp lệ!",
@@ -114,6 +111,7 @@ export const AdminMessage = {
   GET_CATEGORIES: "Lấy danh sách danh mục thành công!",
   GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
   UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công!",
+  UPDATE_SUPPLIER_DETAIL: "Cập nhật thông tin chi tiết nhà cung cấp thành công!",
   CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công!",
   DELETE_CUSTOMER: "Xóa profile khách hàng thành công!",
 
@@ -129,5 +127,20 @@ export const AdminMessage = {
   BRAND_CANNOT_BE_DELETED: "Thương hiệu đang sử dụng không thể xóa!",
   DELETE_CATEGORY: "Xóa danh mục thành công!",
   DELETE_BRAND: "Xóa thương hiệu thành công!",
-  GET_PRODUCTS: "Lấy danh sách các sản phẩm thành công!"
+  GET_PRODUCTS: "Lấy danh sách các sản phẩm thành công!",
+
+  CREATE_SUPPLIER_DETAIL: "Thêm nhà cung cấp thành công!",
+  CREATE_SUPPLY_DETAIL: "Thêm cung ứng thành công!",
+
+  GET_SUPPLIERS: "Lấy danh sách nhà cung cấp thành công!",
+
+}
+
+export const SupplierMessage = {
+  NAME_IS_REQUIRED: "Tên nhà cung cấp bắt buộc!",
+  CONTACT_NAME_IS_REQUIRED: "Tên đại diện nhà cung cấp bắt buộc",
+  EMAIL_IS_REQUIRED: "Email nhà cung cấp bắt buộc",
+  ADDRESS_IS_REQUIRED: "Địa chỉ nhà cung cấp bắt buộc",
+  TAX_CODE_IS_LENGTH: "TaxCode phải từ 10 đến 13 ký tự!",
+  TAX_CODE_IS_INVALID: "TaxCode không hợp lệ!",
 }

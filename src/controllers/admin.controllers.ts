@@ -1,10 +1,13 @@
-import { Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 import adminServices from "~/services/admin.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { AdminMessage, UserMessage } from "~/constant/message"
+import { AdminMessage, ProductMessage, UserMessage } from "~/constant/message"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
 import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import formidable from "formidable"
+import { CreateProductBodyReq, CreateSupplierBodyReq } from "~/models/requests/product.requests"
+import { File } from "formidable"
 
 export const getStatisticalController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { totalCustomer, totalProduct } = await adminServices.getStatistical()
@@ -360,7 +363,7 @@ export const getProductController = async (
     price_min,
     price_max,
     status
-  ) 
+  )
   res.json({
     message: AdminMessage.GET_PRODUCTS,
     result: {
@@ -369,6 +372,131 @@ export const getProductController = async (
       page: pageRes,
       total,
       totalOfPage
+    }
+  })
+}
+
+export const createProductController = async (req: Request, res: Response, next: NextFunction) => {
+  const fields = req.body
+  const files = req.files as formidable.Files
+  const payload: CreateProductBodyReq = {
+    name: fields.name[0], // fields dưới dạng mảng, kể cả khi bạn chỉ gửi 1 giá trị duy nhất.
+    category: fields.category[0] as string,
+    brand: fields.brand[0] as string,
+    price: Number(fields.price[0]),
+    discount: Number(fields.discount[0]),
+    stock: Number(fields.stock[0]),
+    isFeatured: fields.isFeatured[0] as string,
+    description: fields.description[0] as string,
+    banner: files.banner?.[0] as File,
+    medias: files.medias ? (Array.isArray(files.medias) ? files.medias : [files.medias]) : [],
+    specifications: JSON.parse(fields.specifications[0]) // bạn cần gửi từ FE là JSON.stringify
+  }
+  const result = await adminServices.createProduct(payload)
+  res.json({
+    message: ProductMessage.CREATE_PRODUCT_SUCCESS,
+    result
+  })
+}
+
+/**
+ * const formData = new FormData()
+   formData.append("name", "Laptop MSI")
+
+   # sau khi formidable parse xong (middlewares)
+   fields = {
+      name: ["Laptop MSI"] // <-- Mảng có 1 phần tử
+   } 
+   => fields.name[0] === fields["name"][0] mới lấy được kết quả
+ */
+
+export const createSupplierController = async (
+  req: Request<ParamsDictionary, any, CreateSupplierBodyReq>,
+  res: Response
+) => {
+  const { message } = await adminServices.createSupplier(req.body)
+
+  res.json({
+    message: message
+  })
+}
+
+export const getSuppliersController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      name: string
+      email: string
+      phone: string
+      contactName: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+    }
+  >,
+  res: Response
+) => {
+  const {
+    limit,
+    page,
+    name,
+    email,
+    phone,
+    contactName,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getSuppliers(
+    Number(limit),
+    Number(page),
+    name,
+    email,
+    phone,
+    contactName,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  )
+
+  res.json({
+    message: AdminMessage.GET_SUPPLIERS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
+
+export const getSupplierDetailController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  const result = await adminServices.getSupplierDetail(id)
+
+  res.json({
+    message: AdminMessage.GET_BRAND_DETAIL,
+    result: {
+      result
+    }
+  })
+}
+
+export const updateSupplierDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const result = await adminServices.updateSupplier(id, req.body)
+  res.json({
+    message: AdminMessage.UPDATE_SUPPLIER_DETAIL,
+    result: {
+      result
     }
   })
 }

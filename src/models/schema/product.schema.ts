@@ -15,7 +15,7 @@ interface ProductType {
   stock?: number // số lượng tồn kho
   sold?: number // số lượng đã bán
   viewCount?: number // Số lượt xem
-  isFeatured?: boolean // Sản phẩm nổi bật
+  isFeatured?: string // Sản phẩm nổi bật
   specifications?: ObjectId[]
   gifts?: ObjectId[]
   reviews?: ObjectId[]
@@ -36,7 +36,7 @@ class Product {
   sold: number // số lượng đã bán
   viewCount: number // Số lượt xem
   description: string // Mô tả sản phẩm chi tiết
-  isFeatured: boolean // Sản phẩm nổi bật
+  isFeatured: string // Sản phẩm nổi bật
   specifications: ObjectId[]
   gifts: ObjectId[] // quà tặng
   banner: Media
@@ -60,7 +60,7 @@ class Product {
     this.stock = product.stock || 0
     this.sold = product.sold || 0
     this.viewCount = product.viewCount || 0
-    this.isFeatured = product.isFeatured || false
+    this.isFeatured = product.isFeatured || "false"
     this.specifications = product.specifications || []
     this.gifts = product.gifts || []
     this.reviews = product.reviews || []

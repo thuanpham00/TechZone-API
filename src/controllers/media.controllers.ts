@@ -5,7 +5,7 @@ import { mediaServices } from "~/services/medias.services"
 import { handleUploadImage } from "~/utils/file"
 
 export const uploadImageListProductController = async (req: Request, res: Response, next: NextFunction) => {
-  const { files, fields } = await handleUploadImage(req)
+  const { files, fields } = await handleUploadImage(req) // lưu ảnh vào đường dẫn tạm thời chờ xử lý
 
   const nameCategory = fields.nameCategory?.[0] as string
   const idProduct = fields.idProduct?.[0] as string

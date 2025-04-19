@@ -3,6 +3,8 @@ import { RoleType } from "~/constant/enum"
 import {
   createBrandController,
   createCategoryController,
+  createProductController,
+  createSupplierController,
   deleteBrandController,
   deleteCategoryController,
   deleteCustomerController,
@@ -16,6 +18,8 @@ import {
   getNameCategoriesController,
   getProductController,
   getStatisticalController,
+  getSupplierDetailController,
+  getSuppliersController,
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController
@@ -24,13 +28,15 @@ import {
   checkBrandValidator,
   checkCategoryValidator,
   checkIdValidator,
+  createProductValidator,
+  createSupplierValidator,
   deleteBrandValidator,
   deleteCategoryValidator,
   getBrandsValidator,
   queryValidator,
   updateCategoryValidator
 } from "~/middlewares/admin.middlewares"
-import { filterMiddleware } from "~/middlewares/common.middlewares"
+import { filterMiddleware, parseFormData } from "~/middlewares/common.middlewares"
 import { accessTokenValidator, checkRole, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
@@ -332,7 +338,90 @@ adminRouter.get(
   wrapRequestHandler(getProductController)
 )
 
+/**
+ * Description: Create product
+ * Path: /
+ * Method: POST
+ * Header: { Authorization: Bearer <accessToken> }
+ * Body: { body: CreateProductBodyReq }
+ */
+adminRouter.post(
+  "/products",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  parseFormData,
+  // createProductValidator,
+  wrapRequestHandler(createProductController)
+)
+
 // nếu category này đã có các thương hiệu thì không thể thực hiện xóa
 // còn nếu category này chưa có thương hiệu nào thì có thể thực hiện xóa
+
+/**
+ * Description: create supplier
+ * Path: /suppliers
+ * Method: POST
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplierBodyReq
+ */
+adminRouter.post(
+  "/suppliers",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  createSupplierValidator,
+  wrapRequestHandler(createSupplierController)
+)
+
+/**
+ * Description: get list supplier
+ * Path: /suppliers
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Query: {limit: number, page: number, name?: string, phone?: string, email?: string, contactName?: string}
+ */
+adminRouter.get(
+  "/suppliers",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  queryValidator,
+  wrapRequestHandler(getSuppliersController)
+)
+
+/**
+ * Description: get supplier detail
+ * Path: /suppliers/:id
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ */
+adminRouter.get(
+  "/suppliers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  wrapRequestHandler(getSupplierDetailController)
+)
+
+/**
+ * Description: update category detail
+ * Path: /categories/:id
+ * Method: patch
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ * body: UpdateCategoryBodyReq
+ */
+adminRouter.patch(
+  "/suppliers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  // updateCategoryValidator,
+  wrapRequestHandler(updateCategoryDetailController)
+)
 
 export default adminRouter
