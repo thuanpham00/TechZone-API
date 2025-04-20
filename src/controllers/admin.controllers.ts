@@ -492,11 +492,19 @@ export const getSupplierDetailController = async (req: Request, res: Response) =
 
 export const updateSupplierDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
   const { id } = req.params
-  const result = await adminServices.updateSupplier(id, req.body)
+  console.log(id)
+  console.log(req.body)
+  const { message } = await adminServices.updateSupplier(id, req.body)
   res.json({
-    message: AdminMessage.UPDATE_SUPPLIER_DETAIL,
-    result: {
-      result
-    }
+    message
+  })
+}
+
+export const deleteSupplierController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const { message } = await adminServices.deleteSupplier(id)
+
+  res.json({
+    message: message
   })
 }

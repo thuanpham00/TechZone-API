@@ -111,7 +111,6 @@ export const AdminMessage = {
   GET_CATEGORIES: "Lấy danh sách danh mục thành công!",
   GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
   UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công!",
-  UPDATE_SUPPLIER_DETAIL: "Cập nhật thông tin chi tiết nhà cung cấp thành công!",
   CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công!",
   DELETE_CUSTOMER: "Xóa profile khách hàng thành công!",
 
@@ -131,9 +130,10 @@ export const AdminMessage = {
 
   CREATE_SUPPLIER_DETAIL: "Thêm nhà cung cấp thành công!",
   CREATE_SUPPLY_DETAIL: "Thêm cung ứng thành công!",
-
+  UPDATE_SUPPLIER_DETAIL: "Cập nhật thông tin chi tiết nhà cung cấp thành công!",
   GET_SUPPLIERS: "Lấy danh sách nhà cung cấp thành công!",
-
+  SUPPLIER_CANNOT_BE_DELETED: "Nhà cung cấp đang sử dụng không thể xóa!",
+  DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!"
 }
 
 export const SupplierMessage = {
@@ -142,5 +142,6 @@ export const SupplierMessage = {
   EMAIL_IS_REQUIRED: "Email nhà cung cấp bắt buộc",
   ADDRESS_IS_REQUIRED: "Địa chỉ nhà cung cấp bắt buộc",
   TAX_CODE_IS_LENGTH: "TaxCode phải từ 10 đến 13 ký tự!",
-  TAX_CODE_IS_INVALID: "TaxCode không hợp lệ!",
+  TAX_CODE_IS_INVALID: "Mã số thuế không hợp lệ!",
+  TAX_CODE_IS_EXISTS: "Mã số thuế đã tồn tại!"
 }

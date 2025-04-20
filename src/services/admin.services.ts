@@ -1,6 +1,6 @@
 import { ObjectId, WithId } from "mongodb"
 import databaseServices from "./database.services"
-import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import { UpdateBrandBodyReq, UpdateCategoryBodyReq, UpdateSupplierBodyReq } from "~/models/requests/admin.requests"
 import { Brand, Category } from "~/models/schema/brand_category.schema"
 import { AdminMessage } from "~/constant/message"
 import { CreateProductBodyReq, CreateSupplierBodyReq, specificationType } from "~/models/requests/product.requests"
@@ -288,6 +288,7 @@ class AdminServices {
   }
 
   async updateCategory(id: string, body: UpdateCategoryBodyReq) {
+    console.log("body", body)
     const result = await databaseServices.category.findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: body, $currentDate: { updated_at: true } },
@@ -966,6 +967,27 @@ class AdminServices {
   async getSupplierDetail(id: string) {
     const result = await databaseServices.supplier.findOne({ _id: new ObjectId(id) })
     return result
+  } // ok
+
+  async updateSupplier(id: string, body: UpdateSupplierBodyReq) {
+    await databaseServices.supplier.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: body,
+        $currentDate: { updated_at: true } // cập nhật thời gian
+      }
+    )
+
+    return {
+      message: AdminMessage.UPDATE_SUPPLIER_DETAIL
+    }
+  }
+
+  async deleteSupplier(id: string) {
+    await databaseServices.supplier.deleteOne({ _id: new ObjectId(id) })
+    return {
+      message: AdminMessage.DELETE_SUPPLIER
+    }
   } // ok
 }
 

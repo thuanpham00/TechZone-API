@@ -306,7 +306,13 @@ export const createSupplierValidator = validate(
           errorMessage: SupplierMessage.TAX_CODE_IS_LENGTH
         },
         custom: {
-          options: (value) => {
+          options: async (value) => {
+            const checkTaxCode = await databaseServices.supplier.findOne({
+              taxCode: value
+            })
+            if (checkTaxCode) {
+              throw new Error(SupplierMessage.TAX_CODE_IS_EXISTS)
+            }
             const regex = /^\d+$/
             if (!regex.test(value)) {
               throw new Error(SupplierMessage.TAX_CODE_IS_INVALID)
@@ -320,5 +326,71 @@ export const createSupplierValidator = validate(
       }
     },
     ["body"]
+  )
+)
+
+export const updateSupplierValidator = validate(
+  checkSchema(
+    {
+      name: {
+        optional: true
+      },
+      contactName: {
+        optional: true
+      },
+      address: {
+        optional: true
+      },
+      email: {
+        custom: {
+          options: async (value, { req }) => {
+            const findSupplier = await databaseServices.supplier.findOne({
+              _id: new ObjectId((req.params as Record<string, any>).id)
+            })
+            if (findSupplier?.email === value) {
+              return true
+            }
+            const checkEmail = await databaseServices.supplier.findOne({ email: value })
+            if (checkEmail) {
+              throw new Error(UserMessage.EMAIL_IS_EXISTS)
+            }
+            return true
+          }
+        },
+        optional: true
+      },
+      description: {
+        optional: true
+      },
+      phone: {
+        optional: true
+      }
+    },
+    ["body"]
+  )
+)
+
+export const deleteSupplierValidator = validate(
+  checkSchema(
+    {
+      id: {
+        custom: {
+          options: async (value) => {
+            const checkIdSUpplierExists = await databaseServices.supply.findOne({
+              supplierId: new ObjectId(value)
+            })
+            // kiểm tra xem có cung ứng nào thuộc về nhà cung cấp này không
+            if (checkIdSUpplierExists) {
+              throw new ErrorWithStatus({
+                message: AdminMessage.SUPPLIER_CANNOT_BE_DELETED,
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            return true
+          }
+        }
+      }
+    },
+    ["params"]
   )
 )

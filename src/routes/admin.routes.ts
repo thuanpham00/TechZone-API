@@ -8,6 +8,7 @@ import {
   deleteBrandController,
   deleteCategoryController,
   deleteCustomerController,
+  deleteSupplierController,
   getBrandDetailController,
   getBrandsController,
   getCategoriesController,
@@ -22,7 +23,8 @@ import {
   getSuppliersController,
   updateBrandDetailController,
   updateCategoryDetailController,
-  updateCustomerDetailController
+  updateCustomerDetailController,
+  updateSupplierDetailController
 } from "~/controllers/admin.controllers"
 import {
   checkBrandValidator,
@@ -32,13 +34,15 @@ import {
   createSupplierValidator,
   deleteBrandValidator,
   deleteCategoryValidator,
+  deleteSupplierValidator,
   getBrandsValidator,
   queryValidator,
-  updateCategoryValidator
+  updateCategoryValidator,
+  updateSupplierValidator
 } from "~/middlewares/admin.middlewares"
 import { filterMiddleware, parseFormData } from "~/middlewares/common.middlewares"
 import { accessTokenValidator, checkRole, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
-import { UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import { UpdateCategoryBodyReq, UpdateSupplierBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -407,12 +411,12 @@ adminRouter.get(
 )
 
 /**
- * Description: update category detail
- * Path: /categories/:id
+ * Description: update supplier detail
+ * Path: /suppliers/:id
  * Method: patch
  * Headers: {Authorization: AT}
  * Params: {id: string}
- * body: UpdateCategoryBodyReq
+ * body: UpdateSupplierBodyReq
  */
 adminRouter.patch(
   "/suppliers/:id",
@@ -420,8 +424,26 @@ adminRouter.patch(
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
   checkIdValidator,
-  // updateCategoryValidator,
-  wrapRequestHandler(updateCategoryDetailController)
+  updateSupplierValidator,
+  filterMiddleware<UpdateSupplierBodyReq>(["address", "contactName", "email", "name", "phone", "description"]),
+  wrapRequestHandler(updateSupplierDetailController)
+)
+
+/**
+ * Description: delete supplier
+ * Path: /suppliers/:id
+ * Method: delete
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ */
+adminRouter.delete(
+  "/suppliers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  deleteSupplierValidator,
+  wrapRequestHandler(deleteSupplierController)
 )
 
 export default adminRouter
