@@ -10,7 +10,7 @@ import Gift from "~/models/schema/gift.schema"
 import { Supplier, Supply } from "~/models/schema/supply_supplier.schema"
 config()
 
-const URI = `mongodb+srv://thuanpham99:thuan123@cluster0.1nx8m.mongodb.net/`
+const URI = `mongodb+srv://${process.env.USERNAME_MONGODB}:${process.env.PASSWORD_MONGODB}@cluster0.1nx8m.mongodb.net/`
 
 class DatabaseServices {
   private client: MongoClient
