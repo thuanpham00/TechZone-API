@@ -20,14 +20,39 @@ const PORT = process.env.PORT
 app.use(express.json()) // biến request từ object thành json
 app.use(cookieParse())
 
-const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"]
+// app.use(
+//   cors({
+//     origin: ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"], // URL client
+//     credentials: true // Cho phép gửi cookie lên client
+//   })
+// )
 
+const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"]
+// Middleware xử lý CORS chính thức
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error("Not allowed by CORS"))
+      }
+    },
+    credentials: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Content-Type,Authorization"
+  })
+)
+
+// Optional: tự set header nếu muốn chắc chắn
 app.use((req, res, next) => {
   const origin = req.headers.origin
-  if (allowedOrigins.includes(origin || "")) {
-    res.setHeader("Access-Control-Allow-Origin", origin!)
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin)
   }
-  res.header("Access-Control-Allow-Credentials", "true")
+  res.setHeader("Access-Control-Allow-Credentials", "true")
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization")
   next()
 })
 
