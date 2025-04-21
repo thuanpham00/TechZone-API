@@ -28,13 +28,24 @@ app.use(cookieParse())
 // )
 
 const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"]
-// Middleware xử lý CORS chính thức
+
 app.use(
   cors({
-    origin: "*",
+    origin: allowedOrigins,
     credentials: true
   })
 )
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (allowedOrigins.includes(origin as string)) {
+    res.setHeader("Access-Control-Allow-Origin", origin as string)
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+  res.setHeader("Access-Control-Allow-Credentials", "true")
+  next()
+})
 
 // client
 app.use("/users", userRoute)
