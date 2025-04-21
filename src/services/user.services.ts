@@ -12,6 +12,7 @@ import axios from "axios"
 import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
 import { sendForgotPasswordToken, sendVerifyRegisterEmail } from "~/utils/ses"
+import { envConfig } from "~/utils/config"
 config()
 
 class UserServices {
@@ -23,9 +24,9 @@ class UserServices {
         role,
         tokenType: TokenType.AccessToken
       },
-      privateKey: process.env.SECRET_KEY_ACCESS_TOKEN as string,
+      privateKey: envConfig.secret_key_access_token,
       options: {
-        expiresIn: process.env.EXPIRE_IN_ACCESS_TOKEN // 15 phút
+        expiresIn: envConfig.expire_in_access_token // 15 phút
       }
     })
   }
@@ -50,7 +51,7 @@ class UserServices {
           tokenType: TokenType.RefreshToken,
           exp: exp // tạo RT mới và vẫn giữ nguyên exp của RT cũ
         },
-        privateKey: process.env.SECRET_KEY_REFRESH_TOKEN as string
+        privateKey: envConfig.secret_key_refresh_token
       })
     }
     return signToken({
@@ -60,9 +61,9 @@ class UserServices {
         role,
         tokenType: TokenType.RefreshToken
       },
-      privateKey: process.env.SECRET_KEY_REFRESH_TOKEN as string,
+      privateKey: envConfig.secret_key_refresh_token,
       options: {
-        expiresIn: process.env.EXPIRE_IN_REFRESH_TOKEN // 100 ngày
+        expiresIn: envConfig.expire_in_refresh_token // 100 ngày
       }
     })
   }
@@ -83,9 +84,9 @@ class UserServices {
         role,
         tokenType: TokenType.EmailVerifyToken
       },
-      privateKey: process.env.SECRET_KEY_EMAIL_VERIFY_TOKEN as string,
+      privateKey: envConfig.secret_key_email_verify_token,
       options: {
-        expiresIn: process.env.EXPIRE_IN_EMAIL_VERIFY_TOKEN // 7 ngày
+        expiresIn: envConfig.expire_in_email_verify_token // 7 ngày
       }
     })
   }
@@ -106,9 +107,9 @@ class UserServices {
         role,
         tokenType: TokenType.ForgotPasswordToken
       },
-      privateKey: process.env.SECRET_KEY_FORGOT_PASSWORD_TOKEN as string,
+      privateKey: envConfig.secret_key_forgot_password_token,
       options: {
-        expiresIn: process.env.EXPIRE_IN_FORGOT_PASSWORD_TOKEN // 7 ngày
+        expiresIn: envConfig.expire_in_forgot_password_token // 7 ngày
       }
     })
   }
@@ -134,7 +135,7 @@ class UserServices {
   }
 
   private decodeRefreshToken(refreshToken: string) {
-    return verifyToken({ token: refreshToken, privateKey: process.env.SECRET_KEY_REFRESH_TOKEN as string })
+    return verifyToken({ token: refreshToken, privateKey: envConfig.secret_key_refresh_token })
   }
 
   async register(payload: RegisterReqBody) {
@@ -228,9 +229,9 @@ class UserServices {
   private async getGoogleToken(code: string) {
     const body = {
       code,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      client_id: envConfig.google_client_id,
+      client_secret: envConfig.google_client_secret,
+      redirect_uri: envConfig.google_redirect_uri,
       grant_type: "authorization_code"
     }
 

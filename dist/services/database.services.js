@@ -2,14 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongodb_1 = require("mongodb");
 const dotenv_1 = require("dotenv");
+const config_1 = require("../utils/config");
 (0, dotenv_1.config)();
-const URI = `mongodb+srv://${process.env.USERNAME_MONGODB}:${process.env.PASSWORD_MONGODB}@cluster0.1nx8m.mongodb.net/`;
+const URI = `mongodb+srv://${config_1.envConfig.user_name}:${config_1.envConfig.password}@cluster0.1nx8m.mongodb.net/${config_1.envConfig.name_database}?retryWrites=true&w=majority`;
 class DatabaseServices {
     client;
     db;
     constructor() {
         this.client = new mongodb_1.MongoClient(URI);
-        this.db = this.client.db(process.env.DB_NAME); // truyền tên database vào đây
+        this.db = this.client.db(config_1.envConfig.name_database); // truyền tên database vào đây
     }
     async connect() {
         try {
@@ -54,28 +55,28 @@ class DatabaseServices {
     }
     // Tạo getter để truy cập vào collection (như 1 thuộc tính)
     get users() {
-        return this.db.collection(process.env.COLLECTION_USERS);
+        return this.db.collection(config_1.envConfig.collection_users);
     }
     get refreshToken() {
-        return this.db.collection(process.env.COLLECTION_REFRESH_TOKEN);
+        return this.db.collection(config_1.envConfig.collection_refresh_token);
     }
     get product() {
-        return this.db.collection(process.env.COLLECTION_PRODUCT);
+        return this.db.collection(config_1.envConfig.collection_product);
     }
     get brand() {
-        return this.db.collection(process.env.COLLECTION_BRAND);
+        return this.db.collection(config_1.envConfig.collection_brand);
     }
     get category() {
-        return this.db.collection(process.env.COLLECTION_CATEGORY);
+        return this.db.collection(config_1.envConfig.collection_category);
     }
     get specification() {
-        return this.db.collection(process.env.COLLECTION_SPECIFICATION);
+        return this.db.collection(config_1.envConfig.collection_specification);
     }
     get supplier() {
-        return this.db.collection(process.env.COLLECTION_SUPPLIER);
+        return this.db.collection(config_1.envConfig.collection_supplier);
     }
     get supply() {
-        return this.db.collection(process.env.COLLECTION_SUPPLY);
+        return this.db.collection(config_1.envConfig.collection_supply);
     }
 }
 const databaseServices = new DatabaseServices();

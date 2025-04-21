@@ -1,5 +1,6 @@
 import { createHash } from "crypto"
 import { config } from "dotenv"
+import { envConfig } from "./config"
 config()
 
 function sha256(content: string) {
@@ -7,5 +8,5 @@ function sha256(content: string) {
 }
 
 export function hashPassword(password: string) {
-  return sha256(password + process.env.SECRET_KEY_HASH_PASSWORD)
+  return sha256(password + envConfig.secret_key_hash_password)
 }

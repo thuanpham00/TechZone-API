@@ -17,6 +17,7 @@ const axios_1 = __importDefault(require("axios"));
 const errors_1 = require("../models/errors");
 const httpStatus_1 = __importDefault(require("../constant/httpStatus"));
 const ses_1 = require("../utils/ses");
+const config_1 = require("../utils/config");
 (0, dotenv_1.config)();
 class UserServices {
     signAccessToken({ user_id, verify, role }) {
@@ -27,9 +28,9 @@ class UserServices {
                 role,
                 tokenType: enum_1.TokenType.AccessToken
             },
-            privateKey: process.env.SECRET_KEY_ACCESS_TOKEN,
+            privateKey: config_1.envConfig.secret_key_access_token,
             options: {
-                expiresIn: process.env.EXPIRE_IN_ACCESS_TOKEN // 15 phút
+                expiresIn: config_1.envConfig.expire_in_access_token // 15 phút
             }
         });
     }
@@ -43,7 +44,7 @@ class UserServices {
                     tokenType: enum_1.TokenType.RefreshToken,
                     exp: exp // tạo RT mới và vẫn giữ nguyên exp của RT cũ
                 },
-                privateKey: process.env.SECRET_KEY_REFRESH_TOKEN
+                privateKey: config_1.envConfig.secret_key_refresh_token
             });
         }
         return (0, jwt_1.signToken)({
@@ -53,9 +54,9 @@ class UserServices {
                 role,
                 tokenType: enum_1.TokenType.RefreshToken
             },
-            privateKey: process.env.SECRET_KEY_REFRESH_TOKEN,
+            privateKey: config_1.envConfig.secret_key_refresh_token,
             options: {
-                expiresIn: process.env.EXPIRE_IN_REFRESH_TOKEN // 100 ngày
+                expiresIn: config_1.envConfig.expire_in_refresh_token // 100 ngày
             }
         });
     }
@@ -67,9 +68,9 @@ class UserServices {
                 role,
                 tokenType: enum_1.TokenType.EmailVerifyToken
             },
-            privateKey: process.env.SECRET_KEY_EMAIL_VERIFY_TOKEN,
+            privateKey: config_1.envConfig.secret_key_email_verify_token,
             options: {
-                expiresIn: process.env.EXPIRE_IN_EMAIL_VERIFY_TOKEN // 7 ngày
+                expiresIn: config_1.envConfig.expire_in_email_verify_token // 7 ngày
             }
         });
     }
@@ -81,9 +82,9 @@ class UserServices {
                 role,
                 tokenType: enum_1.TokenType.ForgotPasswordToken
             },
-            privateKey: process.env.SECRET_KEY_FORGOT_PASSWORD_TOKEN,
+            privateKey: config_1.envConfig.secret_key_forgot_password_token,
             options: {
-                expiresIn: process.env.EXPIRE_IN_FORGOT_PASSWORD_TOKEN // 7 ngày
+                expiresIn: config_1.envConfig.expire_in_forgot_password_token // 7 ngày
             }
         });
     }
@@ -98,7 +99,7 @@ class UserServices {
         return Boolean(result);
     }
     decodeRefreshToken(refreshToken) {
-        return (0, jwt_1.verifyToken)({ token: refreshToken, privateKey: process.env.SECRET_KEY_REFRESH_TOKEN });
+        return (0, jwt_1.verifyToken)({ token: refreshToken, privateKey: config_1.envConfig.secret_key_refresh_token });
     }
     async register(payload) {
         const user_id = new mongodb_1.ObjectId();
@@ -173,9 +174,9 @@ class UserServices {
     async getGoogleToken(code) {
         const body = {
             code,
-            client_id: process.env.GOOGLE_CLIENT_ID,
-            client_secret: process.env.GOOGLE_CLIENT_SECRET,
-            redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+            client_id: config_1.envConfig.google_client_id,
+            client_secret: config_1.envConfig.google_client_secret,
+            redirect_uri: config_1.envConfig.google_redirect_uri,
             grant_type: "authorization_code"
         };
         const { data } = await axios_1.default.post("https://oauth2.googleapis.com/token", body, {

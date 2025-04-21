@@ -18,6 +18,7 @@ import {
 import { User } from "~/models/schema/users.schema"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
+import { envConfig } from "~/utils/config"
 
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
@@ -76,7 +77,7 @@ export const loginController = async (
 export const loginGoogleController = async (req: Request, res: Response) => {
   const { code } = req.query
   const { accessToken, refreshToken, newUser, verify, name } = await userServices.loginGoogle(code as string)
-  const url = `${process.env.CLIENT_REDIRECT_CALLBACK}?access_token=${accessToken}&newUser=${newUser}&verify=${verify}&name=${name}`
+  const url = `${envConfig.client_redirect_callback}?access_token=${accessToken}&newUser=${newUser}&verify=${verify}&name=${name}`
 
   // RT luu cookie tại backEnd
   // AT luu localStorage tại frontEnd

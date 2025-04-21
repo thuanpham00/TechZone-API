@@ -8,12 +8,13 @@ const client_ses_1 = require("@aws-sdk/client-ses");
 const dotenv_1 = require("dotenv");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const config_1 = require("./config");
 (0, dotenv_1.config)();
 const sesClient = new client_ses_1.SESClient({
-    region: process.env.AWS_REGION,
+    region: config_1.envConfig.aws_region,
     credentials: {
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID
+        secretAccessKey: config_1.envConfig.aws_secret_access_key,
+        accessKeyId: config_1.envConfig.aws_access_key_id
     }
 });
 const createSendEmailCommand = ({ fromAddress, toAddresses, ccAddresses = [], body, subject, replyToAddresses = [] }) => {
@@ -43,7 +44,7 @@ const createSendEmailCommand = ({ fromAddress, toAddresses, ccAddresses = [], bo
 };
 const sendVerifyEmail = (toAddress, subject, body) => {
     const sendEmailCommand = createSendEmailCommand({
-        fromAddress: process.env.SES_FROM_ADDRESS,
+        fromAddress: config_1.envConfig.ses_from_address,
         toAddresses: toAddress,
         body,
         subject
@@ -56,7 +57,7 @@ const sendVerifyRegisterEmail = (toAddress, emailVerifyToken, template = verifyE
         .replace("{{title}}", "Please verify your email")
         .replace("{{content}}", "Click the button below to verify your email")
         .replace("{{titleLink}}", "Verify")
-        .replace("{{link}}", `${process.env.CLIENT_URL}/verify-email?token=${emailVerifyToken}`));
+        .replace("{{link}}", `${config_1.envConfig.client_url}/verify-email?token=${emailVerifyToken}`));
 };
 exports.sendVerifyRegisterEmail = sendVerifyRegisterEmail;
 const sendForgotPasswordToken = (toAddress, forgotPasswordToken, template = verifyEmailTemplate) => {
@@ -64,7 +65,7 @@ const sendForgotPasswordToken = (toAddress, forgotPasswordToken, template = veri
         .replace("{{title}}", "Please reset your password")
         .replace("{{content}}", "Click the button below to reset your password")
         .replace("{{titleLink}}", "Reset")
-        .replace("{{link}}", `${process.env.CLIENT_URL}/forgot-password?token=${forgotPasswordToken}`));
+        .replace("{{link}}", `${config_1.envConfig.client_url}/forgot-password?token=${forgotPasswordToken}`));
 };
 exports.sendForgotPasswordToken = sendForgotPasswordToken;
 // gửi email lên form -> gửi mail về email đó -> từ email navigate qua web với url "/forgot-password" -> lấy ra token -> chạy vào "/verify-forgot-password" -> để kiểm tra -> cuối cùng reset password với "/reset-password"

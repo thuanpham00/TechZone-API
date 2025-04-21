@@ -8,12 +8,13 @@ const client_s3_1 = require("@aws-sdk/client-s3");
 const lib_storage_1 = require("@aws-sdk/lib-storage");
 const dotenv_1 = require("dotenv");
 const fs_1 = __importDefault(require("fs"));
+const config_1 = require("./config");
 (0, dotenv_1.config)();
 const s3 = new client_s3_1.S3({
-    region: process.env.AWS_REGION,
+    region: config_1.envConfig.aws_region,
     credentials: {
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID
+        secretAccessKey: config_1.envConfig.aws_secret_access_key,
+        accessKeyId: config_1.envConfig.aws_access_key_id
     }
 });
 const uploadFileToS3 = ({ fileName, filePath, ContentType }) => {

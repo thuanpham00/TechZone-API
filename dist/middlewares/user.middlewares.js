@@ -18,6 +18,7 @@ const jwt_1 = require("../utils/jwt");
 const dotenv_1 = require("dotenv");
 const jsonwebtoken_1 = require("jsonwebtoken");
 const mongodb_1 = require("mongodb");
+const config_1 = require("../utils/config");
 (0, dotenv_1.config)();
 const Role = (0, common_1.convertEnumToArray)(enum_1.RoleType);
 const passwordSchema = {
@@ -111,7 +112,7 @@ const forgotPasswordToken = {
             try {
                 const decode_forgotPasswordToken = await (0, jwt_1.verifyToken)({
                     token: value,
-                    privateKey: process.env.SECRET_KEY_FORGOT_PASSWORD_TOKEN
+                    privateKey: config_1.envConfig.secret_key_forgot_password_token
                 });
                 const user = await database_services_1.default.users.findOne({
                     _id: new mongodb_1.ObjectId(decode_forgotPasswordToken.user_id)
@@ -240,7 +241,7 @@ exports.accessTokenValidator = (0, validations_1.validate)((0, express_validator
                 try {
                     const decode_authorization = await (0, jwt_1.verifyToken)({
                         token: access_token,
-                        privateKey: process.env.SECRET_KEY_ACCESS_TOKEN
+                        privateKey: config_1.envConfig.secret_key_access_token
                     });
                     req.decode_authorization = decode_authorization;
                 }
@@ -269,7 +270,7 @@ exports.refreshTokenValidator = (0, validations_1.validate)((0, express_validato
                 }
                 try {
                     const [decode_refreshToken, findToken] = await Promise.all([
-                        (0, jwt_1.verifyToken)({ token: value, privateKey: process.env.SECRET_KEY_REFRESH_TOKEN }),
+                        (0, jwt_1.verifyToken)({ token: value, privateKey: config_1.envConfig.secret_key_refresh_token }),
                         database_services_1.default.refreshToken.findOne({ token: value })
                     ]);
                     req.decode_refreshToken = decode_refreshToken;
@@ -312,7 +313,7 @@ exports.emailVerifyValidator = (0, validations_1.validate)((0, express_validator
                 try {
                     const decode_emailVerifyToken = await (0, jwt_1.verifyToken)({
                         token: value,
-                        privateKey: process.env.SECRET_KEY_EMAIL_VERIFY_TOKEN
+                        privateKey: config_1.envConfig.secret_key_email_verify_token
                     });
                     req.decode_emailVerifyToken = decode_emailVerifyToken;
                 }

@@ -15,6 +15,7 @@ import { JsonWebTokenError } from "jsonwebtoken"
 import { ObjectId } from "mongodb"
 import { TokenPayload } from "~/models/requests/user.requests"
 import { ParamsDictionary } from "express-serve-static-core"
+import { envConfig } from "~/utils/config"
 
 config()
 
@@ -115,7 +116,7 @@ const forgotPasswordToken: ParamSchema = {
       try {
         const decode_forgotPasswordToken = await verifyToken({
           token: value,
-          privateKey: process.env.SECRET_KEY_FORGOT_PASSWORD_TOKEN as string
+          privateKey: envConfig.secret_key_forgot_password_token as string
         })
         const user = await databaseServices.users.findOne({
           _id: new ObjectId(decode_forgotPasswordToken.user_id)
@@ -258,7 +259,7 @@ export const accessTokenValidator = validate(
             try {
               const decode_authorization = await verifyToken({
                 token: access_token,
-                privateKey: process.env.SECRET_KEY_ACCESS_TOKEN as string
+                privateKey: envConfig.secret_key_access_token
               })
               req.decode_authorization = decode_authorization
             } catch (error) {
@@ -292,7 +293,7 @@ export const refreshTokenValidator = validate(
             }
             try {
               const [decode_refreshToken, findToken] = await Promise.all([
-                verifyToken({ token: value, privateKey: process.env.SECRET_KEY_REFRESH_TOKEN as string }),
+                verifyToken({ token: value, privateKey: envConfig.secret_key_refresh_token }),
                 databaseServices.refreshToken.findOne({ token: value })
               ])
               req.decode_refreshToken = decode_refreshToken
@@ -340,7 +341,7 @@ export const emailVerifyValidator = validate(
             try {
               const decode_emailVerifyToken = await verifyToken({
                 token: value,
-                privateKey: process.env.SECRET_KEY_EMAIL_VERIFY_TOKEN as string
+                privateKey: envConfig.secret_key_email_verify_token as string
               })
               req.decode_emailVerifyToken = decode_emailVerifyToken
             } catch (error) {

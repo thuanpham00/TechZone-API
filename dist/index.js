@@ -7,7 +7,6 @@ const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const cors_1 = __importDefault(require("cors"));
 const database_services_1 = __importDefault(require("./services/database.services"));
-const dotenv_1 = require("dotenv");
 const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const error_middlewares_1 = require("./middlewares/error.middlewares");
 const product_routes_1 = __importDefault(require("./routes/product.routes"));
@@ -16,14 +15,19 @@ const file_1 = require("./utils/file");
 const collections_routes_1 = __importDefault(require("./routes/collections.routes"));
 const admin_routes_1 = __importDefault(require("./routes/admin.routes"));
 const static_routes_1 = __importDefault(require("./routes/static.routes"));
+const dotenv_1 = require("dotenv");
+const config_1 = require("./utils/config");
+const helmet_1 = __importDefault(require("helmet"));
 (0, dotenv_1.config)();
 const app = (0, express_1.default)();
-const PORT = process.env.PORT;
+const PORT = config_1.envConfig.port;
 app.use(express_1.default.json()); // biến request từ object thành json
 app.use((0, cookie_parser_1.default)());
+app.use((0, helmet_1.default)()); // bảo mật cho server
+const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"];
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:3500", "http://localhost:4173"], // URL client
-    credentials: true // Cho phép gửi cookie lên client
+    origin: allowedOrigins, // những domain có thể truy cập vào server
+    credentials: true
 }));
 // client
 app.use("/users", users_routes_1.default);

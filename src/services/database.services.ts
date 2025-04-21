@@ -8,16 +8,17 @@ import Review from "~/models/schema/review.schema"
 import Specification from "~/models/schema/specification.schema"
 import Gift from "~/models/schema/gift.schema"
 import { Supplier, Supply } from "~/models/schema/supply_supplier.schema"
+import { envConfig } from "~/utils/config"
 config()
 
-const URI = `mongodb+srv://${process.env.USERNAME_MONGODB}:${process.env.PASSWORD_MONGODB}@cluster0.1nx8m.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`
+const URI = `mongodb+srv://${envConfig.user_name}:${envConfig.password}@cluster0.1nx8m.mongodb.net/${envConfig.name_database}?retryWrites=true&w=majority`
 
 class DatabaseServices {
   private client: MongoClient
   private db: Db
   constructor() {
     this.client = new MongoClient(URI)
-    this.db = this.client.db(process.env.DB_NAME) // truyền tên database vào đây
+    this.db = this.client.db(envConfig.name_database) // truyền tên database vào đây
   }
 
   async connect() {
@@ -70,44 +71,36 @@ class DatabaseServices {
 
   // Tạo getter để truy cập vào collection (như 1 thuộc tính)
   get users(): Collection<User> {
-    return this.db.collection(process.env.COLLECTION_USERS as string)
+    return this.db.collection(envConfig.collection_users)
   }
 
   get refreshToken(): Collection<RefreshToken> {
-    return this.db.collection(process.env.COLLECTION_REFRESH_TOKEN as string)
+    return this.db.collection(envConfig.collection_refresh_token)
   }
 
   get product(): Collection<Product> {
-    return this.db.collection(process.env.COLLECTION_PRODUCT as string)
+    return this.db.collection(envConfig.collection_product)
   }
 
   get brand(): Collection<Brand> {
-    return this.db.collection(process.env.COLLECTION_BRAND as string)
+    return this.db.collection(envConfig.collection_brand)
   }
 
   get category(): Collection<Category> {
-    return this.db.collection(process.env.COLLECTION_CATEGORY as string)
+    return this.db.collection(envConfig.collection_category)
   }
 
   get specification(): Collection<Specification> {
-    return this.db.collection(process.env.COLLECTION_SPECIFICATION as string)
+    return this.db.collection(envConfig.collection_specification)
   }
 
   get supplier(): Collection<Supplier> {
-    return this.db.collection(process.env.COLLECTION_SUPPLIER as string)
+    return this.db.collection(envConfig.collection_supplier)
   }
 
   get supply(): Collection<Supply> {
-    return this.db.collection(process.env.COLLECTION_SUPPLY as string)
+    return this.db.collection(envConfig.collection_supply)
   }
-
-  // get gift(): Collection<Gift> {
-  //   return this.db.collection(process.env.COLLECTION_GIFT as string)
-  // }
-
-  // get review(): Collection<Review> {
-  //   return this.db.collection(process.env.COLLECTION_REVIEW as string)
-  // }
 }
 
 const databaseServices = new DatabaseServices()

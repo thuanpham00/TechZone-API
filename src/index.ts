@@ -2,7 +2,6 @@ import express from "express"
 import cookieParse from "cookie-parser"
 import cors from "cors"
 import databaseServices from "./services/database.services"
-import { config } from "dotenv"
 import userRoute from "./routes/users.routes"
 import { defaultErrorHandler } from "./middlewares/error.middlewares"
 import productRoute from "./routes/product.routes"
@@ -10,32 +9,27 @@ import mediasRoute from "./routes/medias.routes"
 import { initFolder } from "./utils/file"
 import collectionsRoute from "./routes/collections.routes"
 import adminRouter from "./routes/admin.routes"
-import path from "path"
 import staticRoute from "./routes/static.routes"
+import { config } from "dotenv"
+import { envConfig } from "./utils/config"
+import helmet from "helmet"
 config()
 
 const app = express()
-const PORT = process.env.PORT
+const PORT = envConfig.port
 
 app.use(express.json()) // biến request từ object thành json
 app.use(cookieParse())
+app.use(helmet()) // bảo mật cho server
 
 const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"]
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error("Not allowed by CORS"))
-      }
-    },
+    origin: allowedOrigins, // những domain có thể truy cập vào server
     credentials: true
   })
 )
-
-app.options("*", cors())
 
 // client
 app.use("/users", userRoute)

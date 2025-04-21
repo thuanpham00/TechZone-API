@@ -11,6 +11,7 @@ const message_1 = require("../constant/message");
 const errors_1 = require("../models/errors");
 const database_services_1 = __importDefault(require("../services/database.services"));
 const user_services_1 = require("../services/user.services");
+const config_1 = require("../utils/config");
 const registerController = async (req, res, next) => {
     const { accessToken, refreshToken, user } = await user_services_1.userServices.register(req.body);
     res.cookie("refresh_token", refreshToken, {
@@ -55,7 +56,7 @@ exports.loginController = loginController;
 const loginGoogleController = async (req, res) => {
     const { code } = req.query;
     const { accessToken, refreshToken, newUser, verify, name } = await user_services_1.userServices.loginGoogle(code);
-    const url = `${process.env.CLIENT_REDIRECT_CALLBACK}?access_token=${accessToken}&newUser=${newUser}&verify=${verify}&name=${name}`;
+    const url = `${config_1.envConfig.client_redirect_callback}?access_token=${accessToken}&newUser=${newUser}&verify=${verify}&name=${name}`;
     // RT luu cookie tại backEnd
     // AT luu localStorage tại frontEnd
     res.cookie("refresh_token", refreshToken, {
@@ -201,6 +202,8 @@ const changePasswordController = async (req, res, next) => {
 };
 exports.changePasswordController = changePasswordController;
 const getMeController = async (req, res, next) => {
+    const a = null;
+    a.b = 1;
     const { user_id } = req.decode_authorization;
     const result = await user_services_1.userServices.getMe(user_id);
     res.json({
