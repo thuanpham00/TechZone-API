@@ -42,7 +42,7 @@ export class Supplier {
 
 // cung ứng
 interface SupplyType {
-  _id: ObjectId
+  _id?: ObjectId
   productId: ObjectId // Liên kết tới Product
   supplierId: ObjectId // Liên kết tới Supplier
   importPrice: number // Giá nhập từ nhà cung cấp

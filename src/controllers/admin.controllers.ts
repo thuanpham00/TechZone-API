@@ -6,7 +6,7 @@ import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
 import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import formidable from "formidable"
-import { CreateProductBodyReq, CreateSupplierBodyReq } from "~/models/requests/product.requests"
+import { CreateProductBodyReq, CreateSupplierBodyReq, CreateSupplyBodyReq } from "~/models/requests/product.requests"
 import { File } from "formidable"
 
 export const getStatisticalController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
@@ -504,6 +504,16 @@ export const deleteSupplierController = async (req: Request<{ id: string }, any,
   const { id } = req.params
   const { message } = await adminServices.deleteSupplier(id)
 
+  res.json({
+    message: message
+  })
+}
+
+export const createSupplyController = async (
+  req: Request<ParamsDictionary, any, CreateSupplyBodyReq>,
+  res: Response
+) => {
+  const { message } = await adminServices.createSupply(req.body)
   res.json({
     message: message
   })

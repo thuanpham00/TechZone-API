@@ -24,6 +24,15 @@ export type CreateSupplierBodyReq = {
   description?: string
 }
 
+export type CreateSupplyBodyReq = {
+  productId: string
+  supplierId: string
+  importPrice: number
+  warrantyMonths: number
+  leadTimeDays: number
+  description: string
+}
+
 export type GetCollectionReq = {
   limit: string
   page: string

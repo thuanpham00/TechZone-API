@@ -1,11 +1,12 @@
 import { checkSchema, ParamSchema } from "express-validator"
 import { ObjectId } from "mongodb"
 import httpStatus from "~/constant/httpStatus"
-import { AdminMessage, Path, ProductMessage, SupplierMessage, UserMessage } from "~/constant/message"
+import { AdminMessage, Path, ProductMessage, SupplierMessage, SupplyMessage, UserMessage } from "~/constant/message"
 import { ErrorWithStatus } from "~/models/errors"
 import { validate } from "~/utils/validations"
 import { nameSchema, numberPhoneSchema } from "./user.middlewares"
 import databaseServices from "~/services/database.services"
+import { Supplier } from "~/models/schema/supply_supplier.schema"
 
 export const checkIdValidator = validate(
   checkSchema(
@@ -392,5 +393,78 @@ export const deleteSupplierValidator = validate(
       }
     },
     ["params"]
+  )
+)
+
+export const createSupplyValidator = validate(
+  checkSchema(
+    {
+      productId: {
+        notEmpty: {
+          errorMessage: SupplyMessage.PRODUCT_ID_IS_REQUIRED
+        },
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: SupplyMessage.PRODUCT_ID_IS_NOT_EXISTS,
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            const checkProduct = await databaseServices.product.findOne({ _id: new ObjectId(value) })
+            if (!checkProduct) {
+              throw new ErrorWithStatus({
+                message: SupplyMessage.PRODUCT_ID_IS_NOT_EXISTS,
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            return true
+          }
+        }
+      },
+      supplierId: {
+        notEmpty: {
+          errorMessage: SupplyMessage.SUPPLIER_ID_IS_REQUIRED
+        },
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: SupplyMessage.SUPPLIER_ID_IS_NOT_EXISTS,
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            const checkSupplier = await databaseServices.supplier.findOne({ _id: new ObjectId(value) })
+            if (!checkSupplier) {
+              throw new ErrorWithStatus({
+                message: SupplyMessage.SUPPLIER_ID_IS_NOT_EXISTS,
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            return true
+          }
+        }
+      },
+      importPrice: {
+        notEmpty: {
+          errorMessage: SupplyMessage.IMPORT_PRICE_IS_REQUIRED
+        }
+        // các validate khác như value > 0... thì sẽ làm ở client
+      },
+      warrantyMonths: {
+        notEmpty: {
+          errorMessage: SupplyMessage.WARRANTY_MONTHS_IS_REQUIRED
+        }
+      },
+      leadTimeDays: {
+        notEmpty: {
+          errorMessage: SupplyMessage.LEAD_TIME_DAYS_IS_REQUIRED
+        }
+      },
+      description: {
+        optional: true
+      }
+    },
+    ["body"]
   )
 )

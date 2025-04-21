@@ -145,3 +145,13 @@ export const SupplierMessage = {
   TAX_CODE_IS_INVALID: "Mã số thuế không hợp lệ!",
   TAX_CODE_IS_EXISTS: "Mã số thuế đã tồn tại!"
 }
+
+export const SupplyMessage = {
+  PRODUCT_ID_IS_REQUIRED: "ID sản phẩm bắt buộc!",
+  SUPPLIER_ID_IS_REQUIRED: "ID nhà cung cấp bắt buộc!",
+  IMPORT_PRICE_IS_REQUIRED: "Giá nhập bắt buộc!",
+  WARRANTY_MONTHS_IS_REQUIRED: "Thời gian bảo hành bắt buộc!",
+  LEAD_TIME_DAYS_IS_REQUIRED: "Thời gian cung ứng bắt buộc!",
+  PRODUCT_ID_IS_NOT_EXISTS: "ID sản phẩm không tồn tại!",
+  SUPPLIER_ID_IS_NOT_EXISTS: "ID nhà cung cấp không tồn tại!"
+}

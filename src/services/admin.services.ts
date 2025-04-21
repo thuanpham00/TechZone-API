@@ -3,11 +3,16 @@ import databaseServices from "./database.services"
 import { UpdateBrandBodyReq, UpdateCategoryBodyReq, UpdateSupplierBodyReq } from "~/models/requests/admin.requests"
 import { Brand, Category } from "~/models/schema/brand_category.schema"
 import { AdminMessage } from "~/constant/message"
-import { CreateProductBodyReq, CreateSupplierBodyReq, specificationType } from "~/models/requests/product.requests"
+import {
+  CreateProductBodyReq,
+  CreateSupplierBodyReq,
+  CreateSupplyBodyReq,
+  specificationType
+} from "~/models/requests/product.requests"
 import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
 import Specification from "~/models/schema/specification.schema"
-import { Supplier } from "~/models/schema/supply_supplier.schema"
+import { Supplier, Supply } from "~/models/schema/supply_supplier.schema"
 
 class AdminServices {
   async getStatistical() {
@@ -989,6 +994,22 @@ class AdminServices {
       message: AdminMessage.DELETE_SUPPLIER
     }
   } // ok
+
+  async createSupply(payload: CreateSupplyBodyReq) {
+    await databaseServices.supply.insertOne(
+      new Supply({
+        ...payload,
+        productId: new ObjectId(payload.productId),
+        supplierId: new ObjectId(payload.supplierId),
+        importPrice: payload.importPrice,
+        warrantyMonths: payload.warrantyMonths,
+        leadTimeDays: payload.leadTimeDays
+      })
+    )
+    return {
+      message: AdminMessage.CREATE_SUPPLY_DETAIL
+    }
+  }
 }
 
 const adminServices = new AdminServices()

@@ -5,6 +5,7 @@ import {
   createCategoryController,
   createProductController,
   createSupplierController,
+  createSupplyController,
   deleteBrandController,
   deleteCategoryController,
   deleteCustomerController,
@@ -32,6 +33,7 @@ import {
   checkIdValidator,
   createProductValidator,
   createSupplierValidator,
+  createSupplyValidator,
   deleteBrandValidator,
   deleteCategoryValidator,
   deleteSupplierValidator,
@@ -445,5 +447,37 @@ adminRouter.delete(
   deleteSupplierValidator,
   wrapRequestHandler(deleteSupplierController)
 )
+
+/**
+ * Description: create supply for product with supplier
+ * Path: /supplies
+ * Method: POST
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.post(
+  "/supplies",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  createSupplyValidator,
+  wrapRequestHandler(createSupplyController)
+)
+
+/**
+ * Description: get list supply
+ * Path: /supplies
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Query: {limit: number, page: number, name?: string, phone?: string, email?: string, contactName?: string}
+ */
+// adminRouter.get(
+//   "/supplies",
+//   accessTokenValidator,
+//   verifyUserValidator,
+//   checkRole([RoleType.ADMIN]),
+//   queryValidator,
+//   wrapRequestHandler(getSuppliesController)
+// )
 
 export default adminRouter
