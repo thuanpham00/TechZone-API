@@ -20,32 +20,9 @@ const PORT = process.env.PORT
 app.use(express.json()) // biến request từ object thành json
 app.use(cookieParse())
 
-// app.use(
-//   cors({
-//     origin: ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"], // URL client
-//     credentials: true // Cho phép gửi cookie lên client
-//   })
-// )
-
 const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"]
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true
-  })
-)
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin
-  if (allowedOrigins.includes(origin as string)) {
-    res.setHeader("Access-Control-Allow-Origin", origin as string)
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  next()
-})
+app.use(cors())
 
 // client
 app.use("/users", userRoute)
