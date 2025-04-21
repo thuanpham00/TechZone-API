@@ -31,7 +31,7 @@ const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https
 // Middleware xử lý CORS chính thức
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: "*",
     credentials: true
   })
 )
