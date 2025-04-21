@@ -22,7 +22,20 @@ app.use(cookieParse())
 
 const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https://tech-zone-shop.vercel.app"]
 
-app.use(cors())
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error("Not allowed by CORS"))
+      }
+    },
+    credentials: true
+  })
+)
+
+app.options("*", cors())
 
 // client
 app.use("/users", userRoute)
