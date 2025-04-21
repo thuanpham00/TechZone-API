@@ -31,30 +31,10 @@ const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https
 // Middleware xử lý CORS chính thức
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error("Not allowed by CORS"))
-      }
-    },
-    credentials: true,
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: "Content-Type,Authorization"
+    origin: allowedOrigins,
+    credentials: true
   })
 )
-
-// Optional: tự set header nếu muốn chắc chắn
-app.use((req, res, next) => {
-  const origin = req.headers.origin
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin)
-  }
-  res.setHeader("Access-Control-Allow-Credentials", "true")
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization")
-  next()
-})
 
 // client
 app.use("/users", userRoute)
