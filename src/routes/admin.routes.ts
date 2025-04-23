@@ -22,6 +22,7 @@ import {
   getStatisticalController,
   getSupplierDetailController,
   getSuppliersController,
+  getSuppliesController,
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
@@ -471,13 +472,13 @@ adminRouter.post(
  * Headers: {Authorization: AT}
  * Query: {limit: number, page: number, name?: string, phone?: string, email?: string, contactName?: string}
  */
-// adminRouter.get(
-//   "/supplies",
-//   accessTokenValidator,
-//   verifyUserValidator,
-//   checkRole([RoleType.ADMIN]),
-//   queryValidator,
-//   wrapRequestHandler(getSuppliesController)
-// )
+adminRouter.get(
+  "/supplies",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  queryValidator,
+  wrapRequestHandler(getSuppliesController)
+)
 
 export default adminRouter

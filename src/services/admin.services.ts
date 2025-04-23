@@ -1010,6 +1010,149 @@ class AdminServices {
       message: AdminMessage.CREATE_SUPPLY_DETAIL
     }
   }
+
+  async getSupplies(
+    limit?: number,
+    page?: number,
+    nameProduct?: string,
+    nameSupplier?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
+    const $match: any = {}
+    // if (name) {
+    //   $match["name"] = { $regex: name, $options: "i" }
+    // }
+    // if (email) {
+    //   $match["email"] = { $regex: email, $options: "i" }
+    // }
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate // >= created_at_start
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      // Nếu đã có $match["created_at"], thêm $lte vào
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate // <= created_at_end
+      } else {
+        $match["created_at"] = {
+          $lte: endDate // Nếu chưa có, chỉ tạo điều kiện này
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
+    }
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.supply
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $lookup: {
+              from: "product",
+              localField: "productId",
+              foreignField: "_id",
+              as: "productId"
+            }
+          },
+          {
+            $addFields: {
+              productId: {
+                $map: {
+                  input: "$productId",
+                  as: "productItem",
+                  in: {
+                    name: "$$productItem.name"
+                  }
+                }
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: "supplier",
+              localField: "supplierId",
+              foreignField: "_id",
+              as: "supplierId"
+            }
+          },
+          {
+            $addFields: {
+              supplierId: {
+                $map: {
+                  input: "$supplierId",
+                  as: "supplierItem",
+                  in: {
+                    name: "$$supplierItem.name"
+                  }
+                }
+              }
+            }
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          }
+        ])
+        .toArray(),
+      databaseServices.supply
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+      databaseServices.supply
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
+    }
+  }
 }
 
 const adminServices = new AdminServices()

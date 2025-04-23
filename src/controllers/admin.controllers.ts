@@ -518,3 +518,46 @@ export const createSupplyController = async (
     message: message
   })
 }
+
+export const getSuppliesController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      nameProduct: string
+      nameSupplier: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+    }
+  >,
+  res: Response
+) => {
+  const { limit, page, nameProduct, nameSupplier, created_at_start, created_at_end, updated_at_start, updated_at_end } =
+    req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getSupplies(
+    Number(limit),
+    Number(page),
+    nameProduct,
+    nameSupplier,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  )
+
+  res.json({
+    message: AdminMessage.GET_SUPPLIERS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
