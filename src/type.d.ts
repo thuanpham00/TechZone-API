@@ -9,6 +9,8 @@ declare global {
       decode_refreshToken: TokenPayload
       decode_emailVerifyToken: TokenPayload
       decode_forgotPasswordToken: TokenPayload
+
+      productId: string
     }
   }
 }

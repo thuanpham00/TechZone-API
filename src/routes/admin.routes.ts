@@ -18,15 +18,20 @@ import {
   getCustomersController,
   getNameBrandsController,
   getNameCategoriesController,
+  getNameProductsController,
+  getNameSuppliersBaseOnProductController,
+  getNameSuppliersController,
   getProductController,
   getStatisticalController,
   getSupplierDetailController,
   getSuppliersController,
   getSuppliesController,
+  getSupplyDetailController,
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
-  updateSupplierDetailController
+  updateSupplierDetailController,
+  updateSupplyDetailController
 } from "~/controllers/admin.controllers"
 import {
   checkBrandValidator,
@@ -39,13 +44,15 @@ import {
   deleteCategoryValidator,
   deleteSupplierValidator,
   getBrandsValidator,
+  getProductIdFromProductNameValidator,
   queryValidator,
   updateCategoryValidator,
-  updateSupplierValidator
+  updateSupplierValidator,
+  updateSupplyValidator
 } from "~/middlewares/admin.middlewares"
 import { filterMiddleware, parseFormData } from "~/middlewares/common.middlewares"
 import { accessTokenValidator, checkRole, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
-import { UpdateCategoryBodyReq, UpdateSupplierBodyReq } from "~/models/requests/admin.requests"
+import { UpdateCategoryBodyReq, UpdateSupplierBodyReq, UpdateSupplyBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -362,6 +369,19 @@ adminRouter.post(
   wrapRequestHandler(createProductController)
 )
 
+/**
+ * Description: get name product filter
+ * Path: /name-categories
+ * Method: GET
+ */
+adminRouter.get(
+  "/name-products",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(getNameProductsController)
+)
+
 // nếu category này đã có các thương hiệu thì không thể thực hiện xóa
 // còn nếu category này chưa có thương hiệu nào thì có thể thực hiện xóa
 
@@ -414,6 +434,34 @@ adminRouter.get(
 )
 
 /**
+ * Description: get name supplier filter
+ * Path: /name-categories
+ * Method: GET
+ */
+adminRouter.get(
+  "/name-suppliers",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(getNameSuppliersController)
+)
+
+/**
+ * Description: get name supplier based on name product (dùng trong tạo 1 liên kết cung ứng)
+ * Ví dụ đã có 1 product A <=> supplier B rồi thì sẽ không có thêm 1 product A <=> 1 supplier B => được quyền cập nhật lại (mối quan hệ n-n)
+ * Path: /name-categories
+ * Method: GET
+ */
+adminRouter.get(
+  "/name-suppliers-based-on-product",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  getProductIdFromProductNameValidator,
+  wrapRequestHandler(getNameSuppliersBaseOnProductController)
+)
+
+/**
  * Description: update supplier detail
  * Path: /suppliers/:id
  * Method: patch
@@ -449,6 +497,7 @@ adminRouter.delete(
   wrapRequestHandler(deleteSupplierController)
 )
 
+// 1 product sẽ có nhiều supplier và 1 supplier sẽ cung cấp nhiều product (n-n)
 /**
  * Description: create supply for product with supplier
  * Path: /supplies
@@ -479,6 +528,41 @@ adminRouter.get(
   checkRole([RoleType.ADMIN]),
   queryValidator,
   wrapRequestHandler(getSuppliesController)
+)
+
+/**
+ * Description: get supply detail
+ * Path: /suppliers/:id
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ */
+adminRouter.get(
+  "/supplies/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  wrapRequestHandler(getSupplyDetailController)
+)
+
+/**
+ * Description: update supply detail
+ * Path: /suppliers/:id
+ * Method: patch
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ * body: UpdateSupplierBodyReq
+ */
+adminRouter.patch(
+  "/supplies/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  updateSupplyValidator,
+  filterMiddleware<UpdateSupplyBodyReq>(["productId", "supplierId", "importPrice", "warrantyMonths", "leadTimeDays", "description"]),
+  wrapRequestHandler(updateSupplyDetailController)
 )
 
 export default adminRouter

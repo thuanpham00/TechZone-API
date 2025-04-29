@@ -376,6 +376,16 @@ export const getProductController = async (
   })
 }
 
+export const getNameProductsController = async (req: Request, res: Response) => {
+  const result = await adminServices.getNameProductsFilter()
+  res.json({
+    message: AdminMessage.GET_PRODUCTS,
+    result: {
+      result
+    }
+  })
+}
+
 export const createProductController = async (req: Request, res: Response, next: NextFunction) => {
   const fields = req.body
   const files = req.files as formidable.Files
@@ -483,7 +493,28 @@ export const getSupplierDetailController = async (req: Request, res: Response) =
   const result = await adminServices.getSupplierDetail(id)
 
   res.json({
-    message: AdminMessage.GET_BRAND_DETAIL,
+    message: AdminMessage.GET_SUPPLIER_DETAIL,
+    result: {
+      result
+    }
+  })
+}
+
+export const getNameSuppliersController = async (req: Request, res: Response) => {
+  const result = await adminServices.getNameSuppliersFilter()
+  res.json({
+    message: AdminMessage.GET_SUPPLIERS,
+    result: {
+      result
+    }
+  })
+}
+
+export const getNameSuppliersBaseOnProductController = async (req: Request, res: Response) => {
+  const productId = req.productId
+  const result = await adminServices.getNameSuppliersBasedOnNameProduct(productId)
+  res.json({
+    message: AdminMessage.GET_SUPPLIERS_BASED_ON_NAME_PRODUCT,
     result: {
       result
     }
@@ -492,8 +523,6 @@ export const getSupplierDetailController = async (req: Request, res: Response) =
 
 export const updateSupplierDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
   const { id } = req.params
-  console.log(id)
-  console.log(req.body)
   const { message } = await adminServices.updateSupplier(id, req.body)
   res.json({
     message
@@ -527,8 +556,8 @@ export const getSuppliesController = async (
     {
       limit: string
       page: string
-      nameProduct: string
-      nameSupplier: string
+      name_supplier: string
+      name_product: string
       created_at_start: string
       created_at_end: string
       updated_at_start: string
@@ -537,13 +566,21 @@ export const getSuppliesController = async (
   >,
   res: Response
 ) => {
-  const { limit, page, nameProduct, nameSupplier, created_at_start, created_at_end, updated_at_start, updated_at_end } =
-    req.query
+  const {
+    limit,
+    page,
+    name_product,
+    name_supplier,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getSupplies(
     Number(limit),
     Number(page),
-    nameProduct,
-    nameSupplier,
+    name_product,
+    name_supplier,
     created_at_start,
     created_at_end,
     updated_at_start,
@@ -559,5 +596,25 @@ export const getSuppliesController = async (
       total,
       totalOfPage
     }
+  })
+}
+
+export const getSupplyDetailController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  const result = await adminServices.getSupplyDetail(id)
+
+  res.json({
+    message: AdminMessage.GET_SUPPLY_DETAIL,
+    result: {
+      result
+    }
+  })
+}
+
+export const updateSupplyDetailController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const { message } = await adminServices.updateSupply(id, req.body)
+  res.json({
+    message
   })
 }

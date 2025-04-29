@@ -1,6 +1,11 @@
 import { ObjectId, WithId } from "mongodb"
 import databaseServices from "./database.services"
-import { UpdateBrandBodyReq, UpdateCategoryBodyReq, UpdateSupplierBodyReq } from "~/models/requests/admin.requests"
+import {
+  UpdateBrandBodyReq,
+  UpdateCategoryBodyReq,
+  UpdateSupplierBodyReq,
+  UpdateSupplyBodyReq
+} from "~/models/requests/admin.requests"
 import { Brand, Category } from "~/models/schema/brand_category.schema"
 import { AdminMessage } from "~/constant/message"
 import {
@@ -718,6 +723,12 @@ class AdminServices {
     }
   }
 
+  async getNameProductsFilter() {
+    const result = await databaseServices.product.find({}).toArray()
+    const listName = result.map((item) => item.name)
+    return listName
+  }
+
   private async checkCategoryBrandExist(category: string, brand: string) {
     // nhận vào category và brand
     // check xem brand đó có tồn tại không
@@ -974,6 +985,77 @@ class AdminServices {
     return result
   } // ok
 
+  async getNameSuppliersFilter() {
+    const result = await databaseServices.supplier.find({}).toArray()
+    const listName = result.map((item) => item.name)
+    return listName
+  }
+
+  // ######
+  async getNameSuppliersBasedOnNameProduct(productId: string) {
+    // lấy ra danh sách cung ứng dựa trên tên sản phẩm
+    const [listSupplierBasedOnProduct, listSupplier] = await Promise.all([
+      databaseServices.supply
+        .aggregate([
+          {
+            $match: {
+              productId: new ObjectId(productId)
+            }
+          },
+          {
+            $lookup: {
+              from: "supplier",
+              localField: "supplierId",
+              foreignField: "_id",
+              as: "supplierId"
+            }
+          },
+          {
+            $addFields: {
+              supplierId: {
+                $map: {
+                  input: "$supplierId",
+                  as: "supplierItem",
+                  in: {
+                    _id: "$$supplierItem._id"
+                  }
+                }
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              productId: 0,
+              importPrice: 0,
+              warrantyMonths: 0,
+              leadTimeDays: 0,
+              description: 0,
+              created_at: 0,
+              updated_at: 0
+            }
+          }
+        ])
+        .toArray(),
+
+      databaseServices.supplier.find({}).toArray()
+    ])
+    const listIdSupplierFilter = listSupplierBasedOnProduct.map((item) => item.supplierId[0]._id)
+    const listIdSUpplier = listSupplier.map((item) => item._id)
+    const supplierIdsNotInProduct = listIdSUpplier.filter(
+      (itemB) => !listIdSupplierFilter.some((itemA) => itemA.equals(itemB))
+    )
+
+    const suppliers = await databaseServices.supplier
+      .find({ _id: { $in: supplierIdsNotInProduct } })
+      .project({ name: 1 })
+      .toArray()
+
+    const listNameSupplier = suppliers.map((supplier) => supplier.name)
+
+    return listNameSupplier
+  }
+
   async updateSupplier(id: string, body: UpdateSupplierBodyReq) {
     await databaseServices.supplier.updateOne(
       { _id: new ObjectId(id) },
@@ -996,11 +1078,15 @@ class AdminServices {
   } // ok
 
   async createSupply(payload: CreateSupplyBodyReq) {
+    const [productId, supplierId] = await Promise.all([
+      databaseServices.product.findOne({ name: payload.productId }),
+      databaseServices.supplier.findOne({ name: payload.supplierId })
+    ])
     await databaseServices.supply.insertOne(
       new Supply({
         ...payload,
-        productId: new ObjectId(payload.productId),
-        supplierId: new ObjectId(payload.supplierId),
+        productId: new ObjectId(productId?._id),
+        supplierId: new ObjectId(supplierId?._id),
         importPrice: payload.importPrice,
         warrantyMonths: payload.warrantyMonths,
         leadTimeDays: payload.leadTimeDays
@@ -1014,20 +1100,22 @@ class AdminServices {
   async getSupplies(
     limit?: number,
     page?: number,
-    nameProduct?: string,
-    nameSupplier?: string,
+    name_product?: string,
+    name_supplier?: string,
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
     updated_at_end?: string
   ) {
     const $match: any = {}
-    // if (name) {
-    //   $match["name"] = { $regex: name, $options: "i" }
-    // }
-    // if (email) {
-    //   $match["email"] = { $regex: email, $options: "i" }
-    // }
+    const findIdProduct = await databaseServices.product.findOne({ name: name_product })
+    const findIdSupplier = await databaseServices.supplier.findOne({ name: name_supplier })
+    if (name_product) {
+      $match["productId"] = findIdProduct?._id
+    }
+    if (name_supplier) {
+      $match["supplierId"] = findIdSupplier?._id
+    }
     if (created_at_start) {
       const startDate = new Date(created_at_start)
       $match["created_at"] = {
@@ -1151,6 +1239,84 @@ class AdminServices {
       pageRes: page || 1,
       total: total[0]?.total || 0,
       totalOfPage: totalOfPage[0]?.total || 0
+    }
+  }
+
+  async getSupplyDetail(id: string) {
+    const result = await databaseServices.supply
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectId(id)
+          }
+        },
+        {
+          $lookup: {
+            from: "product",
+            localField: "productId",
+            foreignField: "_id",
+            as: "productId"
+          }
+        },
+        {
+          $addFields: {
+            productId: {
+              $map: {
+                input: "$productId",
+                as: "productItem",
+                in: {
+                  name: "$$productItem.name"
+                }
+              }
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: "supplier",
+            localField: "supplierId",
+            foreignField: "_id",
+            as: "supplierId"
+          }
+        },
+        {
+          $addFields: {
+            supplierId: {
+              $map: {
+                input: "$supplierId",
+                as: "supplierItem",
+                in: {
+                  name: "$$supplierItem.name"
+                }
+              }
+            }
+          }
+        }
+      ])
+      .toArray()
+    return result
+  } // ok
+
+  async updateSupply(id: string, body: UpdateSupplyBodyReq) {
+    const [productId, supplierId] = await Promise.all([
+      databaseServices.product.findOne({ name: body.productId }),
+      databaseServices.supplier.findOne({ name: body.supplierId })
+    ])
+    await databaseServices.supply.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          ...body,
+          productId: new ObjectId(productId?._id),
+          supplierId: new ObjectId(supplierId?._id)
+          
+        },
+        $currentDate: { updated_at: true } // cập nhật thời gian
+      }
+    )
+
+    return {
+      message: AdminMessage.UPDATE_SUPPLY_DETAIL
     }
   }
 }

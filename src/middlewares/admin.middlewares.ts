@@ -6,7 +6,7 @@ import { ErrorWithStatus } from "~/models/errors"
 import { validate } from "~/utils/validations"
 import { nameSchema, numberPhoneSchema } from "./user.middlewares"
 import databaseServices from "~/services/database.services"
-import { Supplier } from "~/models/schema/supply_supplier.schema"
+import { Request, Response, NextFunction } from "express"
 
 export const checkIdValidator = validate(
   checkSchema(
@@ -266,6 +266,15 @@ export const createSupplierValidator = validate(
       name: {
         notEmpty: {
           errorMessage: SupplierMessage.NAME_IS_REQUIRED
+        },
+        custom: {
+          options: async (value) => {
+            const checkNameExists = await databaseServices.supplier.findOne({ name: value })
+            if (checkNameExists) {
+              throw new Error(SupplierMessage.NAME_IS_EXISTS)
+            }
+            return true
+          }
         }
       },
       contactName: {
@@ -334,7 +343,19 @@ export const updateSupplierValidator = validate(
   checkSchema(
     {
       name: {
-        optional: true
+        optional: true,
+        custom: {
+          options: async (value) => {
+            const checkName = await databaseServices.supplier.findOne({ name: value })
+            if (value === checkName?.name) {
+              return true
+            }
+            if (checkName) {
+              throw new Error(SupplierMessage.NAME_IS_EXISTS)
+            }
+            return true
+          }
+        }
       },
       contactName: {
         optional: true
@@ -402,54 +423,28 @@ export const createSupplyValidator = validate(
       productId: {
         notEmpty: {
           errorMessage: SupplyMessage.PRODUCT_ID_IS_REQUIRED
-        },
-        custom: {
-          options: async (value) => {
-            if (!ObjectId.isValid(value)) {
-              throw new ErrorWithStatus({
-                message: SupplyMessage.PRODUCT_ID_IS_NOT_EXISTS,
-                status: httpStatus.BAD_REQUESTED
-              })
-            }
-            const checkProduct = await databaseServices.product.findOne({ _id: new ObjectId(value) })
-            if (!checkProduct) {
-              throw new ErrorWithStatus({
-                message: SupplyMessage.PRODUCT_ID_IS_NOT_EXISTS,
-                status: httpStatus.BAD_REQUESTED
-              })
-            }
-            return true
-          }
         }
       },
       supplierId: {
         notEmpty: {
           errorMessage: SupplyMessage.SUPPLIER_ID_IS_REQUIRED
-        },
-        custom: {
-          options: async (value) => {
-            if (!ObjectId.isValid(value)) {
-              throw new ErrorWithStatus({
-                message: SupplyMessage.SUPPLIER_ID_IS_NOT_EXISTS,
-                status: httpStatus.BAD_REQUESTED
-              })
-            }
-            const checkSupplier = await databaseServices.supplier.findOne({ _id: new ObjectId(value) })
-            if (!checkSupplier) {
-              throw new ErrorWithStatus({
-                message: SupplyMessage.SUPPLIER_ID_IS_NOT_EXISTS,
-                status: httpStatus.BAD_REQUESTED
-              })
-            }
-            return true
-          }
         }
       },
       importPrice: {
         notEmpty: {
           errorMessage: SupplyMessage.IMPORT_PRICE_IS_REQUIRED
+        },
+        custom: {
+          options: async (value, { req }) => {
+            const findProduct = await databaseServices.product.findOne({ name: req.body.productId })
+            if ((findProduct?.price as number) < value) {
+              throw new Error(SupplyMessage.IMPORT_PRICE_IS_INVALID)
+            }
+            return true
+          }
         }
         // các validate khác như value > 0... thì sẽ làm ở client
+        // sẽ tạo sản phẩm trước rồi mới thêm cung ứng thì cần check giá cung ung phải thấp hơn giá sản phẩm
       },
       warrantyMonths: {
         notEmpty: {
@@ -460,6 +455,44 @@ export const createSupplyValidator = validate(
         notEmpty: {
           errorMessage: SupplyMessage.LEAD_TIME_DAYS_IS_REQUIRED
         }
+      },
+      description: {
+        optional: true
+      }
+    },
+    ["body"]
+  )
+)
+
+export const getProductIdFromProductNameValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const productId = await databaseServices.product.findOne({ name: req.query.productId })
+  if (productId) {
+    req.productId = productId?._id.toString()
+    return next()
+  }
+  next(
+    new ErrorWithStatus({
+      message: ProductMessage.PRODUCT_ID_IS_INVALID,
+      status: httpStatus.BAD_REQUESTED
+    })
+  )
+}
+
+export const updateSupplyValidator = validate(
+  checkSchema(
+    {
+      productId: {
+        optional: true
+      },
+      supplierId: {
+        optional: true
+      },
+      importPrice: {
+        optional: true
+      },
+      warrantyMonths: { optional: true },
+      leadTimeDays: {
+        optional: true
       },
       description: {
         optional: true

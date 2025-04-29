@@ -56,6 +56,8 @@ export const UserMessage = {
 } as const
 
 export const ProductMessage = {
+  PRODUCT_ID_IS_INVALID: "Id sản phẩm không hợp lệ!",
+
   NAME_IS_REQUIRED: "Tên sản phẩm bắt buộc!",
   NAME_MUST_BE_STRING: "Tên sản phẩm phải là chuỗi!",
 
@@ -110,6 +112,8 @@ export const AdminMessage = {
   GET_CUSTOMER: "Lấy thông tin khách hàng thành công!",
   GET_CATEGORIES: "Lấy danh sách danh mục thành công!",
   GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
+  GET_SUPPLY_DETAIL: "Lấy thông tin chi tiết cung ứng thành công!",
+  GET_SUPPLIER_DETAIL: "Lấy thông tin chi tiết nhà cung cấp thành công!",
   UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công!",
   CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công!",
   DELETE_CUSTOMER: "Xóa profile khách hàng thành công!",
@@ -131,13 +135,16 @@ export const AdminMessage = {
   CREATE_SUPPLIER_DETAIL: "Thêm nhà cung cấp thành công!",
   CREATE_SUPPLY_DETAIL: "Thêm cung ứng thành công!",
   UPDATE_SUPPLIER_DETAIL: "Cập nhật thông tin chi tiết nhà cung cấp thành công!",
+  UPDATE_SUPPLY_DETAIL: "Cập nhật thông tin chi tiết cung ứng thành công!",
   GET_SUPPLIERS: "Lấy danh sách nhà cung cấp thành công!",
+  GET_SUPPLIERS_BASED_ON_NAME_PRODUCT: "Lấy danh sách nhà cung cấp dựa trên tên sản phẩm thành công!",
   SUPPLIER_CANNOT_BE_DELETED: "Nhà cung cấp đang sử dụng không thể xóa!",
   DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!"
 }
 
 export const SupplierMessage = {
   NAME_IS_REQUIRED: "Tên nhà cung cấp bắt buộc!",
+  NAME_IS_EXISTS: "Tên nhà cung cấp đã tồn tại!",
   CONTACT_NAME_IS_REQUIRED: "Tên đại diện nhà cung cấp bắt buộc",
   EMAIL_IS_REQUIRED: "Email nhà cung cấp bắt buộc",
   ADDRESS_IS_REQUIRED: "Địa chỉ nhà cung cấp bắt buộc",
@@ -153,5 +160,7 @@ export const SupplyMessage = {
   WARRANTY_MONTHS_IS_REQUIRED: "Thời gian bảo hành bắt buộc!",
   LEAD_TIME_DAYS_IS_REQUIRED: "Thời gian cung ứng bắt buộc!",
   PRODUCT_ID_IS_NOT_EXISTS: "ID sản phẩm không tồn tại!",
-  SUPPLIER_ID_IS_NOT_EXISTS: "ID nhà cung cấp không tồn tại!"
+  SUPPLIER_ID_IS_NOT_EXISTS: "ID nhà cung cấp không tồn tại!",
+
+  IMPORT_PRICE_IS_INVALID: "Giá nhập phải nhỏ hơn giá bán sản phẩm!"
 }
