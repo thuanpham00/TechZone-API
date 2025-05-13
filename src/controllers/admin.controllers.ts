@@ -6,7 +6,12 @@ import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
 import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import formidable from "formidable"
-import { CreateProductBodyReq, CreateSupplierBodyReq, CreateSupplyBodyReq } from "~/models/requests/product.requests"
+import {
+  CreateProductBodyReq,
+  CreateReceiptBodyReq,
+  CreateSupplierBodyReq,
+  CreateSupplyBodyReq
+} from "~/models/requests/product.requests"
 import { File } from "formidable"
 
 export const getStatisticalController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
@@ -616,5 +621,73 @@ export const updateSupplyDetailController = async (req: Request<{ id: string }, 
   const { message } = await adminServices.updateSupply(id, req.body)
   res.json({
     message
+  })
+}
+
+export const deleteSupplyController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const { message } = await adminServices.deleteSupply(id)
+
+  res.json({
+    message: message
+  })
+}
+
+export const createReceiptController = async (req: Request<any, any, CreateReceiptBodyReq>, res: Response) => {
+  const { message } = await adminServices.createReceipt(req.body)
+
+  res.json({
+    message: message
+  })
+}
+
+export const getReceiptsController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      // name_supplier: string
+      // name_product: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+    }
+  >,
+  res: Response
+) => {
+  const {
+    limit,
+    page,
+    // name_product,
+    // name_supplier,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getReceipts(
+    Number(limit),
+    Number(page),
+    // name_product,
+    // name_supplier,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end
+  )
+
+  res.json({
+    message: AdminMessage.GET_RECEIPTS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
   })
 }

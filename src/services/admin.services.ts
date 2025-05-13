@@ -7,9 +7,10 @@ import {
   UpdateSupplyBodyReq
 } from "~/models/requests/admin.requests"
 import { Brand, Category } from "~/models/schema/brand_category.schema"
-import { AdminMessage } from "~/constant/message"
+import { AdminMessage, ReceiptMessage, SupplyMessage } from "~/constant/message"
 import {
   CreateProductBodyReq,
+  CreateReceiptBodyReq,
   CreateSupplierBodyReq,
   CreateSupplyBodyReq,
   specificationType
@@ -17,7 +18,8 @@ import {
 import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
 import Specification from "~/models/schema/specification.schema"
-import { Supplier, Supply } from "~/models/schema/supply_supplier.schema"
+import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
+import { ProductStatus } from "~/constant/enum"
 
 class AdminServices {
   async getStatistical() {
@@ -1309,7 +1311,6 @@ class AdminServices {
           ...body,
           productId: new ObjectId(productId?._id),
           supplierId: new ObjectId(supplierId?._id)
-          
         },
         $currentDate: { updated_at: true } // cập nhật thời gian
       }
@@ -1317,6 +1318,217 @@ class AdminServices {
 
     return {
       message: AdminMessage.UPDATE_SUPPLY_DETAIL
+    }
+  }
+
+  async deleteSupply(id: string) {
+    await databaseServices.supply.deleteOne({ _id: new ObjectId(id) })
+    return {
+      message: SupplyMessage.DELETE_SUPPLY
+    }
+  } // ok
+
+  async createReceipt(body: CreateReceiptBodyReq) {
+    const listItem = await Promise.all(
+      body.items.map(async (item) => {
+        const [productId, supplierId] = await Promise.all([
+          databaseServices.product.findOne({ name: item.productId }),
+          databaseServices.supplier.findOne({ name: item.supplierId })
+        ])
+        return {
+          ...item,
+          productId: new ObjectId(productId?._id),
+          supplierId: new ObjectId(supplierId?._id)
+        }
+      })
+    )
+    const listItemNameAndQuantity = listItem.map((item) => {
+      const itemNameAndQuantity = {
+        idProduct: item.productId,
+        quantityProduct: item.quantity
+      }
+      return itemNameAndQuantity
+    })
+
+    await Promise.all([
+      databaseServices.receipt.insertOne(
+        new Receipt({
+          items: listItem,
+          importDate: body.importDate,
+          totalAmount: body.totalAmount,
+          totalItem: body.totalItem,
+          note: body.note
+        })
+      ),
+      Promise.all(
+        listItemNameAndQuantity.map(async (item) => {
+          await databaseServices.product.updateOne(
+            {
+              _id: new ObjectId(item.idProduct)
+            },
+            {
+              $inc: {
+                stock: item.quantityProduct
+              },
+              $set: {
+                status: ProductStatus.AVAILABLE // set trạng thái có hàng
+              },
+              $currentDate: {
+                updated_at: true
+              }
+            }
+          )
+        })
+      )
+    ])
+
+    return {
+      message: ReceiptMessage.CREATE_RECEIPT_IS_SUCCESS
+    }
+  }
+
+  async getReceipts(
+    limit?: number,
+    page?: number,
+    // name_product?: string,
+    // name_supplier?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
+    const $match: any = {}
+    // const findIdProduct = await databaseServices.product.findOne({ name: name_product })
+    // const findIdSupplier = await databaseServices.supplier.findOne({ name: name_supplier })
+    // if (name_product) {
+    //   $match["productId"] = findIdProduct?._id
+    // }
+    // if (name_supplier) {
+    //   $match["supplierId"] = findIdSupplier?._id
+    // }
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate // >= created_at_start
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      // Nếu đã có $match["created_at"], thêm $lte vào
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate // <= created_at_end
+      } else {
+        $match["created_at"] = {
+          $lte: endDate // Nếu chưa có, chỉ tạo điều kiện này
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
+    }
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.receipt
+        .aggregate([
+          {
+            $match
+          },
+          // {
+          //   $lookup: {
+          //     from: "product",
+          //     localField: "productId",
+          //     foreignField: "_id",
+          //     as: "productId"
+          //   }
+          // },
+          // {
+          //   $addFields: {
+          //     productId: {
+          //       $map: {
+          //         input: "$productId",
+          //         as: "productItem",
+          //         in: {
+          //           name: "$$productItem.name"
+          //         }
+          //       }
+          //     }
+          //   }
+          // },
+          // {
+          //   $lookup: {
+          //     from: "supplier",
+          //     localField: "supplierId",
+          //     foreignField: "_id",
+          //     as: "supplierId"
+          //   }
+          // },
+          // {
+          //   $addFields: {
+          //     supplierId: {
+          //       $map: {
+          //         input: "$supplierId",
+          //         as: "supplierItem",
+          //         in: {
+          //           name: "$$supplierItem.name"
+          //         }
+          //       }
+          //     }
+          //   }
+          // },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          }
+        ])
+        .toArray(),
+      databaseServices.receipt
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+      databaseServices.receipt
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
     }
   }
 }

@@ -1,7 +1,15 @@
 import { checkSchema, ParamSchema } from "express-validator"
 import { ObjectId } from "mongodb"
 import httpStatus from "~/constant/httpStatus"
-import { AdminMessage, Path, ProductMessage, SupplierMessage, SupplyMessage, UserMessage } from "~/constant/message"
+import {
+  AdminMessage,
+  Path,
+  ProductMessage,
+  ReceiptMessage,
+  SupplierMessage,
+  SupplyMessage,
+  UserMessage
+} from "~/constant/message"
 import { ErrorWithStatus } from "~/models/errors"
 import { validate } from "~/utils/validations"
 import { nameSchema, numberPhoneSchema } from "./user.middlewares"
@@ -495,6 +503,60 @@ export const updateSupplyValidator = validate(
         optional: true
       },
       description: {
+        optional: true
+      }
+    },
+    ["body"]
+  )
+)
+
+export const createReceiptValidator = validate(
+  checkSchema(
+    {
+      items: {
+        isArray: true,
+        custom: {
+          options: (value) => {
+            if (
+              value.some(
+                (item: any) =>
+                  typeof item !== "object" ||
+                  item === null ||
+                  !("productId" in item) ||
+                  !("supplierId" in item) ||
+                  !("quantity" in item) ||
+                  !("pricePerUnit" in item) ||
+                  !("totalPrice" in item) ||
+                  typeof item.quantity !== "number" ||
+                  typeof item.pricePerUnit !== "number" ||
+                  typeof item.totalPrice !== "number"
+              )
+            ) {
+              throw new Error(ReceiptMessage.ITEM_IS_INVALID)
+            }
+            return true
+          }
+        },
+        notEmpty: {
+          errorMessage: ReceiptMessage.ITEM_IS_REQUIRED
+        }
+      },
+      totalAmount: {
+        notEmpty: {
+          errorMessage: ReceiptMessage.TOTAL_AMOUNT_IS_REQUIRED
+        }
+      },
+      totalItem: {
+        notEmpty: {
+          errorMessage: ReceiptMessage.TOTAL_ITEM_IS_REQUIRED
+        }
+      },
+      importDate: {
+        notEmpty: {
+          errorMessage: ReceiptMessage.IMPORT_DATE_IS_REQUIRED
+        }
+      },
+      note: {
         optional: true
       }
     },

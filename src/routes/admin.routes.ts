@@ -4,12 +4,14 @@ import {
   createBrandController,
   createCategoryController,
   createProductController,
+  createReceiptController,
   createSupplierController,
   createSupplyController,
   deleteBrandController,
   deleteCategoryController,
   deleteCustomerController,
   deleteSupplierController,
+  deleteSupplyController,
   getBrandDetailController,
   getBrandsController,
   getCategoriesController,
@@ -22,6 +24,7 @@ import {
   getNameSuppliersBaseOnProductController,
   getNameSuppliersController,
   getProductController,
+  getReceiptsController,
   getStatisticalController,
   getSupplierDetailController,
   getSuppliersController,
@@ -38,6 +41,7 @@ import {
   checkCategoryValidator,
   checkIdValidator,
   createProductValidator,
+  createReceiptValidator,
   createSupplierValidator,
   createSupplyValidator,
   deleteBrandValidator,
@@ -561,8 +565,63 @@ adminRouter.patch(
   checkRole([RoleType.ADMIN]),
   checkIdValidator,
   updateSupplyValidator,
-  filterMiddleware<UpdateSupplyBodyReq>(["productId", "supplierId", "importPrice", "warrantyMonths", "leadTimeDays", "description"]),
+  filterMiddleware<UpdateSupplyBodyReq>([
+    "productId",
+    "supplierId",
+    "importPrice",
+    "warrantyMonths",
+    "leadTimeDays",
+    "description"
+  ]),
   wrapRequestHandler(updateSupplyDetailController)
+)
+
+/**
+ * Description: delete supply
+ * Path: /suppliers/:id
+ * Method: delete
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ */
+adminRouter.delete(
+  "/supplies/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  wrapRequestHandler(deleteSupplyController)
+)
+
+/**
+ * Description: create receipt for products
+ * Path: /receipts
+ * Method: POST
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.post(
+  "/receipts",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  createReceiptValidator,
+  wrapRequestHandler(createReceiptController)
+)
+
+/**
+ * Description: get receipt for products
+ * Path: /receipts
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/receipts",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  queryValidator,
+  wrapRequestHandler(getReceiptsController)
 )
 
 export default adminRouter

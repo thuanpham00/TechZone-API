@@ -33,6 +33,22 @@ export type CreateSupplyBodyReq = {
   description: string
 }
 
+export type ReceiptProductBodyReq = {
+  productId: string // tên sản phẩm
+  supplierId: string // tên nhà cung cấp
+  quantity: number // Số lượng nhập
+  pricePerUnit: number // Giá nhập mỗi đơn vị, tự động lấy từ Supply
+  totalPrice: number // Tổng giá, tự động tính: quantity * pricePerUnit
+}
+
+export type CreateReceiptBodyReq = {
+  items: ReceiptProductBodyReq[] // danh sách sản phẩm trong 1 đơn hàng
+  totalAmount: number // Tổng giá trị toàn bộ đơn hàng
+  totalItem: number // số lượng sản phẩm trong đơn hàng
+  importDate: Date // Ngày nhập hàng
+  note?: string
+}
+
 export type GetCollectionReq = {
   limit: string
   page: string

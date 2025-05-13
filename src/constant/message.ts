@@ -60,6 +60,7 @@ export const ProductMessage = {
 
   NAME_IS_REQUIRED: "Tên sản phẩm bắt buộc!",
   NAME_MUST_BE_STRING: "Tên sản phẩm phải là chuỗi!",
+  NAME_IS_INVALID: "Tên sản phẩm đã tồn tại!",
 
   CATEGORY_IS_REQUIRED: "Thể loại bắt buộc!",
   CATEGORY_MUST_BE_STRING: "Thể loại phải là chuỗi!",
@@ -139,7 +140,9 @@ export const AdminMessage = {
   GET_SUPPLIERS: "Lấy danh sách nhà cung cấp thành công!",
   GET_SUPPLIERS_BASED_ON_NAME_PRODUCT: "Lấy danh sách nhà cung cấp dựa trên tên sản phẩm thành công!",
   SUPPLIER_CANNOT_BE_DELETED: "Nhà cung cấp đang sử dụng không thể xóa!",
-  DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!"
+  DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!",
+
+  GET_RECEIPTS: "Lấy danh sách đơn nhập hàng thành công!"
 }
 
 export const SupplierMessage = {
@@ -162,5 +165,17 @@ export const SupplyMessage = {
   PRODUCT_ID_IS_NOT_EXISTS: "ID sản phẩm không tồn tại!",
   SUPPLIER_ID_IS_NOT_EXISTS: "ID nhà cung cấp không tồn tại!",
 
-  IMPORT_PRICE_IS_INVALID: "Giá nhập phải nhỏ hơn giá bán sản phẩm!"
+  IMPORT_PRICE_IS_INVALID: "Giá nhập phải nhỏ hơn giá bán sản phẩm!",
+  DELETE_SUPPLY: "Xóa cung ứng thành công!"
+}
+
+export const ReceiptMessage = {
+  ITEM_IS_INVALID: "Các thông tin sản phẩm phải là mảng các object!",
+  ITEM_IS_REQUIRED: "Thông tin sản phẩm là bắt buộc!",
+
+  TOTAL_AMOUNT_IS_REQUIRED: "Tổng giá trị toàn bộ đơn hàng là bắt buộc!",
+
+  TOTAL_ITEM_IS_REQUIRED: "Số lượng sản phẩm trong đơn hàng là bắt buộc!",
+  IMPORT_DATE_IS_REQUIRED: "Ngày nhập hàng bắt buộc!",
+  CREATE_RECEIPT_IS_SUCCESS: "Tạo đơn nhập hàng thành công!"
 }

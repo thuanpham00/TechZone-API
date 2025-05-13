@@ -7,7 +7,7 @@ import { Brand, Category } from "~/models/schema/brand_category.schema"
 import Review from "~/models/schema/review.schema"
 import Specification from "~/models/schema/specification.schema"
 import Gift from "~/models/schema/gift.schema"
-import { Supplier, Supply } from "~/models/schema/supply_supplier.schema"
+import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
 import { envConfig } from "~/utils/config"
 config()
 
@@ -100,6 +100,10 @@ class DatabaseServices {
 
   get supply(): Collection<Supply> {
     return this.db.collection(envConfig.collection_supply)
+  }
+
+  get receipt(): Collection<Receipt> {
+    return this.db.collection(envConfig.collection_receipt)
   }
 }
 

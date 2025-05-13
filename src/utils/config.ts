@@ -37,6 +37,7 @@ export const envConfig = {
   collection_specification: process.env.COLLECTION_SPECIFICATION as string,
   collection_supplier: process.env.COLLECTION_SUPPLIER as string,
   collection_supply: process.env.COLLECTION_SUPPLY as string,
+  collection_receipt: process.env.COLLECTION_RECEIPT as string,
 
   aws_region: process.env.AWS_REGION as string,
   aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY as string,

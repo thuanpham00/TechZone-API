@@ -76,3 +76,53 @@ export class Supply {
     this.updated_at = supply.updated_at || date
   }
 }
+
+export interface ReceiptProductType {
+  productId: ObjectId // ID sản phẩm
+  supplierId: ObjectId // ID nhà cung cấp
+  quantity: number // Số lượng nhập
+  pricePerUnit: number // Giá nhập mỗi đơn vị, tự động lấy từ Supply
+  totalPrice: number // Tổng giá, tự động tính: quantity * pricePerUnit
+}
+
+interface ReceiptType {
+  _id?: ObjectId
+  items: ReceiptProductType[] // danh sách sản phẩm trong 1 đơn hàng
+  totalAmount: number // Tổng giá trị toàn bộ đơn hàng
+  totalItem: number // tổng sản phẩm trong đơn hàng
+  importDate: Date // Ngày nhập hàng
+  note?: string
+  created_at?: Date
+  updated_at?: Date
+}
+
+export class Receipt {
+  _id: ObjectId
+  items: ReceiptProductType[] // danh sách sản phẩm trong 1 đơn hàng
+  totalAmount: number // Tổng giá trị toàn bộ đơn hàng
+  totalItem: number // số lượng sản phẩm trong đơn hàng
+  importDate: Date // Ngày nhập hàng
+  note: string
+  created_at: Date
+  updated_at: Date
+  constructor(receipt: ReceiptType) {
+    const date = new Date()
+    this._id = receipt._id || new ObjectId()
+    this.items = receipt.items
+    this.totalAmount = receipt.totalAmount
+    this.totalItem = receipt.totalItem
+    this.importDate = receipt.importDate
+    this.note = receipt.note || ""
+    this.created_at = receipt.created_at || date
+    this.updated_at = receipt.updated_at || date
+  }
+}
+
+// Cái api này là dùng để sử dụng khi nhập hàng (hàng mới đã giao) -> mình tự cập nhật số lượng sản phẩm khi có hàng mới về - để quản lý đầu vào
+// flow tạo 1 đơn hàng (gồm danh sách sản phẩm)
+// tạo 1 đơn hàng -> chọn sản phẩm -> chọn nhà cung cấp -> sau đó render ra giá nhập -> tự fill (productId, supplierId, pricePerUnit) -> người dùng nhập quantity và render tự động ra totalPrice
+
+// lần lượt add các sản phẩm
+// sau đó tự cập nhật totalAmount và totalItem
+// tự render ra ngày nhập hàng
+// note, created_at, updated_at ko bắt buộc

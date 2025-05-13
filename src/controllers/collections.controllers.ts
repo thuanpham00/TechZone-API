@@ -13,7 +13,9 @@ export const slugConditionMap = {
 
   "laptop-duoi-15-trieu": { price: { $lt: 15000000 }, category: "Laptop" },
   "laptop-tu-15-den-20-trieu": { price: { $gte: 15000000, $lt: 20000000 }, category: "Laptop" },
-  "laptop-tren-20-trieu": { price: { $gte: 20000000 }, category: "Laptop" }
+  "laptop-tren-20-trieu": { price: { $gte: 20000000 }, category: "Laptop" },
+
+  "laptop-ban-chay": { category: "Laptop" }
 }
 
 export const getCollectionsController = async (
@@ -22,9 +24,8 @@ export const getCollectionsController = async (
   next: NextFunction
 ) => {
   const { slug } = req.params
-  const { page, limit } = req.query
   const condition = (slugConditionMap as Record<string, any>)[slug]
-  const { result, total } = await collectionServices.getCollection(condition, Number(page), Number(limit))
+  const { result, total } = await collectionServices.getCollection(condition, slug)
   res.json({
     message: CollectionMessage.GET_COLLECTION_IS_SUCCESS,
     result,
