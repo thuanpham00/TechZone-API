@@ -649,8 +649,8 @@ export const getReceiptsController = async (
     {
       limit: string
       page: string
-      // name_supplier: string
-      // name_product: string
+      name_supplier: string
+      name_product: string
       created_at_start: string
       created_at_end: string
       updated_at_start: string
@@ -662,8 +662,8 @@ export const getReceiptsController = async (
   const {
     limit,
     page,
-    // name_product,
-    // name_supplier,
+    name_product,
+    name_supplier,
     created_at_start,
     created_at_end,
     updated_at_start,
@@ -672,8 +672,8 @@ export const getReceiptsController = async (
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getReceipts(
     Number(limit),
     Number(page),
-    // name_product,
-    // name_supplier,
+    name_product,
+    name_supplier,
     created_at_start,
     created_at_end,
     updated_at_start,
@@ -689,5 +689,5 @@ export const getReceiptsController = async (
       total,
       totalOfPage
     }
-  })
+  }) 
 }

@@ -1386,40 +1386,31 @@ class AdminServices {
       message: ReceiptMessage.CREATE_RECEIPT_IS_SUCCESS
     }
   }
-
   async getReceipts(
     limit?: number,
     page?: number,
-    // name_product?: string,
-    // name_supplier?: string,
+    name_product?: string,
+    name_supplier?: string,
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
     updated_at_end?: string
   ) {
     const $match: any = {}
-    // const findIdProduct = await databaseServices.product.findOne({ name: name_product })
-    // const findIdSupplier = await databaseServices.supplier.findOne({ name: name_supplier })
-    // if (name_product) {
-    //   $match["productId"] = findIdProduct?._id
-    // }
-    // if (name_supplier) {
-    //   $match["supplierId"] = findIdSupplier?._id
-    // }
+
     if (created_at_start) {
       const startDate = new Date(created_at_start)
       $match["created_at"] = {
-        $gte: startDate // >= created_at_start
+        $gte: startDate
       }
     }
     if (created_at_end) {
       const endDate = new Date(created_at_end)
-      // Nếu đã có $match["created_at"], thêm $lte vào
       if ($match["created_at"]) {
-        $match["created_at"]["$lte"] = endDate // <= created_at_end
+        $match["created_at"]["$lte"] = endDate
       } else {
         $match["created_at"] = {
-          $lte: endDate // Nếu chưa có, chỉ tạo điều kiện này
+          $lte: endDate
         }
       }
     }
@@ -1439,86 +1430,120 @@ class AdminServices {
         }
       }
     }
+
+    // Tìm ID của product và supplier nếu có
+    const findIdProduct = name_product ? await databaseServices.product.findOne({ name: name_product }) : null
+    const findIdSupplier = name_supplier ? await databaseServices.supplier.findOne({ name: name_supplier }) : null
+
+    // Thêm điều kiện tìm kiếm dựa trên productId hoặc supplierId
+    if (findIdProduct) {
+      $match["items.productId"] = new ObjectId(findIdProduct._id)
+    }
+    if (findIdSupplier) {
+      $match["items.supplierId"] = new ObjectId(findIdSupplier._id)
+    }
+
+    const pipeline: any[] = [
+      { $match },
+      // Lookup để lấy thông tin chi tiết của product
+      {
+        $lookup: {
+          from: "product",
+          localField: "items.productId",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
+      // Gắn thông tin product vào từng item
+      {
+        $addFields: {
+          items: {
+            $map: {
+              input: "$items",
+              as: "item",
+              in: {
+                $mergeObjects: [
+                  "$$item",
+                  {
+                    productId: {
+                      $arrayElemAt: [
+                        "$productDetails",
+                        {
+                          $indexOfArray: ["$productDetails._id", "$$item.productId"]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      // Lookup để lấy thông tin chi tiết của supplier
+      {
+        $lookup: {
+          from: "supplier",
+          localField: "items.supplierId",
+          foreignField: "_id",
+          as: "supplierDetails"
+        }
+      },
+      // Gắn thông tin supplier vào từng item
+      {
+        $addFields: {
+          items: {
+            $map: {
+              input: "$items",
+              as: "item",
+              in: {
+                $mergeObjects: [
+                  "$$item",
+                  {
+                    supplierId: {
+                      $arrayElemAt: [
+                        "$supplierDetails",
+                        {
+                          $indexOfArray: ["$supplierDetails._id", "$$item.supplierId"]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      // Loại bỏ các trường tạm thời
+      {
+        $project: {
+          productDetails: 0,
+          supplierDetails: 0
+        }
+      },
+      // Phân trang
+      {
+        $skip: limit && page ? limit * (page - 1) : 0
+      },
+      {
+        $limit: limit ? limit : 5
+      }
+    ]
+
     const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.receipt.aggregate(pipeline).toArray(),
+      databaseServices.receipt.aggregate([{ $match }, { $count: "total" }]).toArray(),
       databaseServices.receipt
         .aggregate([
-          {
-            $match
-          },
-          // {
-          //   $lookup: {
-          //     from: "product",
-          //     localField: "productId",
-          //     foreignField: "_id",
-          //     as: "productId"
-          //   }
-          // },
-          // {
-          //   $addFields: {
-          //     productId: {
-          //       $map: {
-          //         input: "$productId",
-          //         as: "productItem",
-          //         in: {
-          //           name: "$$productItem.name"
-          //         }
-          //       }
-          //     }
-          //   }
-          // },
-          // {
-          //   $lookup: {
-          //     from: "supplier",
-          //     localField: "supplierId",
-          //     foreignField: "_id",
-          //     as: "supplierId"
-          //   }
-          // },
-          // {
-          //   $addFields: {
-          //     supplierId: {
-          //       $map: {
-          //         input: "$supplierId",
-          //         as: "supplierItem",
-          //         in: {
-          //           name: "$$supplierItem.name"
-          //         }
-          //       }
-          //     }
-          //   }
-          // },
-          {
-            $skip: limit && page ? limit * (page - 1) : 0
-          },
-          {
-            $limit: limit ? limit : 5
-          }
-        ])
-        .toArray(),
-      databaseServices.receipt
-        .aggregate([
-          {
-            $match
-          },
-          {
-            $count: "total"
-          }
-        ])
-        .toArray(),
-      databaseServices.receipt
-        .aggregate([
-          {
-            $match
-          },
+          { $match },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
           {
             $limit: limit ? limit : 5
           },
-          {
-            $count: "total"
-          }
+          { $count: "total" }
         ])
         .toArray()
     ])
