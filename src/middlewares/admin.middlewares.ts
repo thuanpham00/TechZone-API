@@ -15,6 +15,37 @@ import { validate } from "~/utils/validations"
 import { nameSchema, numberPhoneSchema } from "./user.middlewares"
 import databaseServices from "~/services/database.services"
 import { Request, Response, NextFunction } from "express"
+import { userServices } from "~/services/user.services"
+
+export const checkEmailExistValidator = validate(
+  checkSchema(
+    {
+      email: {
+        notEmpty: {
+          errorMessage: UserMessage.EMAIL_IS_REQUIRED
+        },
+        isEmail: {
+          errorMessage: UserMessage.EMAIL_IS_VALID
+        },
+        trim: true,
+        custom: {
+          options: async (value) => {
+            const isEmail = await userServices.checkEmailExist(value)
+            if (isEmail) {
+              throw new Error(UserMessage.EMAIL_IS_EXISTS) // truyền lỗi này vào msg và là lỗi 422 - msg là string
+              // throw new ErrorWithStatus({
+              //   status: httpStatus.UNAUTHORIZED,
+              //   message: UserMessage.EMAIL_IS_EXISTS
+              // }) // truyền lỗi này vào msg và là lỗi 401 - msg là instanceof ErrorWithStatus - msg là Object
+            }
+            return true
+          }
+        }
+      }
+    },
+    ["body"]
+  )
+)
 
 export const checkIdValidator = validate(
   checkSchema(
@@ -481,6 +512,24 @@ export const getProductIdFromProductNameValidator = async (req: Request, res: Re
   next(
     new ErrorWithStatus({
       message: ProductMessage.PRODUCT_ID_IS_INVALID,
+      status: httpStatus.BAD_REQUESTED
+    })
+  )
+}
+
+export const getProductIdAndSupplierIdValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const productId = await databaseServices.product.findOne({ name: req.query.name_product })
+
+  const supplierId = await databaseServices.supplier.findOne({ name: req.query.name_supplier })
+
+  if (productId && supplierId) {
+    req.productId = productId?._id.toString()
+    req.supplierId = supplierId?._id.toString()
+    return next()
+  }
+  next(
+    new ErrorWithStatus({
+      message: ReceiptMessage.PRODUCT_ID_OR_SUPPLIER_ID_IS_INVALID,
       status: httpStatus.BAD_REQUESTED
     })
   )

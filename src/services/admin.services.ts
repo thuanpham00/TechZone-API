@@ -1,6 +1,7 @@
 import { ObjectId, WithId } from "mongodb"
 import databaseServices from "./database.services"
 import {
+  CreateCustomerBodyReq,
   UpdateBrandBodyReq,
   UpdateCategoryBodyReq,
   UpdateSupplierBodyReq,
@@ -19,7 +20,12 @@ import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
 import Specification from "~/models/schema/specification.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
-import { ProductStatus } from "~/constant/enum"
+import { ProductStatus, RoleType, UserVerifyStatus } from "~/constant/enum"
+import { userServices } from "./user.services"
+import { hashPassword } from "~/utils/scripto"
+import { User } from "~/models/schema/users.schema"
+import { RefreshToken } from "~/models/schema/refreshToken.schema"
+import { sendVerifyRegisterEmail } from "~/utils/ses"
 
 class AdminServices {
   async getStatistical() {
@@ -48,6 +54,65 @@ class AdminServices {
     return {
       totalCustomer: totalCustomer[0]?.total || 0,
       totalProduct: totalProduct[0]?.total || 0
+    }
+  }
+
+  async createCustomer(payload: CreateCustomerBodyReq) {
+    const emailVerifyToken = await userServices.signEmailVerifyToken({
+      user_id: payload.id,
+      verify: UserVerifyStatus.Unverified,
+      role: RoleType.USER
+    })
+
+    const body = {
+      ...payload,
+      _id: new ObjectId(payload.id),
+      password: hashPassword(payload.password),
+      email_verify_token: emailVerifyToken,
+      role: RoleType.USER
+    }
+
+    if (payload.avatar) {
+      body.avatar = payload.avatar
+    }
+
+    const [, token] = await Promise.all([
+      databaseServices.users.insertOne(
+        new User({
+          ...payload,
+          _id: new ObjectId(payload.id),
+          password: hashPassword(payload.password),
+          email_verify_token: emailVerifyToken,
+          numberPhone: payload.phone,
+          date_of_birth: new Date(payload.dateOfBirth)
+        })
+      ),
+      // tạo cặp AccessToken và RefreshToken mới
+      userServices.signAccessTokenAndRefreshToken({
+        user_id: payload.id,
+        verify: UserVerifyStatus.Unverified, // mới tạo tài khoản thì chưa xác thực
+        role: RoleType.USER
+      })
+    ])
+
+    const [accessToken, refreshToken] = token
+    const { exp, iat } = await userServices.decodeRefreshToken(refreshToken)
+
+    const [user] = await Promise.all([
+      databaseServices.users.findOne(
+        { _id: new ObjectId(payload.id) },
+        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+      ),
+      // thêm RefreshToken mới vào DB
+      databaseServices.refreshToken.insertOne(
+        new RefreshToken({ token: refreshToken, iat: iat, exp: exp, user_id: new ObjectId(payload.id) })
+      )
+    ])
+
+    await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
+
+    return {
+      user
     }
   }
 
@@ -994,7 +1059,7 @@ class AdminServices {
   }
 
   // ######
-  async getNameSuppliersBasedOnNameProduct(productId: string) {
+  async getNameSuppliersNotLinkedToProduct(productId: string) {
     // lấy ra danh sách cung ứng dựa trên tên sản phẩm
     const [listSupplierBasedOnProduct, listSupplier] = await Promise.all([
       databaseServices.supply
@@ -1056,6 +1121,73 @@ class AdminServices {
     const listNameSupplier = suppliers.map((supplier) => supplier.name)
 
     return listNameSupplier
+  }
+
+  async getNameSuppliersLinkedToProduct(productId: string) {
+    // lấy ra danh sách cung ứng dựa trên tên sản phẩm
+    const [listSupplierBasedOnProduct] = await Promise.all([
+      databaseServices.supply
+        .aggregate([
+          {
+            $match: {
+              productId: new ObjectId(productId)
+            }
+          },
+          {
+            $lookup: {
+              from: "supplier",
+              localField: "supplierId",
+              foreignField: "_id",
+              as: "supplierId"
+            }
+          },
+          {
+            $addFields: {
+              supplierId: {
+                $map: {
+                  input: "$supplierId",
+                  as: "supplierItem",
+                  in: {
+                    _id: "$$supplierItem._id"
+                  }
+                }
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              productId: 0,
+              importPrice: 0,
+              warrantyMonths: 0,
+              leadTimeDays: 0,
+              description: 0,
+              created_at: 0,
+              updated_at: 0
+            }
+          }
+        ])
+        .toArray()
+    ])
+
+    const listIdSupplierFilter = listSupplierBasedOnProduct.map((item) => item.supplierId[0]._id)
+
+    const suppliers = await databaseServices.supplier
+      .find({ _id: { $in: listIdSupplierFilter } })
+      .project({ name: 1 })
+      .toArray()
+
+    const listNameSupplier = suppliers.map((supplier) => supplier.name)
+
+    return listNameSupplier
+  }
+
+  async getPricePerUnitFromProductAndSupplier(productId: string, supplierId: string) {
+    const result = await databaseServices.supply.findOne(
+      { productId: new ObjectId(productId), supplierId: new ObjectId(supplierId) },
+      { projection: { importPrice: 1 } }
+    )
+    return result
   }
 
   async updateSupplier(id: string, body: UpdateSupplierBodyReq) {
@@ -1386,6 +1518,7 @@ class AdminServices {
       message: ReceiptMessage.CREATE_RECEIPT_IS_SUCCESS
     }
   }
+
   async getReceipts(
     limit?: number,
     page?: number,
@@ -1394,7 +1527,8 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+    quantity?: string
   ) {
     const $match: any = {}
 
@@ -1428,6 +1562,11 @@ class AdminServices {
         $match["updated_at"] = {
           $lte: endDate
         }
+      }
+    }
+    if (quantity) {
+      $match["$expr"] = {
+        $eq: [{ $size: "$items" }, Number(quantity)]
       }
     }
 

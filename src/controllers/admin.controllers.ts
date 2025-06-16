@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express"
 import adminServices from "~/services/admin.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { AdminMessage, ProductMessage, UserMessage } from "~/constant/message"
+import { AdminMessage, ProductMessage, ReceiptMessage, UserMessage } from "~/constant/message"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
-import { UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import { CreateCustomerBodyReq, UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import formidable from "formidable"
 import {
   CreateProductBodyReq,
@@ -24,6 +24,20 @@ export const getStatisticalController = async (req: Request<ParamsDictionary, an
       totalProduct,
       totalEmployee: 0,
       totalSales: 0
+    }
+  })
+}
+
+export const createCustomerController = async (
+  req: Request<ParamsDictionary, any, CreateCustomerBodyReq>,
+  res: Response
+) => {
+  const result = await adminServices.createCustomer(req.body)
+
+  res.json({
+    message: AdminMessage.CREATE_CUSTOMER_DETAIL,
+    result: {
+      result
     }
   })
 }
@@ -515,11 +529,33 @@ export const getNameSuppliersController = async (req: Request, res: Response) =>
   })
 }
 
-export const getNameSuppliersBaseOnProductController = async (req: Request, res: Response) => {
+export const getNameSuppliersNotLinkedToProductController = async (req: Request, res: Response) => {
   const productId = req.productId
-  const result = await adminServices.getNameSuppliersBasedOnNameProduct(productId)
+  const result = await adminServices.getNameSuppliersNotLinkedToProduct(productId)
   res.json({
     message: AdminMessage.GET_SUPPLIERS_BASED_ON_NAME_PRODUCT,
+    result: {
+      result
+    }
+  })
+}
+
+export const getNameSuppliersLinkedToProductController = async (req: Request, res: Response) => {
+  const productId = req.productId
+  const result = await adminServices.getNameSuppliersLinkedToProduct(productId)
+  res.json({
+    message: AdminMessage.GET_SUPPLIERS_BASED_ON_NAME_PRODUCT_2,
+    result: {
+      result
+    }
+  })
+}
+
+export const getPricePerUnitBasedOnProductAndSupplierController = async (req: Request, res: Response) => {
+  const { productId, supplierId } = req
+  const result = await adminServices.getPricePerUnitFromProductAndSupplier(productId, supplierId)
+  res.json({
+    message: ReceiptMessage.PRICE_PER_UNIT_IS_SUCCESS,
     result: {
       result
     }
@@ -655,6 +691,7 @@ export const getReceiptsController = async (
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+      quantity: string
     }
   >,
   res: Response
@@ -667,7 +704,8 @@ export const getReceiptsController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    quantity
   } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getReceipts(
     Number(limit),
@@ -677,7 +715,8 @@ export const getReceiptsController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    quantity
   )
 
   res.json({
@@ -689,5 +728,5 @@ export const getReceiptsController = async (
       total,
       totalOfPage
     }
-  }) 
+  })
 }

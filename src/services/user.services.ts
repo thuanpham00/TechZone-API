@@ -68,15 +68,7 @@ class UserServices {
     })
   }
 
-  private signEmailVerifyToken({
-    user_id,
-    verify,
-    role
-  }: {
-    user_id: string
-    verify: UserVerifyStatus
-    role: RoleType
-  }) {
+  signEmailVerifyToken({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
     return signToken({
       payload: {
         user_id,
@@ -114,7 +106,7 @@ class UserServices {
     })
   }
 
-  private signAccessTokenAndRefreshToken({
+  signAccessTokenAndRefreshToken({
     user_id,
     verify,
     role
@@ -134,7 +126,7 @@ class UserServices {
     return Boolean(result)
   }
 
-  private decodeRefreshToken(refreshToken: string) {
+  decodeRefreshToken(refreshToken: string) {
     return verifyToken({ token: refreshToken, privateKey: envConfig.secret_key_refresh_token })
   }
 

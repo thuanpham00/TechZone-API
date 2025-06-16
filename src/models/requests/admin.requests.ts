@@ -24,3 +24,14 @@ export type UpdateSupplyBodyReq = {
   leadTimeDays?: number
   description?: string
 }
+
+export type CreateCustomerBodyReq = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  dateOfBirth: string
+  password: string
+  confirmPassword: string
+  avatar?: string
+}

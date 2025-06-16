@@ -11,6 +11,7 @@ declare global {
       decode_forgotPasswordToken: TokenPayload
 
       productId: string
+      supplierId: string
     }
   }
 }

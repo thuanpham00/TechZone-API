@@ -3,6 +3,7 @@ import { RoleType } from "~/constant/enum"
 import {
   createBrandController,
   createCategoryController,
+  createCustomerController,
   createProductController,
   createReceiptController,
   createSupplierController,
@@ -21,8 +22,10 @@ import {
   getNameBrandsController,
   getNameCategoriesController,
   getNameProductsController,
-  getNameSuppliersBaseOnProductController,
   getNameSuppliersController,
+  getNameSuppliersLinkedToProductController,
+  getNameSuppliersNotLinkedToProductController,
+  getPricePerUnitBasedOnProductAndSupplierController,
   getProductController,
   getReceiptsController,
   getStatisticalController,
@@ -39,6 +42,7 @@ import {
 import {
   checkBrandValidator,
   checkCategoryValidator,
+  checkEmailExistValidator,
   checkIdValidator,
   createProductValidator,
   createReceiptValidator,
@@ -48,6 +52,7 @@ import {
   deleteCategoryValidator,
   deleteSupplierValidator,
   getBrandsValidator,
+  getProductIdAndSupplierIdValidator,
   getProductIdFromProductNameValidator,
   queryValidator,
   updateCategoryValidator,
@@ -74,6 +79,22 @@ adminRouter.get(
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getStatisticalController)
+)
+
+/**
+ * Description: create customer
+ * Path: /customers
+ * Method: POST
+ * Headers: {Authorization: AT}
+ * Body: createCustomerBodyReq
+ */
+adminRouter.post(
+  "/customers",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkEmailExistValidator,
+  wrapRequestHandler(createCustomerController)
 )
 
 /**
@@ -453,16 +474,44 @@ adminRouter.get(
 /**
  * Description: get name supplier based on name product (dùng trong tạo 1 liên kết cung ứng)
  * Ví dụ đã có 1 product A <=> supplier B rồi thì sẽ không có thêm 1 product A <=> 1 supplier B => được quyền cập nhật lại (mối quan hệ n-n)
- * Path: /name-categories
+ * Path: /name-suppliers-based-on-product
  * Method: GET
  */
 adminRouter.get(
-  "/name-suppliers-based-on-product",
+  "/not-linked-to-product",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
   getProductIdFromProductNameValidator,
-  wrapRequestHandler(getNameSuppliersBaseOnProductController)
+  wrapRequestHandler(getNameSuppliersNotLinkedToProductController)
+)
+
+/**
+ * Description: lấy ra danh sách nhà cung cấp đã liên kết với sản phẩm này
+ * Path: /name-categories
+ * Method: GET
+ */
+adminRouter.get(
+  "/linked-to-product",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  getProductIdFromProductNameValidator,
+  wrapRequestHandler(getNameSuppliersLinkedToProductController)
+)
+
+/**
+ * Description: lấy ra danh sách nhà cung cấp đã liên kết với sản phẩm này
+ * Path: /name-categories
+ * Method: GET
+ */
+adminRouter.get(
+  "/get-pricePerUnit",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  getProductIdAndSupplierIdValidator,
+  wrapRequestHandler(getPricePerUnitBasedOnProductAndSupplierController)
 )
 
 /**

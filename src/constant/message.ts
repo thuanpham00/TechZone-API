@@ -110,6 +110,7 @@ export const Path = {
 export const AdminMessage = {
   GET_STATISTICAL: "Lấy số liệu thống kê thành công!",
   GET_CUSTOMERS: "Lấy danh sách khách hàng thành công!",
+  CREATE_CUSTOMER_DETAIL: "Thêm người dùng thành công!",
   GET_CUSTOMER: "Lấy thông tin khách hàng thành công!",
   GET_CATEGORIES: "Lấy danh sách danh mục thành công!",
   GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
@@ -138,7 +139,8 @@ export const AdminMessage = {
   UPDATE_SUPPLIER_DETAIL: "Cập nhật thông tin chi tiết nhà cung cấp thành công!",
   UPDATE_SUPPLY_DETAIL: "Cập nhật thông tin chi tiết cung ứng thành công!",
   GET_SUPPLIERS: "Lấy danh sách nhà cung cấp thành công!",
-  GET_SUPPLIERS_BASED_ON_NAME_PRODUCT: "Lấy danh sách nhà cung cấp dựa trên tên sản phẩm thành công!",
+  GET_SUPPLIERS_BASED_ON_NAME_PRODUCT: "Lấy danh sách nhà cung cấp chưa liên kết sản phẩm thành công!",
+  GET_SUPPLIERS_BASED_ON_NAME_PRODUCT_2: "Lấy danh sách nhà cung cấp đã liên kết sản phẩm thành công!",
   SUPPLIER_CANNOT_BE_DELETED: "Nhà cung cấp đang sử dụng không thể xóa!",
   DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!",
 
@@ -177,5 +179,8 @@ export const ReceiptMessage = {
 
   TOTAL_ITEM_IS_REQUIRED: "Số lượng sản phẩm trong đơn hàng là bắt buộc!",
   IMPORT_DATE_IS_REQUIRED: "Ngày nhập hàng bắt buộc!",
-  CREATE_RECEIPT_IS_SUCCESS: "Tạo đơn nhập hàng thành công!"
+  CREATE_RECEIPT_IS_SUCCESS: "Tạo đơn nhập hàng thành công!",
+
+  PRODUCT_ID_OR_SUPPLIER_ID_IS_INVALID: "Id sản phẩm hoặc Id nhà cung cấp không hợp lệ!",
+  PRICE_PER_UNIT_IS_SUCCESS: "Lấy giá nhập thành công!"
 }
