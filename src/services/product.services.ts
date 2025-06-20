@@ -4,37 +4,51 @@ import Product from "~/models/schema/product.schema"
 
 class ProductServices {
   async getProductDetail(id: string) {
-    const result = await databaseServices.product
-      .aggregate([
-        {
-          $match: {
-            _id: new ObjectId(id)
-          }
-        },
-        {
-          $lookup: {
-            from: "specification",
-            localField: "specifications",
-            foreignField: "_id",
-            as: "specifications"
-          }
-        },
-        {
-          $addFields: {
-            specifications: {
-              $map: {
-                input: "$specifications",
-                as: "specification",
-                in: {
-                  name: "$$specification.name",
-                  value: "$$specification.value"
+    const date = new Date()
+    const [result] = await Promise.all([
+      databaseServices.product
+        .aggregate([
+          {
+            $match: {
+              _id: new ObjectId(id)
+            }
+          },
+          {
+            $lookup: {
+              from: "specification",
+              localField: "specifications",
+              foreignField: "_id",
+              as: "specifications"
+            }
+          },
+          {
+            $addFields: {
+              specifications: {
+                $map: {
+                  input: "$specifications",
+                  as: "specification",
+                  in: {
+                    name: "$$specification.name",
+                    value: "$$specification.value"
+                  }
                 }
               }
             }
           }
+        ])
+        .toArray(),
+      databaseServices.product.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $inc: {
+            viewCount: 1
+          },
+          $set: {
+            updated_at: date
+          }
         }
-      ])
-      .toArray()
+      )
+    ])
     return result
   }
 

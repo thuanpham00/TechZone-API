@@ -2,6 +2,8 @@ import Product from "~/models/schema/product.schema"
 import databaseServices from "./database.services"
 import { ObjectId } from "mongodb"
 import { ConditionQuery } from "~/models/requests/product.requests"
+import { Favourite, ProductInFavourite } from "~/models/schema/favourite.schema"
+import { CollectionMessage } from "~/constant/message"
 
 class CollectionServices {
   async getCollection(condition: ConditionQuery, slug: string) {
@@ -9,6 +11,21 @@ class CollectionServices {
     let checkBanChay = false
     if (slug.includes("ban-chay")) {
       checkBanChay = true
+    }
+    if (slug.includes("5090")) {
+      $match["name"] = { $regex: "rtx 5090", $options: "i" } // Tìm kiếm sản phẩm có tên chứa "rtx 5090"
+    } else if (slug.includes("5080")) {
+      $match["name"] = { $regex: "rtx 5080", $options: "i" }
+    } else if (slug.includes("5070Ti")) {
+      $match["name"] = { $regex: "rtx 5070Ti", $options: "i" }
+    } else if (slug.includes("5060Ti")) {
+      $match["name"] = { $regex: "rtx 5060Ti", $options: "i" }
+    } else if (slug.includes("5060")) {
+      $match["name"] = { $regex: "rtx 5060(?!Ti)\\b", $options: "i" }
+    } else if (slug.includes("4060")) {
+      $match["name"] = { $regex: "rtx 4060", $options: "i" }
+    } else if (slug.includes("3060")) {
+      $match["name"] = { $regex: "rtx 3060", $options: "i" }
     }
 
     if (condition.category) {
@@ -170,6 +187,78 @@ class CollectionServices {
     return {
       result: result,
       total: total[0]?.total || 0
+    }
+  }
+
+  async createFavouriteCollection(userId: string, product: ProductInFavourite) {
+    const date = new Date()
+    const existingFavourite = await databaseServices.favourite.findOne({ user_id: new ObjectId(userId) })
+    let message = ""
+    if (existingFavourite) {
+      // Cập nhật danh sách sản phẩm trong mục yêu thích
+      const existsProduct = await databaseServices.favourite.findOne({
+        user_id: new ObjectId(userId),
+        "products._id": new ObjectId(product._id)
+      })
+
+      if (existsProduct) {
+        await databaseServices.favourite.updateOne(
+          { user_id: new ObjectId(userId) },
+          { $pull: { products: { _id: new ObjectId(product._id) } } } // nếu đã tồn tại trong danh sách thì xóa đi (click lần 1 thêm vào và click lần 2 sẽ xóa đi)
+        )
+        message = CollectionMessage.DELETE_COLLECTION_FAVOURITE_IS_SUCCESS
+      } else {
+        await databaseServices.favourite.updateOne(
+          { user_id: new ObjectId(userId) },
+          {
+            $addToSet: {
+              products: {
+                _id: new ObjectId(product._id),
+                name: product.name,
+                image: product.image,
+                price: product.price,
+                discount: product.discount
+              }
+            },
+            $set: { updated_at: date }
+          }
+        )
+        message = CollectionMessage.CREATE_COLLECTION_FAVOURITE_IS_SUCCESS
+      }
+    } else {
+      // Tạo mới mục yêu thích
+      const newFavourite = {
+        user_id: new ObjectId(userId),
+        products: [
+          {
+            _id: new ObjectId(product._id),
+            name: product.name,
+            image: product.image,
+            price: product.price,
+            discount: product.discount
+          }
+        ],
+        created_at: date,
+        updated_at: date
+      }
+      await databaseServices.favourite.insertOne(new Favourite(newFavourite))
+
+      message = CollectionMessage.CREATE_COLLECTION_FAVOURITE_IS_SUCCESS
+    }
+
+    return {
+      message: message
+    }
+  }
+
+  async getFavouriteCollection(userId: string) {
+    const favourite = await databaseServices.favourite
+      .findOne({ user_id: new ObjectId(userId) })
+      .then((res) => res?.products || [])
+    const total = favourite.length
+    return {
+      products: favourite,
+      total: total
     }
   }
 }

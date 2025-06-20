@@ -1,4 +1,6 @@
 import { File } from "formidable"
+import { ProductInFavourite } from "../schema/favourite.schema"
+import { ObjectId } from "mongodb"
 
 export type CreateProductBodyReq = {
   name: string
@@ -63,4 +65,8 @@ export type ConditionQuery = {
 export type specificationType = {
   name: string
   value: string | number
+}
+
+export type CreateFavouriteBodyReq = {
+  products: ProductInFavourite
 }

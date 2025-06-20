@@ -9,6 +9,7 @@ import Specification from "~/models/schema/specification.schema"
 import Gift from "~/models/schema/gift.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
 import { envConfig } from "~/utils/config"
+import { Favourite } from "~/models/schema/favourite.schema"
 config()
 
 const URI = `mongodb+srv://${envConfig.user_name}:${envConfig.password}@cluster0.1nx8m.mongodb.net/${envConfig.name_database}?retryWrites=true&w=majority`
@@ -104,6 +105,10 @@ class DatabaseServices {
 
   get receipt(): Collection<Receipt> {
     return this.db.collection(envConfig.collection_receipt)
+  }
+
+   get favourite(): Collection<Favourite> {
+    return this.db.collection(envConfig.collection_favourite)
   }
 }
 

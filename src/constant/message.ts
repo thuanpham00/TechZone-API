@@ -1,4 +1,5 @@
 export const UserMessage = {
+  REQUIRED_LOGIN: "Vui lòng đăng nhập để tiếp tục!",
   VALIDATION_ERROR: "Lỗi xác thực!",
   EMAIL_IS_VALID: "Email không hợp lệ!",
 
@@ -100,7 +101,10 @@ export const MediaMessage = {
 }
 
 export const CollectionMessage = {
-  GET_COLLECTION_IS_SUCCESS: "Lấy danh sách sản phẩm thành công!"
+  GET_COLLECTION_IS_SUCCESS: "Lấy danh sách sản phẩm thành công!",
+  GET_COLLECTION_FAVOURITE_IS_SUCCESS: "Lấy danh sách sản phẩm yêu thích thành công!",
+  CREATE_COLLECTION_FAVOURITE_IS_SUCCESS: "Thêm sản phẩm vào danh sách yêu thích thành công!",
+  DELETE_COLLECTION_FAVOURITE_IS_SUCCESS: "Xóa sản phẩm khỏi danh sách yêu thích thành công!"
 }
 
 export const Path = {
