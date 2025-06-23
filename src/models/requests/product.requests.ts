@@ -1,6 +1,5 @@
 import { File } from "formidable"
-import { ProductInFavourite } from "../schema/favourite.schema"
-import { ObjectId } from "mongodb"
+import { ProductInFavourite } from "../schema/favourite_cart.schema"
 
 export type CreateProductBodyReq = {
   name: string
