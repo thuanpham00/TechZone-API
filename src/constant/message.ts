@@ -103,8 +103,11 @@ export const MediaMessage = {
 export const CollectionMessage = {
   GET_COLLECTION_IS_SUCCESS: "Lấy danh sách sản phẩm thành công!",
   GET_COLLECTION_FAVOURITE_IS_SUCCESS: "Lấy danh sách sản phẩm yêu thích thành công!",
-  CREATE_COLLECTION_FAVOURITE_IS_SUCCESS: "Thêm sản phẩm vào danh sách yêu thích thành công!",
-  DELETE_COLLECTION_FAVOURITE_IS_SUCCESS: "Xóa sản phẩm khỏi danh sách yêu thích thành công!"
+  GET_COLLECTION_CART_IS_SUCCESS: "Lấy danh sách sản phẩm trong giỏ hàng thành công!",
+  ADD_PRODUCT_FAVOURITE_IS_SUCCESS: "Thêm sản phẩm vào danh sách yêu thích thành công!",
+  DELETE_PRODUCT_FAVOURITE_IS_SUCCESS: "Xóa sản phẩm khỏi danh sách yêu thích thành công!",
+  ADD_PRODUCT_CART_IS_SUCCESS: "Thêm sản phẩm vào giỏ hàng thành công!",
+  UPDATE_PRODUCT_CART_IS_SUCCESS: "Cập nhật số lượng sản phẩm trong giỏ hàng thành công!",
 }
 
 export const Path = {

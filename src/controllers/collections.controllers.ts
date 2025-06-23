@@ -2,10 +2,9 @@ import { Request, Response, NextFunction } from "express"
 import { CollectionMessage } from "~/constant/message"
 import collectionServices from "~/services/collection.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { CreateFavouriteBodyReq, GetCollectionReq } from "~/models/requests/product.requests"
-import { getValueObject } from "~/utils/common"
+import { GetCollectionReq } from "~/models/requests/product.requests"
 import { TokenPayload } from "~/models/requests/user.requests"
-import { ProductInFavourite } from "~/models/schema/favourite.schema"
+import { CartProduct, ProductInFavourite } from "~/models/schema/favourite_cart.schema"
 
 export const slugConditionMap = {
   "laptop-asus-hoc-tap-va-lam-viec": { brand: "ASUS", category: "Laptop" },
@@ -66,7 +65,7 @@ export const getCollectionsFavouriteController = async (
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
-  const { products, total } = await collectionServices.getFavouriteCollection(user_id)
+  const { products, total } = await collectionServices.getProductsInFavourite(user_id)
   res.json({
     message: CollectionMessage.GET_COLLECTION_FAVOURITE_IS_SUCCESS,
     result: {
@@ -76,14 +75,42 @@ export const getCollectionsFavouriteController = async (
   })
 }
 
-export const createCollectionsFavouriteController = async (
+export const addProductToFavouriteController = async (
   req: Request<ParamsDictionary, any, ProductInFavourite>,
   res: Response,
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
-  const { message } = await collectionServices.createFavouriteCollection(user_id, req.body)
+  const { message } = await collectionServices.addProductToFavourite(user_id, req.body)
   res.json({
     message: message
+  })
+}
+
+export const addProductToCartController = async (
+  req: Request<ParamsDictionary, any, CartProduct>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { message } = await collectionServices.addProductToCart(user_id, req.body)
+  res.json({
+    message: message
+  })
+}
+
+export const getCollectionsCartController = async (
+  req: Request<ParamsDictionary, any, any, GetCollectionReq>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { products, total } = await collectionServices.getProductsInCart(user_id)
+  res.json({
+    message: CollectionMessage.GET_COLLECTION_CART_IS_SUCCESS,
+    result: {
+      products,
+      total
+    }
   })
 }

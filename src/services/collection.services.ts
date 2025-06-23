@@ -2,7 +2,7 @@ import Product from "~/models/schema/product.schema"
 import databaseServices from "./database.services"
 import { ObjectId } from "mongodb"
 import { ConditionQuery } from "~/models/requests/product.requests"
-import { Favourite, ProductInFavourite } from "~/models/schema/favourite.schema"
+import { Cart, CartProduct, Favourite, ProductInFavourite } from "~/models/schema/favourite_cart.schema"
 import { CollectionMessage } from "~/constant/message"
 
 class CollectionServices {
@@ -190,7 +190,7 @@ class CollectionServices {
     }
   }
 
-  async createFavouriteCollection(userId: string, product: ProductInFavourite) {
+  async addProductToFavourite(userId: string, product: ProductInFavourite) {
     const date = new Date()
     const existingFavourite = await databaseServices.favourite.findOne({ user_id: new ObjectId(userId) })
     let message = ""
@@ -198,32 +198,29 @@ class CollectionServices {
       // Cập nhật danh sách sản phẩm trong mục yêu thích
       const existsProduct = await databaseServices.favourite.findOne({
         user_id: new ObjectId(userId),
-        "products._id": new ObjectId(product._id)
+        "products.product_id": new ObjectId(product.product_id)
       })
 
       if (existsProduct) {
         await databaseServices.favourite.updateOne(
           { user_id: new ObjectId(userId) },
-          { $pull: { products: { _id: new ObjectId(product._id) } } } // nếu đã tồn tại trong danh sách thì xóa đi (click lần 1 thêm vào và click lần 2 sẽ xóa đi)
+          { $pull: { products: { product_id: new ObjectId(product.product_id) } } } // nếu đã tồn tại trong danh sách thì xóa đi (click lần 1 thêm vào và click lần 2 sẽ xóa đi)
         )
-        message = CollectionMessage.DELETE_COLLECTION_FAVOURITE_IS_SUCCESS
+        message = CollectionMessage.DELETE_PRODUCT_FAVOURITE_IS_SUCCESS
       } else {
         await databaseServices.favourite.updateOne(
           { user_id: new ObjectId(userId) },
           {
             $addToSet: {
               products: {
-                _id: new ObjectId(product._id),
-                name: product.name,
-                image: product.image,
-                price: product.price,
-                discount: product.discount
+                product_id: new ObjectId(product.product_id),
+                added_at: date
               }
             },
             $set: { updated_at: date }
           }
         )
-        message = CollectionMessage.CREATE_COLLECTION_FAVOURITE_IS_SUCCESS
+        message = CollectionMessage.ADD_PRODUCT_FAVOURITE_IS_SUCCESS
       }
     } else {
       // Tạo mới mục yêu thích
@@ -231,11 +228,8 @@ class CollectionServices {
         user_id: new ObjectId(userId),
         products: [
           {
-            _id: new ObjectId(product._id),
-            name: product.name,
-            image: product.image,
-            price: product.price,
-            discount: product.discount
+            product_id: new ObjectId(product.product_id),
+            added_at: date
           }
         ],
         created_at: date,
@@ -243,7 +237,7 @@ class CollectionServices {
       }
       await databaseServices.favourite.insertOne(new Favourite(newFavourite))
 
-      message = CollectionMessage.CREATE_COLLECTION_FAVOURITE_IS_SUCCESS
+      message = CollectionMessage.ADD_PRODUCT_FAVOURITE_IS_SUCCESS
     }
 
     return {
@@ -251,13 +245,134 @@ class CollectionServices {
     }
   }
 
-  async getFavouriteCollection(userId: string) {
+  async getProductsInFavourite(userId: string) {
     const favourite = await databaseServices.favourite
-      .findOne({ user_id: new ObjectId(userId) })
-      .then((res) => res?.products || [])
-    const total = favourite.length
+      .aggregate([
+        {
+          $match: { user_id: new ObjectId(userId) }
+        },
+        {
+          $lookup: {
+            from: "product",
+            localField: "products.product_id",
+            foreignField: "_id",
+            as: "products"
+          }
+        },
+        {
+          $project: {
+            updated_at: 0,
+            created_at: 0,
+            user_id: 0,
+            _id: 0
+          }
+        }
+      ])
+      .toArray()
+    const total = favourite[0].products.length
     return {
       products: favourite,
+      total: total
+    }
+  }
+
+  async addProductToCart(userId: string, product: CartProduct) {
+    const date = new Date()
+    const existingCartOfUserID = await databaseServices.cart.findOne({ user_id: new ObjectId(userId) })
+    let message = ""
+    // nếu tồn tại giỏ hàng của userId
+    if (existingCartOfUserID) {
+      const existsProduct = await databaseServices.cart.findOne({
+        user_id: new ObjectId(userId),
+        "products.product_id": new ObjectId(product.product_id)
+      })
+
+      // nếu tồn tại sản phẩm trong giỏ hàng thì cập nhật số lượng
+      if (existsProduct) {
+        await databaseServices.cart.updateOne(
+          { user_id: new ObjectId(userId), "products.product_id": new ObjectId(product.product_id) },
+          { $set: { "products.quantity": product.quantity } } // nếu đã tồn tại trong danh sách thì xóa đi (click lần 1 thêm vào và click lần 2 sẽ xóa đi)
+        )
+        message = CollectionMessage.UPDATE_PRODUCT_CART_IS_SUCCESS
+      } else {
+        // nếu sản phẩm chưa tồn tại trong giỏ hàng thì thêm sản phẩm vào giỏ hàng
+        await databaseServices.cart.updateOne(
+          { user_id: new ObjectId(userId) },
+          {
+            $addToSet: {
+              products: {
+                product_id: new ObjectId(product.product_id),
+                quantity: product.quantity,
+                added_at: date
+              }
+            },
+            $set: { updated_at: date }
+          }
+        )
+        message = CollectionMessage.ADD_PRODUCT_CART_IS_SUCCESS
+      }
+    } else {
+      // Tạo mới mục yêu thích
+      const newCart = {
+        user_id: new ObjectId(userId),
+        products: [
+          {
+            product_id: new ObjectId(product.product_id),
+            quantity: product.quantity,
+            added_at: date
+          }
+        ],
+        created_at: date,
+        updated_at: date
+      }
+      await databaseServices.cart.insertOne(new Cart(newCart))
+
+      message = CollectionMessage.ADD_PRODUCT_CART_IS_SUCCESS
+    }
+
+    return {
+      message: message
+    }
+  }
+
+  async getProductsInCart(user_id: string) {
+    const cart = await databaseServices.cart
+      .aggregate([
+        { $match: { user_id: new ObjectId(user_id) } },
+        { $unwind: "$products" },
+        {
+          $lookup: {
+            from: "product",
+            localField: "products.product_id",
+            foreignField: "_id",
+            as: "productInfo"
+          }
+        },
+        { $unwind: "$productInfo" },
+        {
+          $addFields: {
+            "productInfo.added_at": "$products.added_at",
+            "productInfo.quantity": "$products.quantity"
+          }
+        },
+        {
+          $group: {
+            _id: "$_id",
+            products: { $push: "$productInfo" }
+          }
+        },
+        {
+          $project: {
+            products: 1,
+            _id: 0
+          }
+        }
+      ])
+      .toArray()
+
+    const total = cart[0].products.length
+    return {
+      products: cart,
       total: total
     }
   }

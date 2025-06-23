@@ -1,10 +1,12 @@
 import { Router } from "express"
 import {
-  createCollectionsFavouriteController,
+  addProductToCartController,
+  addProductToFavouriteController,
+  getCollectionsCartController,
   getCollectionsController,
   getCollectionsFavouriteController
 } from "~/controllers/collections.controllers"
-import { checkUserIdValidator, getCollectionValidator } from "~/middlewares/collection.middlewares"
+import { getCollectionValidator } from "~/middlewares/collection.middlewares"
 import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -19,7 +21,7 @@ collectionsRoute.post(
   "/favourite",
   accessTokenValidator,
   verifyUserValidator,
-  wrapRequestHandler(createCollectionsFavouriteController)
+  wrapRequestHandler(addProductToFavouriteController)
 )
 
 /**
@@ -32,6 +34,30 @@ collectionsRoute.get(
   accessTokenValidator,
   verifyUserValidator,
   wrapRequestHandler(getCollectionsFavouriteController)
+)
+
+/**
+ * Description: Tạo danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Path: /
+ * Method: GET
+ */
+collectionsRoute.post(
+  "/cart",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(addProductToCartController)
+)
+
+/**
+ * Description: Lấy danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Path: /
+ * Method: GET
+ */
+collectionsRoute.get(
+  "/cart",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(getCollectionsCartController)
 )
 
 /**
