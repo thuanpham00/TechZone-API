@@ -336,6 +336,13 @@ class CollectionServices {
   }
 
   async getProductsInCart(user_id: string) {
+    const cartUserId = await databaseServices.cart.findOne({ user_id: new ObjectId(user_id) })
+    if (cartUserId === null) {
+      return {
+        products: [],
+        total: 0
+      }
+    }
     const cart = await databaseServices.cart
       .aggregate([
         { $match: { user_id: new ObjectId(user_id) } },
