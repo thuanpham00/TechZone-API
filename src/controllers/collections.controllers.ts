@@ -114,3 +114,17 @@ export const getCollectionsCartController = async (
     }
   })
 }
+
+export const removeProductToCartController = async (
+  req: Request<ParamsDictionary, any, string>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { id } = req.params
+  console.log(id)
+  const { message } = await collectionServices.removeProductToCart(user_id, id)
+  res.json({
+    message: message
+  })
+}

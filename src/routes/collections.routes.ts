@@ -4,7 +4,8 @@ import {
   addProductToFavouriteController,
   getCollectionsCartController,
   getCollectionsController,
-  getCollectionsFavouriteController
+  getCollectionsFavouriteController,
+  removeProductToCartController
 } from "~/controllers/collections.controllers"
 import { getCollectionValidator } from "~/middlewares/collection.middlewares"
 import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
@@ -58,6 +59,18 @@ collectionsRoute.get(
   accessTokenValidator,
   verifyUserValidator,
   wrapRequestHandler(getCollectionsCartController)
+)
+
+/**
+ * Description: Lấy danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Path: /
+ * Method: GET
+ */
+collectionsRoute.delete(
+  "/cart/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(removeProductToCartController)
 )
 
 /**

@@ -291,7 +291,9 @@ class CollectionServices {
       if (existsProduct) {
         await databaseServices.cart.updateOne(
           { user_id: new ObjectId(userId), "products.product_id": new ObjectId(product.product_id) },
-          { $set: { "products.quantity": product.quantity } } // nếu đã tồn tại trong danh sách thì xóa đi (click lần 1 thêm vào và click lần 2 sẽ xóa đi)
+          {
+            $set: { updated_at: date, "products.$.quantity": product.quantity }
+          }
         )
         message = CollectionMessage.UPDATE_PRODUCT_CART_IS_SUCCESS
       } else {
@@ -312,7 +314,6 @@ class CollectionServices {
         message = CollectionMessage.ADD_PRODUCT_CART_IS_SUCCESS
       }
     } else {
-      // Tạo mới mục yêu thích
       const newCart = {
         user_id: new ObjectId(userId),
         products: [
@@ -383,8 +384,27 @@ class CollectionServices {
       total: total
     }
   }
+
+  async removeProductToCart(userId: string, productId: string) {
+    const res = await databaseServices.cart.updateOne(
+      {
+        user_id: new ObjectId(userId)
+      },
+      {
+        $pull: {
+          products: {
+            product_id: new ObjectId(productId)
+          }
+        }
+      }
+    )
+    return {
+      message: CollectionMessage.DELETE_PRODUCT_CART_IS_SUCCESS
+    }
+  }
 }
 
 const collectionServices = new CollectionServices()
 
 export default collectionServices
+//  "products.product_id": new ObjectId(productId)
