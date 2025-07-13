@@ -62,6 +62,11 @@ class OrderServices {
       )
     ])
 
+    const cartUser = await databaseServices.cart.findOne({ user_id: new ObjectId(user_id) })
+    if (cartUser?.products.length === 0) {
+      await databaseServices.cart.deleteOne({ user_id: new ObjectId(user_id) })
+    }
+
     return {
       message: OrderMessage.CREATE_ORDER_IS_SUCCESS
     }
