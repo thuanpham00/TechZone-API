@@ -1,10 +1,14 @@
 import { Request, Response, NextFunction } from "express"
-import { CollectionMessage } from "~/constant/message"
+import { CollectionMessage, UserMessage } from "~/constant/message"
 import collectionServices from "~/services/collection.services"
 import { ParamsDictionary } from "express-serve-static-core"
 import { GetCollectionReq } from "~/models/requests/product.requests"
 import { TokenPayload } from "~/models/requests/user.requests"
-import { CartProduct, ProductInFavourite } from "~/models/schema/favourite_cart.schema"
+import { CartProduct, ProductInFavourite } from "~/models/schema/favourite_cart.order.schema"
+import databaseServices from "~/services/database.services"
+import { ObjectId } from "mongodb"
+import { ErrorWithStatus } from "~/models/errors"
+import httpStatus from "~/constant/httpStatus"
 
 export const slugConditionMap = {
   "laptop-asus-hoc-tap-va-lam-viec": { brand: "ASUS", category: "Laptop" },
@@ -65,6 +69,13 @@ export const getCollectionsFavouriteController = async (
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
   const { products, total } = await collectionServices.getProductsInFavourite(user_id)
   res.json({
     message: CollectionMessage.GET_COLLECTION_FAVOURITE_IS_SUCCESS,
@@ -81,6 +92,13 @@ export const addProductToFavouriteController = async (
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
   const { message } = await collectionServices.addProductToFavourite(user_id, req.body)
   res.json({
     message: message
@@ -93,7 +111,52 @@ export const addProductToCartController = async (
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
   const { message } = await collectionServices.addProductToCart(user_id, req.body)
+  res.json({
+    message: message
+  })
+}
+
+export const updateQuantityProductInCartController = async (
+  req: Request<ParamsDictionary, any, CartProduct>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
+  const { message } = await collectionServices.updateQuantityProductToCart(user_id, req.body)
+  res.json({
+    message: message
+  })
+}
+
+export const clearProductInCartController = async (
+  req: Request<ParamsDictionary, any, CartProduct>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
+  const { message } = await collectionServices.clearProductToCart(user_id)
   res.json({
     message: message
   })
@@ -105,6 +168,13 @@ export const getCollectionsCartController = async (
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
   const { products, total } = await collectionServices.getProductsInCart(user_id)
   res.json({
     message: CollectionMessage.GET_COLLECTION_CART_IS_SUCCESS,
@@ -121,8 +191,14 @@ export const removeProductToCartController = async (
   next: NextFunction
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
   const { id } = req.params
-  console.log(id)
   const { message } = await collectionServices.removeProductToCart(user_id, id)
   res.json({
     message: message

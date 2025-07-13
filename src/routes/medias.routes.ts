@@ -51,7 +51,7 @@ mediasRoute.post(
   "/upload-image-user",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole([RoleType.ADMIN, RoleType.USER]),
   wrapRequestHandler(uploadImageUserController)
 )
 

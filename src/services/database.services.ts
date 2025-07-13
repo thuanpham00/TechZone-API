@@ -9,7 +9,8 @@ import Specification from "~/models/schema/specification.schema"
 import Gift from "~/models/schema/gift.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
 import { envConfig } from "~/utils/config"
-import { Cart, Favourite } from "~/models/schema/favourite_cart.schema"
+import { Cart, Favourite } from "~/models/schema/favourite_cart.order.schema"
+import { Order } from "~/models/schema/favourite_cart.order.schema"
 config()
 
 const URI = `mongodb+srv://${envConfig.user_name}:${envConfig.password}@cluster0.1nx8m.mongodb.net/${envConfig.name_database}?retryWrites=true&w=majority`
@@ -113,6 +114,10 @@ class DatabaseServices {
 
   get cart(): Collection<Cart> {
     return this.db.collection(envConfig.collection_cart)
+  }
+
+  get order(): Collection<Order> {
+    return this.db.collection(envConfig.collection_order)
   }
 }
 

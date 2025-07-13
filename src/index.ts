@@ -13,6 +13,8 @@ import staticRoute from "./routes/static.routes"
 import { config } from "dotenv"
 import { envConfig } from "./utils/config"
 import helmet from "helmet"
+import ordersRoute from "./routes/order.routes"
+import paymentRoute from "./routes/payment.routes"
 config()
 
 const app = express()
@@ -36,7 +38,9 @@ app.use("/users", userRoute)
 app.use("/products", productRoute)
 app.use("/medias", mediasRoute)
 app.use("/collections", collectionsRoute)
+app.use("/orders", ordersRoute)
 app.use("/static", staticRoute)
+app.use("/payment", paymentRoute)
 
 // admin
 app.use("/admin", adminRouter)

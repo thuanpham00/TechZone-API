@@ -109,7 +109,13 @@ export const CollectionMessage = {
   ADD_PRODUCT_CART_IS_SUCCESS: "Thêm sản phẩm vào giỏ hàng thành công!",
   UPDATE_PRODUCT_CART_IS_SUCCESS: "Cập nhật số lượng sản phẩm trong giỏ hàng thành công!",
 
-  DELETE_PRODUCT_CART_IS_SUCCESS: "Xóa sản phẩm trong giỏ hàng thành công!"
+  DELETE_PRODUCT_CART_IS_SUCCESS: "Xóa sản phẩm trong giỏ hàng thành công!",
+  CLEAR_PRODUCT_CART_IS_SUCCESS: "Xóa tất cả sản phẩm trong giỏ hàng thành công!"
+}
+
+export const OrderMessage = {
+  CREATE_ORDER_IS_SUCCESS: "Tạo đơn hàng thành công!",
+  GET_ORDER_IS_SUCCESS: "Lấy danh sách đơn hàng thành công!"
 }
 
 export const Path = {

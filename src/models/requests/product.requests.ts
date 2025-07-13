@@ -1,5 +1,6 @@
 import { File } from "formidable"
-import { ProductInFavourite } from "../schema/favourite_cart.schema"
+import { ProductInFavourite } from "../schema/favourite_cart.order.schema"
+import { OrderStatus } from "~/constant/enum"
 
 export type CreateProductBodyReq = {
   name: string
@@ -47,6 +48,25 @@ export type CreateReceiptBodyReq = {
   totalAmount: number // Tổng giá trị toàn bộ đơn hàng
   totalItem: number // số lượng sản phẩm trong đơn hàng
   importDate: Date // Ngày nhập hàng
+  note?: string
+}
+
+export type CreateOrderBodyReq = {
+  customer_info: {
+    name: string // người nhận
+    phone: string
+    address: string
+  }
+  products: {
+    product_id: string // ref tới bảng Product (để tra cứu thêm nếu cần)
+    name: string // tên sản phẩm tại thời điểm mua
+    price: number // đơn giá lúc mua
+    quantity: number // số lượng mua
+    image: string
+    discount?: number
+  }[]
+  totalAmount: number
+  status?: OrderStatus
   note?: string
 }
 

@@ -2,7 +2,7 @@ import Product from "~/models/schema/product.schema"
 import databaseServices from "./database.services"
 import { ObjectId } from "mongodb"
 import { ConditionQuery } from "~/models/requests/product.requests"
-import { Cart, CartProduct, Favourite, ProductInFavourite } from "~/models/schema/favourite_cart.schema"
+import { Cart, CartProduct, Favourite, ProductInFavourite } from "~/models/schema/favourite_cart.order.schema"
 import { CollectionMessage } from "~/constant/message"
 
 class CollectionServices {
@@ -292,7 +292,8 @@ class CollectionServices {
         await databaseServices.cart.updateOne(
           { user_id: new ObjectId(userId), "products.product_id": new ObjectId(product.product_id) },
           {
-            $set: { updated_at: date, "products.$.quantity": product.quantity }
+            $inc: { "products.$.quantity": product.quantity },
+            $set: { updated_at: date }
           }
         )
         message = CollectionMessage.UPDATE_PRODUCT_CART_IS_SUCCESS
@@ -333,6 +334,20 @@ class CollectionServices {
 
     return {
       message: message
+    }
+  }
+
+  async updateQuantityProductToCart(userId: string, product: CartProduct) {
+    const date = new Date()
+    await databaseServices.cart.updateOne(
+      { user_id: new ObjectId(userId), "products.product_id": new ObjectId(product.product_id) },
+      {
+        $set: { updated_at: date, "products.$.quantity": product.quantity }
+      }
+    )
+
+    return {
+      message: CollectionMessage.UPDATE_PRODUCT_CART_IS_SUCCESS
     }
   }
 
@@ -386,7 +401,7 @@ class CollectionServices {
   }
 
   async removeProductToCart(userId: string, productId: string) {
-    const res = await databaseServices.cart.updateOne(
+    await databaseServices.cart.updateOne(
       {
         user_id: new ObjectId(userId)
       },
@@ -398,8 +413,24 @@ class CollectionServices {
         }
       }
     )
+    const cart = await databaseServices.cart.findOne({ user_id: new ObjectId(userId) })
+    if (!cart?.products || cart?.products.length === 0) {
+      await databaseServices.cart.deleteOne({ user_id: new ObjectId(userId) })
+      return {
+        message: CollectionMessage.CLEAR_PRODUCT_CART_IS_SUCCESS
+      }
+    }
     return {
       message: CollectionMessage.DELETE_PRODUCT_CART_IS_SUCCESS
+    }
+  }
+
+  async clearProductToCart(userId: string) {
+    await databaseServices.cart.deleteOne({
+      user_id: new ObjectId(userId)
+    })
+    return {
+      message: CollectionMessage.CLEAR_PRODUCT_CART_IS_SUCCESS
     }
   }
 }
@@ -407,4 +438,3 @@ class CollectionServices {
 const collectionServices = new CollectionServices()
 
 export default collectionServices
-//  "products.product_id": new ObjectId(productId)

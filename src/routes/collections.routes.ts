@@ -2,10 +2,12 @@ import { Router } from "express"
 import {
   addProductToCartController,
   addProductToFavouriteController,
+  clearProductInCartController,
   getCollectionsCartController,
   getCollectionsController,
   getCollectionsFavouriteController,
-  removeProductToCartController
+  removeProductToCartController,
+  updateQuantityProductInCartController
 } from "~/controllers/collections.controllers"
 import { getCollectionValidator } from "~/middlewares/collection.middlewares"
 import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
@@ -38,7 +40,7 @@ collectionsRoute.get(
 )
 
 /**
- * Description: Tạo danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Description: Tạo danh sách sản phẩm  trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
  * Path: /
  * Method: GET
  */
@@ -50,7 +52,31 @@ collectionsRoute.post(
 )
 
 /**
- * Description: Lấy danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Description: Cập nhật số lượng sản phẩm trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Path: /
+ * Method: GET
+ */
+collectionsRoute.put(
+  "/cart",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(updateQuantityProductInCartController)
+)
+
+/**
+ * Description: Tạo danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Path: /
+ * Method: GET
+ */
+collectionsRoute.delete(
+  "/cart",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(clearProductInCartController)
+)
+
+/**
+ * Description: Lấy danh sách sản phẩm trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
  * Path: /
  * Method: GET
  */
@@ -62,7 +88,7 @@ collectionsRoute.get(
 )
 
 /**
- * Description: Lấy danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
+ * Description:xóa 1 sản phẩm trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
  * Path: /
  * Method: GET
  */

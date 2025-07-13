@@ -25,3 +25,11 @@ export enum ProductStatus {
   OUT_OF_STOCK = "out_of_stock",
   DISCONTINUED = "discontinued"
 }
+
+export enum OrderStatus {
+  pending = "Chờ xác nhận",
+  processing = "Đang xử lý",
+  shipping = "Đang vận chuyển",
+  delivered = "Đã giao hàng",
+  cancelled = "Đã hủy"
+}
