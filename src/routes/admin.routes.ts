@@ -25,6 +25,7 @@ import {
   getNameSuppliersController,
   getNameSuppliersLinkedToProductController,
   getNameSuppliersNotLinkedToProductController,
+  getOrdersController,
   getPricePerUnitBasedOnProductAndSupplierController,
   getProductController,
   getReceiptsController,
@@ -671,6 +672,22 @@ adminRouter.get(
   checkRole([RoleType.ADMIN]),
   queryValidator,
   wrapRequestHandler(getReceiptsController)
+)
+
+/**
+ * Description: get orders from customer
+ * Path: /orders
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/orders",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  queryValidator,
+  wrapRequestHandler(getOrdersController)
 )
 
 export default adminRouter

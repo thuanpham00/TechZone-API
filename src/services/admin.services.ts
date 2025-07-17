@@ -1528,7 +1528,9 @@ class AdminServices {
     created_at_end?: string,
     updated_at_start?: string,
     updated_at_end?: string,
-    quantity?: string
+    quantity?: string,
+    price_max?: string,
+    price_min?: string
   ) {
     const $match: any = {}
 
@@ -1567,6 +1569,23 @@ class AdminServices {
     if (quantity) {
       $match["$expr"] = {
         $eq: [{ $size: "$items" }, Number(quantity)]
+      }
+    }
+
+    if (price_min) {
+      const minPrice = Number(price_min.replace(/[.,]/g, ""))
+      if (!isNaN(minPrice)) {
+        $match["totalAmount"] = { $gte: minPrice }
+      }
+    }
+    if (price_max) {
+      const maxPrice = Number(price_max.replace(/[.,]/g, ""))
+      if (!isNaN(maxPrice)) {
+        if ($match["totalAmount"]) {
+          $match["totalAmount"]["$lte"] = maxPrice
+        } else {
+          $match["totalAmount"] = { $lte: maxPrice }
+        }
       }
     }
 
@@ -1674,6 +1693,85 @@ class AdminServices {
       databaseServices.receipt.aggregate(pipeline).toArray(),
       databaseServices.receipt.aggregate([{ $match }, { $count: "total" }]).toArray(),
       databaseServices.receipt
+        .aggregate([
+          { $match },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          { $count: "total" }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
+    }
+  }
+
+  async getOrders(
+    limit?: number,
+    page?: number,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
+    const $match: any = {}
+
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate
+      } else {
+        $match["created_at"] = {
+          $lte: endDate
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
+    }
+
+    const pipeline: any[] = [
+      { $match },
+      {
+        $skip: limit && page ? limit * (page - 1) : 0
+      },
+      {
+        $limit: limit ? limit : 5
+      }
+    ]
+
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.order.aggregate(pipeline).toArray(),
+      databaseServices.order.aggregate([{ $match }, { $count: "total" }]).toArray(),
+      databaseServices.order
         .aggregate([
           { $match },
           {
