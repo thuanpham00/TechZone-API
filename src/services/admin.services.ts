@@ -1721,7 +1721,8 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+    sortBy?: string
   ) {
     const $match: any = {}
 
@@ -1760,6 +1761,7 @@ class AdminServices {
 
     const pipeline: any[] = [
       { $match },
+      { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
       {
         $skip: limit && page ? limit * (page - 1) : 0
       },
@@ -1793,6 +1795,11 @@ class AdminServices {
       totalOfPage: totalOfPage[0]?.total || 0
     }
   }
+
+  async getOrderDetail(id: string) {
+    const result = await databaseServices.order.findOne({ _id: new ObjectId(id) })
+    return result
+  } // ok
 }
 
 const adminServices = new AdminServices()

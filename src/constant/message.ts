@@ -131,6 +131,7 @@ export const AdminMessage = {
   GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
   GET_SUPPLY_DETAIL: "Lấy thông tin chi tiết cung ứng thành công!",
   GET_SUPPLIER_DETAIL: "Lấy thông tin chi tiết nhà cung cấp thành công!",
+  GET_ORDER_DETAIL: "Lấy thông tin chi tiết đơn hàng thành công!",
   UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công!",
   CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công!",
   DELETE_CUSTOMER: "Xóa profile khách hàng thành công!",

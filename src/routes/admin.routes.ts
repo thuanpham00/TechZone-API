@@ -25,6 +25,7 @@ import {
   getNameSuppliersController,
   getNameSuppliersLinkedToProductController,
   getNameSuppliersNotLinkedToProductController,
+  getOrderDetailController,
   getOrdersController,
   getPricePerUnitBasedOnProductAndSupplierController,
   getProductController,
@@ -688,6 +689,22 @@ adminRouter.get(
   checkRole([RoleType.ADMIN]),
   queryValidator,
   wrapRequestHandler(getOrdersController)
+)
+
+/**
+ * Description: get supply detail
+ * Path: /suppliers/:id
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ */
+adminRouter.get(
+  "/orders/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  wrapRequestHandler(getOrderDetailController)
 )
 
 export default adminRouter

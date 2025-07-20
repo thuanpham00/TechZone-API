@@ -749,18 +749,21 @@ export const getOrdersController = async (
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+
+      sortBy: string
     }
   >,
   res: Response
 ) => {
-  const { limit, page, created_at_start, created_at_end, updated_at_start, updated_at_end } = req.query
+  const { limit, page, created_at_start, created_at_end, updated_at_start, updated_at_end, sortBy } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getOrders(
     Number(limit),
     Number(page),
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    sortBy
   )
 
   res.json({
@@ -772,5 +775,15 @@ export const getOrdersController = async (
       total,
       totalOfPage
     }
+  })
+}
+
+export const getOrderDetailController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  const result = await adminServices.getOrderDetail(id)
+
+  res.json({
+    message: AdminMessage.GET_ORDER_DETAIL,
+    result
   })
 }
