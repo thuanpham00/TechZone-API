@@ -787,3 +787,14 @@ export const getOrderDetailController = async (req: Request, res: Response) => {
     result
   })
 }
+
+export const updateStatusOrderController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  console.log(id)
+  const { status } = req.body
+  const { message } = await adminServices.updateStatusOrder(id, status)
+
+  res.json({
+    message: message
+  })
+}

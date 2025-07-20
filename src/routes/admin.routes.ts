@@ -38,6 +38,7 @@ import {
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
+  updateStatusOrderController,
   updateSupplierDetailController,
   updateSupplyDetailController
 } from "~/controllers/admin.controllers"
@@ -692,8 +693,8 @@ adminRouter.get(
 )
 
 /**
- * Description: get supply detail
- * Path: /suppliers/:id
+ * Description: get order detail
+ * Path: /orders/:id
  * Method: GET
  * Headers: {Authorization: AT}
  * Params: {id: string}
@@ -705,6 +706,22 @@ adminRouter.get(
   checkRole([RoleType.ADMIN]),
   checkIdValidator,
   wrapRequestHandler(getOrderDetailController)
+)
+
+/**
+ * Description: update status order detail
+ * Path: /orders/:id
+ * Method: PATCH
+ * Headers: {Authorization: AT}
+ * Params: {id: string}
+ */
+adminRouter.put(
+  "/orders/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  checkIdValidator,
+  wrapRequestHandler(updateStatusOrderController)
 )
 
 export default adminRouter

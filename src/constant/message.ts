@@ -160,7 +160,9 @@ export const AdminMessage = {
   SUPPLIER_CANNOT_BE_DELETED: "Nhà cung cấp đang sử dụng không thể xóa!",
   DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!",
 
-  GET_RECEIPTS: "Lấy danh sách đơn nhập hàng thành công!"
+  GET_RECEIPTS: "Lấy danh sách đơn nhập hàng thành công!",
+
+  UPDATE_STATUS_ORDER: "Cập nhật trạng thái đơn hàng thành công!"
 }
 
 export const SupplierMessage = {

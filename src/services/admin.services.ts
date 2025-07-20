@@ -20,12 +20,13 @@ import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
 import Specification from "~/models/schema/specification.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
-import { ProductStatus, RoleType, UserVerifyStatus } from "~/constant/enum"
+import { OrderStatus, ProductStatus, RoleType, UserVerifyStatus } from "~/constant/enum"
 import { userServices } from "./user.services"
 import { hashPassword } from "~/utils/scripto"
 import { User } from "~/models/schema/users.schema"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { sendVerifyRegisterEmail } from "~/utils/ses"
+import { Order } from "~/models/schema/favourite_cart.order.schema"
 
 class AdminServices {
   async getStatistical() {
@@ -1799,6 +1800,27 @@ class AdminServices {
   async getOrderDetail(id: string) {
     const result = await databaseServices.order.findOne({ _id: new ObjectId(id) })
     return result
+  } // ok
+
+  async updateStatusOrder(id: string, status: OrderStatus) {
+    await databaseServices.order.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          status: status
+        },
+        $push: {
+          status_history: {
+            status: status,
+            updated_at: new Date()
+          }
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+    return {
+      message: AdminMessage.UPDATE_STATUS_ORDER
+    }
   } // ok
 }
 

@@ -80,6 +80,10 @@ interface OrderType {
   products: ProductInOrder[]
   totalAmount: number
   status?: OrderStatus
+  status_history?: {
+    status: OrderStatus
+    updated_at: Date
+  }[]
   note?: string
   created_at?: Date
   updated_at?: Date
@@ -96,6 +100,10 @@ export class Order {
   products: ProductInOrder[]
   totalAmount: number
   status: OrderStatus
+  status_history: {
+    status: OrderStatus
+    updated_at: Date
+  }[]
   note: string
   created_at: Date
   updated_at: Date
@@ -111,6 +119,7 @@ export class Order {
     this.products = order.products
     this.totalAmount = order.totalAmount
     this.status = order.status || OrderStatus.pending
+    this.status_history = order.status_history || []
     this.note = order.note || ""
     this.created_at = order.created_at || date
     this.updated_at = order.updated_at || date
