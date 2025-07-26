@@ -29,11 +29,9 @@ const allowedOrigins = ["http://localhost:3500", "http://localhost:4173", "https
 app.use(
   cors({
     origin: allowedOrigins, // những domain có thể truy cập vào server
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] // <-- THÊM DÒNG NÀY
+    credentials: true
   })
 )
-app.options("*", cors())
 // client
 app.use("/users", userRoute)
 app.use("/products", productRoute)

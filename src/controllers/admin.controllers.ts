@@ -14,16 +14,31 @@ import {
 } from "~/models/requests/product.requests"
 import { File } from "formidable"
 
-export const getStatisticalController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
-  const { totalCustomer, totalProduct } = await adminServices.getStatistical()
+export const getStatistical_Sell_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { year, month } = req.query
+  const { totalCustomer, totalOrder, totalProductSold, avgOrderValue, rateStatusOrder } =
+    await adminServices.getStatisticalSell(Number(month), Number(year))
 
   res.json({
     message: AdminMessage.GET_STATISTICAL,
     result: {
       totalCustomer,
-      totalProduct,
-      totalEmployee: 0,
-      totalSales: 0
+      totalOrder,
+      totalProductSold,
+      avgOrderValue,
+      rateStatusOrder
+    }
+  })
+}
+
+export const getStatistical_Product_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { countCategory, top10ProductSold } = await adminServices.getStatisticalProduct()
+
+  res.json({
+    message: AdminMessage.GET_STATISTICAL,
+    result: {
+      countCategory,
+      top10ProductSold
     }
   })
 }
@@ -745,6 +760,10 @@ export const getOrdersController = async (
     {
       limit: string
       page: string
+      name: string
+      address: string
+      phone: string
+      status: string
       created_at_start: string
       created_at_end: string
       updated_at_start: string
@@ -755,7 +774,22 @@ export const getOrdersController = async (
   >,
   res: Response
 ) => {
-  const { limit, page, created_at_start, created_at_end, updated_at_start, updated_at_end, sortBy } = req.query
+  const {
+    limit,
+    page,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
+    sortBy,
+    name,
+    address,
+    phone,
+    status
+  } = req.query
+  const nameEncode = name && decodeURIComponent(name)
+  const addressEncode = address && decodeURIComponent(address)
+
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getOrders(
     Number(limit),
     Number(page),
@@ -763,7 +797,11 @@ export const getOrdersController = async (
     created_at_end,
     updated_at_start,
     updated_at_end,
-    sortBy
+    sortBy,
+    nameEncode,
+    addressEncode,
+    phone,
+    status
   )
 
   res.json({

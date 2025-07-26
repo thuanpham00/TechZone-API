@@ -28,6 +28,27 @@ export const createOrderController = async (
   })
 }
 
+export const updateStatusOrderForCustomerController = async (
+  req: Request<ParamsDictionary, any, { status: number }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { id } = req.params
+  const { status } = req.body
+  const { user_id } = req.decode_authorization as TokenPayload
+  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!findUser) {
+    throw new ErrorWithStatus({
+      message: UserMessage.USER_NOT_FOUND,
+      status: httpStatus.NOTFOUND
+    })
+  }
+  const { message } = await orderServices.updateStatusOrder(id, status)
+  res.json({
+    message: message
+  })
+}
+
 export const getOrderController = async (
   req: Request<ParamsDictionary, any, any>,
   res: Response,

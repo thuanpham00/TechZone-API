@@ -30,7 +30,8 @@ import {
   getPricePerUnitBasedOnProductAndSupplierController,
   getProductController,
   getReceiptsController,
-  getStatisticalController,
+  getStatistical_Product_Controller,
+  getStatistical_Sell_Controller,
   getSupplierDetailController,
   getSuppliersController,
   getSuppliesController,
@@ -71,17 +72,31 @@ import { wrapRequestHandler } from "~/utils/handlers"
 const adminRouter = Router()
 
 /**
- * Description: get statistical dashboard
+ * Description: get statistical sell dashboard
  * Path: /statistical
  * Method: GET
  * Headers: {Authorization: AT}
  */
 adminRouter.get(
-  "/statistical",
+  "/statistical_sell",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
-  wrapRequestHandler(getStatisticalController)
+  wrapRequestHandler(getStatistical_Sell_Controller)
+)
+
+/**
+ * Description: get statistical product dashboard
+ * Path: /statistical
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/statistical_product",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(getStatistical_Product_Controller)
 )
 
 /**
@@ -135,12 +150,12 @@ adminRouter.get(
 /**
  * Description: update customer
  * Path: /customers/:id
- * Method: PATCH
+ * Method: PUT
  * Headers: {Authorization: AT}
  * Params: {id: string}
  * Body: updateMeReqBody
  */
-adminRouter.patch(
+adminRouter.put(
   "/customers/:id",
   accessTokenValidator,
   verifyUserValidator,
@@ -231,12 +246,12 @@ adminRouter.get(
 /**
  * Description: update category detail
  * Path: /categories/:id
- * Method: patch
+ * Method: put
  * Headers: {Authorization: AT}
  * Params: {id: string}
  * body: UpdateCategoryBodyReq
  */
-adminRouter.patch(
+adminRouter.put(
   "/categories/:id",
   accessTokenValidator,
   verifyUserValidator,
@@ -330,12 +345,12 @@ adminRouter.get(
 /**
  * Description: update brand detail
  * Path: /brands/:id
- * Method: patch
+ * Method: put
  * Headers: {Authorization: AT}
  * Params: {id: string}
  * body: UpdateBrandsBodyReq
  */
-adminRouter.patch(
+adminRouter.put(
   "/brands/:id",
   accessTokenValidator,
   verifyUserValidator,
@@ -520,12 +535,12 @@ adminRouter.get(
 /**
  * Description: update supplier detail
  * Path: /suppliers/:id
- * Method: patch
+ * Method: put
  * Headers: {Authorization: AT}
  * Params: {id: string}
  * body: UpdateSupplierBodyReq
  */
-adminRouter.patch(
+adminRouter.put(
   "/suppliers/:id",
   accessTokenValidator,
   verifyUserValidator,
@@ -605,12 +620,12 @@ adminRouter.get(
 /**
  * Description: update supply detail
  * Path: /suppliers/:id
- * Method: patch
+ * Method: put
  * Headers: {Authorization: AT}
  * Params: {id: string}
  * body: UpdateSupplierBodyReq
  */
-adminRouter.patch(
+adminRouter.put(
   "/supplies/:id",
   accessTokenValidator,
   verifyUserValidator,
@@ -711,7 +726,7 @@ adminRouter.get(
 /**
  * Description: update status order detail
  * Path: /orders/:id
- * Method: PATCH
+ * Method: PUT
  * Headers: {Authorization: AT}
  * Params: {id: string}
  */

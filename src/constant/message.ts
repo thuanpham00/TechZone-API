@@ -115,7 +115,9 @@ export const CollectionMessage = {
 
 export const OrderMessage = {
   CREATE_ORDER_IS_SUCCESS: "Tạo đơn hàng thành công!",
-  GET_ORDER_IS_SUCCESS: "Lấy danh sách đơn hàng thành công!"
+  GET_ORDER_IS_SUCCESS: "Lấy danh sách đơn hàng thành công!",
+  CANCEL_ORDER_IS_SUCCESS: "Hủy đơn hàng thành công",
+  RECEIVE_ORDER_IS_SUCCESS: "Xác nhận giao hàng thành công"
 }
 
 export const Path = {

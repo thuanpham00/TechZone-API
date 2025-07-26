@@ -246,6 +246,14 @@ class CollectionServices {
   }
 
   async getProductsInFavourite(userId: string) {
+    const favouriteUserId = await databaseServices.cart.findOne({ user_id: new ObjectId(userId) })
+    if (favouriteUserId === null) {
+      return {
+        products: [],
+        total: 0
+      }
+    }
+
     const favourite = await databaseServices.favourite
       .aggregate([
         {

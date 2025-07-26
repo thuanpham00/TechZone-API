@@ -27,15 +27,39 @@ import { User } from "~/models/schema/users.schema"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { sendVerifyRegisterEmail } from "~/utils/ses"
 import { Order } from "~/models/schema/favourite_cart.order.schema"
+import { title } from "process"
 
 class AdminServices {
-  async getStatistical() {
-    const [totalCustomer, totalProduct] = await Promise.all([
-      databaseServices.users
+  async getStatisticalSell(month: number, year: number) {
+    const [totalRevenue, totalOrder, totalProductSold, totalOrderDelivered, orderStatusRate] = await Promise.all([
+      // đếm tổng doanh thu của các đơn "đã giao hàng"
+      databaseServices.order
         .aggregate([
           {
             $match: {
-              role: "User"
+              $expr: {
+                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+              },
+              status: "Đã giao hàng"
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              totalRevenue: { $sum: "$totalAmount" }
+            }
+          }
+        ])
+        .toArray(),
+
+      // đếm tổng số đơn
+      databaseServices.order
+        .aggregate([
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+              }
             }
           },
           {
@@ -43,18 +67,167 @@ class AdminServices {
           }
         ])
         .toArray(),
+
+      // đếm tổng số sp đã bán được "đã giao hàng"
+      databaseServices.order
+        .aggregate([
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+              },
+              status: "Đã giao hàng"
+            }
+          },
+          { $unwind: "$products" },
+          {
+            $group: {
+              _id: null, // nhóm dữ liệu dựa trên 1 trường nào đó
+              totalQuantity: { $sum: "$products.quantity" }
+            }
+          }
+        ])
+        .toArray(),
+
+      // đếm số đơn "đã giao"
+      databaseServices.order
+        .aggregate([
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+              },
+              status: "Đã giao hàng"
+            }
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+
+      // tỉ lệ trạng thái đơn hàng
+      databaseServices.order
+        .aggregate([
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+              }
+            }
+          },
+          {
+            $group: {
+              _id: "$status",
+              total: { $sum: 1 }
+            }
+          }
+        ])
+        .toArray()
+    ])
+
+    const revenue = totalRevenue[0]?.totalRevenue || 0
+    const deliveredCount = totalOrderDelivered[0]?.total || 0
+    const avgValue = deliveredCount ? revenue / deliveredCount : 0
+
+    const rateStatusOrder = orderStatusRate.map((item) => {
+      const rate = (item.total * 100) / totalOrder[0].total
+      return {
+        name: item._id,
+        total: item.total,
+        rate: Math.round(rate * 10) / 10 // làm tròn 1 chữ số thập phân
+      }
+    })
+    console.log(rateStatusOrder)
+
+    return {
+      totalCustomer: {
+        title: "Tổng số doanh thu",
+        value: revenue,
+        color: "#c1121f"
+      },
+      totalOrder: {
+        title: "Tổng số đơn hàng",
+        value: totalOrder[0]?.total || 0,
+        color: "#3a86ff"
+      },
+      totalProductSold: {
+        title: "Tổng số sản phẩm đã bán",
+        value: totalProductSold[0]?.totalQuantity || 0,
+        color: "#f9c74f"
+      },
+      avgOrderValue: {
+        title: "Giá trị trung bình mỗi đơn hàng",
+        value: Math.round(avgValue),
+
+        color: "#8338ec"
+      },
+      rateStatusOrder
+    }
+  }
+
+  async getStatisticalProduct() {
+    const [countCategory, top10ProductSold] = await Promise.all([
+      // tính số lượng sản phẩm của mỗi doanh mục
       databaseServices.product
         .aggregate([
           {
-            $count: "total"
+            $group: {
+              _id: "$category", // nhóm dữ liệu dựa trên trường category
+              total: { $sum: 1 } // Đếm số lượng sản phẩm mỗi danh mục
+            }
+          },
+          {
+            $lookup: {
+              from: "category",
+              localField: "_id",
+              foreignField: "_id",
+              as: "categoryInfo"
+            }
+          },
+          { $unwind: "$categoryInfo" },
+          {
+            $project: {
+              total: 1,
+              categoryId: "$_id",
+              categoryName: "$categoryInfo.name"
+            }
+          },
+          {
+            $sort: { total: -1 } // (Tùy chọn) Sắp xếp giảm dần theo số lượng
+          }
+        ])
+        .toArray(),
+
+      // top 10 sản phẩm bán chạy nhất
+      databaseServices.product
+        .aggregate([
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              sold: 1
+            }
+          },
+          {
+            $sort: { sold: -1 }
+          },
+          {
+            $limit: 10
           }
         ])
         .toArray()
     ])
 
     return {
-      totalCustomer: totalCustomer[0]?.total || 0,
-      totalProduct: totalProduct[0]?.total || 0
+      countCategory: {
+        title: "Sản phẩm theo danh mục",
+        value: countCategory
+      },
+      top10ProductSold: {
+        title: "Top 10 sản phẩm bán chạy",
+        value: top10ProductSold
+      }
     }
   }
 
@@ -1723,7 +1896,11 @@ class AdminServices {
     created_at_end?: string,
     updated_at_start?: string,
     updated_at_end?: string,
-    sortBy?: string
+    sortBy?: string,
+    name?: string,
+    address?: string,
+    phone?: string,
+    status?: string
   ) {
     const $match: any = {}
 
@@ -1758,6 +1935,22 @@ class AdminServices {
           $lte: endDate
         }
       }
+    }
+
+    if (name) {
+      $match["customer_info.name"] = name
+    }
+
+    if (address) {
+      $match["customer_info.address"] = address
+    }
+
+    if (phone) {
+      $match["customer_info.phone"] = phone
+    }
+
+    if (status) {
+      $match["status"] = status
     }
 
     const pipeline: any[] = [
