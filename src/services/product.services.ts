@@ -148,6 +148,38 @@ class ProductServices {
     })
     return listProduct
   }
+
+  async getSearchProduct(search: string) {
+    const result = await databaseServices.product
+      .aggregate([
+        {
+          $match: {
+            name: { $regex: search, $options: "i" }
+          }
+        },
+        {
+          $facet: {
+            // chạy song song 1 lần nhiều pipe // $match là dùng chung giữa 2 pipe này
+            data: [
+              {
+                $project: {
+                  _id: 1,
+                  name: 1,
+                  price: 1,
+                  discount: 1,
+                  banner: 1
+                }
+              },
+              { $limit: 10 } // chỉ lấy 10 gợi ý đầu tiên
+            ],
+            total: [{ $count: "total" }]
+          }
+        }
+      ])
+      .toArray()
+
+    return result[0]
+  }
 }
 
 export const productServices = new ProductServices()

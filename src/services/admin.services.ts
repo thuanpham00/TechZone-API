@@ -31,100 +31,136 @@ import { title } from "process"
 
 class AdminServices {
   async getStatisticalSell(month: number, year: number) {
-    const [totalRevenue, totalOrder, totalProductSold, totalOrderDelivered, orderStatusRate] = await Promise.all([
-      // đếm tổng doanh thu của các đơn "đã giao hàng"
-      databaseServices.order
-        .aggregate([
-          {
-            $match: {
-              $expr: {
-                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-              },
-              status: "Đã giao hàng"
-            }
-          },
-          {
-            $group: {
-              _id: null,
-              totalRevenue: { $sum: "$totalAmount" }
-            }
-          }
-        ])
-        .toArray(),
-
-      // đếm tổng số đơn
-      databaseServices.order
-        .aggregate([
-          {
-            $match: {
-              $expr: {
-                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+    const [totalRevenue, totalOrder, totalProductSold, totalOrderDelivered, orderStatusRate, revenueFor6Month] =
+      await Promise.all([
+        // đếm tổng doanh thu của các đơn "đã giao hàng"
+        databaseServices.order
+          .aggregate([
+            {
+              $match: {
+                $expr: {
+                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+                },
+                status: "Đã giao hàng"
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                totalRevenue: { $sum: "$totalAmount" }
               }
             }
-          },
-          {
-            $count: "total"
-          }
-        ])
-        .toArray(),
+          ])
+          .toArray(),
 
-      // đếm tổng số sp đã bán được "đã giao hàng"
-      databaseServices.order
-        .aggregate([
-          {
-            $match: {
-              $expr: {
-                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-              },
-              status: "Đã giao hàng"
+        // đếm tổng số đơn
+        databaseServices.order
+          .aggregate([
+            {
+              $match: {
+                $expr: {
+                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+                }
+              }
+            },
+            {
+              $count: "total"
             }
-          },
-          { $unwind: "$products" },
-          {
-            $group: {
-              _id: null, // nhóm dữ liệu dựa trên 1 trường nào đó
-              totalQuantity: { $sum: "$products.quantity" }
-            }
-          }
-        ])
-        .toArray(),
+          ])
+          .toArray(),
 
-      // đếm số đơn "đã giao"
-      databaseServices.order
-        .aggregate([
-          {
-            $match: {
-              $expr: {
-                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-              },
-              status: "Đã giao hàng"
-            }
-          },
-          {
-            $count: "total"
-          }
-        ])
-        .toArray(),
-
-      // tỉ lệ trạng thái đơn hàng
-      databaseServices.order
-        .aggregate([
-          {
-            $match: {
-              $expr: {
-                $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+        // đếm tổng số sp đã bán được "đã giao hàng"
+        databaseServices.order
+          .aggregate([
+            {
+              $match: {
+                $expr: {
+                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+                },
+                status: "Đã giao hàng"
+              }
+            },
+            { $unwind: "$products" },
+            {
+              $group: {
+                _id: null, // nhóm dữ liệu dựa trên 1 trường nào đó
+                totalQuantity: { $sum: "$products.quantity" }
               }
             }
-          },
-          {
-            $group: {
-              _id: "$status",
-              total: { $sum: 1 }
+          ])
+          .toArray(),
+
+        // đếm số đơn "đã giao"
+        databaseServices.order
+          .aggregate([
+            {
+              $match: {
+                $expr: {
+                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+                },
+                status: "Đã giao hàng"
+              }
+            },
+            {
+              $count: "total"
             }
-          }
-        ])
-        .toArray()
-    ])
+          ])
+          .toArray(),
+
+        // tỉ lệ trạng thái đơn hàng
+        databaseServices.order
+          .aggregate([
+            {
+              $match: {
+                $expr: {
+                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+                }
+              }
+            },
+            {
+              $group: {
+                _id: "$status",
+                total: { $sum: 1 }
+              }
+            }
+          ])
+          .toArray(),
+
+        // tính doanh thu 6 tháng gần nhất
+        databaseServices.order
+          .aggregate([
+            {
+              $match: {
+                status: "Đã giao hàng"
+              }
+            },
+            {
+              $group: {
+                _id: {
+                  year: { $year: "$created_at" },
+                  month: { $month: "$created_at" }
+                }, // gom nhóm dữ liệu dựa trên year và month
+                totalRevenue: { $sum: "$totalAmount" }
+              }
+            },
+            {
+              $sort: {
+                "_id.year": -1,
+                "_id.month": -1
+              }
+            },
+            {
+              $limit: 6
+            },
+            {
+              $sort: {
+                "_id.year": 1,
+                "_id.month": 1
+              }
+            }
+          ])
+          .toArray()
+      ])
 
     const revenue = totalRevenue[0]?.totalRevenue || 0
     const deliveredCount = totalOrderDelivered[0]?.total || 0
@@ -138,36 +174,47 @@ class AdminServices {
         rate: Math.round(rate * 10) / 10 // làm tròn 1 chữ số thập phân
       }
     })
-    console.log(rateStatusOrder)
+
+    const revenueFor6MonthData = revenueFor6Month.map((item) => {
+      const { month, year } = item._id
+      return {
+        label: `${year}-${month.toString().padStart(2, "0")}`,
+        revenue: item.totalRevenue
+      }
+    })
 
     return {
       totalCustomer: {
-        title: "Tổng số doanh thu",
+        title: "Tổng số doanh thu theo tháng",
         value: revenue,
         color: "#c1121f"
       },
       totalOrder: {
-        title: "Tổng số đơn hàng",
+        title: "Tổng số đơn hàng theo tháng",
         value: totalOrder[0]?.total || 0,
         color: "#3a86ff"
       },
       totalProductSold: {
-        title: "Tổng số sản phẩm đã bán",
+        title: "Tổng số sản phẩm đã bán theo tháng",
         value: totalProductSold[0]?.totalQuantity || 0,
         color: "#f9c74f"
       },
       avgOrderValue: {
-        title: "Giá trị trung bình mỗi đơn hàng",
+        title: "Giá trị trung bình mỗi đơn hàng theo tháng",
         value: Math.round(avgValue),
 
         color: "#8338ec"
       },
-      rateStatusOrder
+      rateStatusOrder,
+      revenueFor6Month: {
+        title: "Doanh thu 6 tháng gần nhất",
+        value: revenueFor6MonthData
+      }
     }
   }
 
   async getStatisticalProduct() {
-    const [countCategory, top10ProductSold] = await Promise.all([
+    const [countCategory, top10ProductSold, productRunningOutOfStock] = await Promise.all([
       // tính số lượng sản phẩm của mỗi doanh mục
       databaseServices.product
         .aggregate([
@@ -216,6 +263,34 @@ class AdminServices {
             $limit: 10
           }
         ])
+        .toArray(),
+
+      // danh sách các sp sắp hết hàng stock < 5
+      databaseServices.product
+        .aggregate([
+          {
+            $match: {
+              stock: { $lt: 5 }
+            }
+          },
+          {
+            $lookup: {
+              from: "category",
+              localField: "category",
+              foreignField: "_id",
+              as: "categoryInfo"
+            }
+          },
+          { $unwind: "$categoryInfo" },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              stock: 1,
+              categoryInfo: "$categoryInfo.name"
+            }
+          }
+        ])
         .toArray()
     ])
 
@@ -227,6 +302,11 @@ class AdminServices {
       top10ProductSold: {
         title: "Top 10 sản phẩm bán chạy",
         value: top10ProductSold
+      },
+
+      productRunningOutOfStock: {
+        title: "Danh sách các sản phẩm sắp hết hàng",
+        value: productRunningOutOfStock
       }
     }
   }
@@ -313,7 +393,6 @@ class AdminServices {
       $match["numberPhone"] = { $regex: phone, $options: "i" }
     }
     if (verify) {
-      console.log(verify)
       $match["verify"] = Number(verify)
     }
     if (created_at_start) {
@@ -539,7 +618,6 @@ class AdminServices {
   }
 
   async updateCategory(id: string, body: UpdateCategoryBodyReq) {
-    console.log("body", body)
     const result = await databaseServices.category.findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: body, $currentDate: { updated_at: true } },

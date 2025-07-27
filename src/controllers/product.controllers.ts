@@ -18,3 +18,13 @@ export const getProductRelatedController = async (req: Request, res: Response, n
     result
   })
 }
+
+export const getSearchProductController = async (req: Request, res: Response, next: NextFunction) => {
+  const { search } = req.query
+  const result = await productServices.getSearchProduct(search as string)
+  console.log(result)
+  res.json({
+    message: ProductMessage.GET_SEARCH_PRODUCT,
+    result
+  })
+}

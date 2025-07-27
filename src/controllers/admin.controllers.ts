@@ -16,7 +16,7 @@ import { File } from "formidable"
 
 export const getStatistical_Sell_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { year, month } = req.query
-  const { totalCustomer, totalOrder, totalProductSold, avgOrderValue, rateStatusOrder } =
+  const { totalCustomer, totalOrder, totalProductSold, avgOrderValue, rateStatusOrder, revenueFor6Month } =
     await adminServices.getStatisticalSell(Number(month), Number(year))
 
   res.json({
@@ -26,19 +26,21 @@ export const getStatistical_Sell_Controller = async (req: Request<ParamsDictiona
       totalOrder,
       totalProductSold,
       avgOrderValue,
-      rateStatusOrder
+      rateStatusOrder,
+      revenueFor6Month
     }
   })
 }
 
 export const getStatistical_Product_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
-  const { countCategory, top10ProductSold } = await adminServices.getStatisticalProduct()
+  const { countCategory, top10ProductSold, productRunningOutOfStock } = await adminServices.getStatisticalProduct()
 
   res.json({
     message: AdminMessage.GET_STATISTICAL,
     result: {
       countCategory,
-      top10ProductSold
+      top10ProductSold,
+      productRunningOutOfStock
     }
   })
 }
@@ -828,7 +830,6 @@ export const getOrderDetailController = async (req: Request, res: Response) => {
 
 export const updateStatusOrderController = async (req: Request, res: Response) => {
   const { id } = req.params
-  console.log(id)
   const { status } = req.body
   const { message } = await adminServices.updateStatusOrder(id, status)
 

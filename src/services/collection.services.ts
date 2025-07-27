@@ -246,7 +246,7 @@ class CollectionServices {
   }
 
   async getProductsInFavourite(userId: string) {
-    const favouriteUserId = await databaseServices.cart.findOne({ user_id: new ObjectId(userId) })
+    const favouriteUserId = await databaseServices.favourite.findOne({ user_id: new ObjectId(userId) })
     if (favouriteUserId === null) {
       return {
         products: [],
