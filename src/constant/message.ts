@@ -165,7 +165,9 @@ export const AdminMessage = {
 
   GET_RECEIPTS: "Lấy danh sách đơn nhập hàng thành công!",
 
-  UPDATE_STATUS_ORDER: "Cập nhật trạng thái đơn hàng thành công!"
+  UPDATE_STATUS_ORDER: "Cập nhật trạng thái đơn hàng thành công!",
+
+  GET_PRICE_SELLING: "Lấy giá sản phẩm thành công!"
 }
 
 export const SupplierMessage = {

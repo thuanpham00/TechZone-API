@@ -1,0 +1,6 @@
+version: '3'
+services:
+  twitter:
+    image: thuanpham00/techzone:v0
+    ports:
+      - '5100:5000'

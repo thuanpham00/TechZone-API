@@ -28,10 +28,12 @@ import {
   getOrderDetailController,
   getOrdersController,
   getPricePerUnitBasedOnProductAndSupplierController,
+  getPriceProductController,
   getProductController,
   getReceiptsController,
   getStatistical_Product_Controller,
   getStatistical_Sell_Controller,
+  getStatistical_User_Controller,
   getSupplierDetailController,
   getSuppliersController,
   getSuppliesController,
@@ -73,12 +75,12 @@ const adminRouter = Router()
 
 /**
  * Description: get statistical sell dashboard
- * Path: /statistical
+ * Path: /statistical-sell
  * Method: GET
  * Headers: {Authorization: AT}
  */
 adminRouter.get(
-  "/statistical_sell",
+  "/statistical-sell",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
@@ -87,16 +89,30 @@ adminRouter.get(
 
 /**
  * Description: get statistical product dashboard
- * Path: /statistical
+ * Path: /statistical-product
  * Method: GET
  * Headers: {Authorization: AT}
  */
 adminRouter.get(
-  "/statistical_product",
+  "/statistical-product",
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getStatistical_Product_Controller)
+)
+
+/**
+ * Description: get statistical user dashboard
+ * Path: /statistical-user
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/statistical-user",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  wrapRequestHandler(getStatistical_User_Controller)
 )
 
 /**
@@ -599,6 +615,22 @@ adminRouter.get(
   checkRole([RoleType.ADMIN]),
   queryValidator,
   wrapRequestHandler(getSuppliesController)
+)
+
+/**
+ * Description: get selling price (lấy giá bán hiện tại của sản phẩm - phục vụ cho tạo cung ứng)
+ * Path: /supplies
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Query: {name: string}
+ */
+adminRouter.get(
+  "/supplies/price-product",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole([RoleType.ADMIN]),
+  queryValidator,
+  wrapRequestHandler(getPriceProductController)
 )
 
 /**

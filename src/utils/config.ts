@@ -4,6 +4,9 @@ import { config } from "dotenv"
 // console.log(options)
 // export const isProduction = options.env === "production" // check mt production
 
+/**
+ * Gán NODE_ENV ở câu lệnh script thì ở file config.ts nó lấy ra được env.NODE_ENV thì nó sử dụng file env tương ứng với môi trường hiện tại đã gán
+ */
 const env = process.env.NODE_ENV
 const envFileName = `.env.${env}`
 console.log(envFileName)

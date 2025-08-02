@@ -31,6 +31,16 @@ import { title } from "process"
 
 class AdminServices {
   async getStatisticalSell(month: number, year: number) {
+    let filterMonthYear: any = {}
+    if (month && year) {
+      filterMonthYear = {
+        $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+      }
+    } else if (year) {
+      filterMonthYear = {
+        $eq: [{ $year: "$created_at" }, year]
+      }
+    }
     const [totalRevenue, totalOrder, totalProductSold, totalOrderDelivered, orderStatusRate, revenueFor6Month] =
       await Promise.all([
         // đếm tổng doanh thu của các đơn "đã giao hàng"
@@ -38,9 +48,7 @@ class AdminServices {
           .aggregate([
             {
               $match: {
-                $expr: {
-                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-                },
+                $expr: filterMonthYear,
                 status: "Đã giao hàng"
               }
             },
@@ -58,9 +66,7 @@ class AdminServices {
           .aggregate([
             {
               $match: {
-                $expr: {
-                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-                }
+                $expr: filterMonthYear
               }
             },
             {
@@ -74,9 +80,7 @@ class AdminServices {
           .aggregate([
             {
               $match: {
-                $expr: {
-                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-                },
+                $expr: filterMonthYear,
                 status: "Đã giao hàng"
               }
             },
@@ -95,9 +99,7 @@ class AdminServices {
           .aggregate([
             {
               $match: {
-                $expr: {
-                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-                },
+                $expr: filterMonthYear,
                 status: "Đã giao hàng"
               }
             },
@@ -112,9 +114,7 @@ class AdminServices {
           .aggregate([
             {
               $match: {
-                $expr: {
-                  $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
-                }
+                $expr: filterMonthYear
               }
             },
             {
@@ -311,6 +311,131 @@ class AdminServices {
     }
   }
 
+  async getStatisticalUser(month: number, year: number) {
+    const today = new Date()
+    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 1)
+
+    let filterMonthYear: any = {}
+    if (month && year) {
+      filterMonthYear = {
+        $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+      }
+    } else if (year) {
+      filterMonthYear = {
+        $eq: [{ $year: "$created_at" }, year]
+      }
+    }
+
+    const [totalCustomer, top10CustomerBuyTheMost, rateReturningCustomers] = await Promise.all([
+      databaseServices.users
+        .aggregate([
+          {
+            $match: {
+              role: "User"
+            }
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+
+      databaseServices.order
+        .aggregate([
+          {
+            $match: {
+              $expr: filterMonthYear,
+              status: "Đã giao hàng"
+            }
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "user_id",
+              foreignField: "_id",
+              as: "user_id"
+            }
+          },
+          { $unwind: "$user_id" },
+          {
+            $group: {
+              _id: "$user_id._id",
+              name: { $first: "$user_id.name" }, // hoặc "fullname", "email",...
+              email: { $first: "$user_id.email" }, // hoặc "fullname", "email",...
+              totalRevenue: { $sum: "$totalAmount" }
+            }
+          },
+          {
+            $sort: { totalRevenue: -1 }
+          },
+          {
+            $limit: 10
+          }
+        ])
+        .toArray(),
+
+      databaseServices.order
+        .aggregate([
+          {
+            $match: {
+              created_at: { $gte: threeMonthsAgo },
+              status: "Đã giao hàng",
+              user_id: { $ne: null }
+            }
+          },
+          {
+            $group: {
+              _id: "$user_id",
+              orderCount: { $sum: 1 }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              totalCustomers: { $sum: 1 },
+              returningCustomers: {
+                $sum: {
+                  $cond: [{ $gt: ["$orderCount", 1] }, 1, 0]
+                }
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              totalCustomers: 1,
+              returningCustomers: 1,
+              retentionRate: {
+                $cond: [
+                  { $eq: ["$totalCustomers", 0] },
+                  0,
+                  {
+                    $multiply: [{ $divide: ["$returningCustomers", "$totalCustomers"] }, 100]
+                  }
+                ]
+              }
+            }
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      totalCustomer: {
+        title: "Khách hàng",
+        value: totalCustomer[0]?.total || 0,
+        color: "#c1121f"
+      },
+      totalStaff: {
+        title: "Nhân viên",
+        value: 0,
+        color: "#3a86ff"
+      },
+      top10CustomerBuyTheMost,
+      rateReturningCustomers
+    }
+  }
+
   async createCustomer(payload: CreateCustomerBodyReq) {
     const emailVerifyToken = await userServices.signEmailVerifyToken({
       user_id: payload.id,
@@ -380,7 +505,9 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+
+    sortBy?: string
   ) {
     const $match: any = { role: "User" }
     if (email) {
@@ -440,6 +567,9 @@ class AdminServices {
               forgot_password_token: 0,
               password: 0
             }
+          },
+          {
+            $sort: { created_at: sortBy === "new" ? -1 : 1 }
           },
           {
             $skip: limit && page ? limit * (page - 1) : 0
@@ -516,7 +646,8 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+    sortBy?: string
   ) {
     const $match: any = {}
     if (name) {
@@ -561,6 +692,7 @@ class AdminServices {
           {
             $match
           },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -641,7 +773,8 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+    sortBy?: string
   ) {
     const $match: any = { category_ids: new ObjectId(id) }
     if (name) {
@@ -686,6 +819,7 @@ class AdminServices {
           {
             $match
           },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -868,7 +1002,8 @@ class AdminServices {
     updated_at_end?: string,
     price_min?: string,
     price_max?: string,
-    status?: string
+    status?: string,
+    sortBy?: string
   ) {
     const $match: any = {}
     if (name) {
@@ -943,6 +1078,7 @@ class AdminServices {
           {
             $match
           },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -1200,7 +1336,8 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+    sortBy?: string
   ) {
     const $match: any = {}
     if (name) {
@@ -1254,6 +1391,7 @@ class AdminServices {
           {
             $match
           },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -1483,6 +1621,14 @@ class AdminServices {
     }
   }
 
+  async getSellPriceProduct(nameProduct: string) {
+    const result = await databaseServices.product.findOne({ name: nameProduct }).then((res) => res?.price)
+
+    return {
+      priceProduct: result
+    }
+  }
+
   async getSupplies(
     limit?: number,
     page?: number,
@@ -1491,7 +1637,8 @@ class AdminServices {
     created_at_start?: string,
     created_at_end?: string,
     updated_at_start?: string,
-    updated_at_end?: string
+    updated_at_end?: string,
+    sortBy?: string
   ) {
     const $match: any = {}
     const findIdProduct = await databaseServices.product.findOne({ name: name_product })
@@ -1583,6 +1730,7 @@ class AdminServices {
               }
             }
           },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -1782,7 +1930,8 @@ class AdminServices {
     updated_at_end?: string,
     quantity?: string,
     price_max?: string,
-    price_min?: string
+    price_min?: string,
+    sortBy?: string
   ) {
     const $match: any = {}
 
@@ -1933,6 +2082,7 @@ class AdminServices {
         }
       },
       // Phân trang
+      { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
       {
         $skip: limit && page ? limit * (page - 1) : 0
       },

@@ -26,7 +26,7 @@ class UserServices {
       },
       privateKey: envConfig.secret_key_access_token,
       options: {
-        expiresIn: envConfig.expire_in_access_token // 15 phút
+        expiresIn: envConfig.expire_in_access_token ? parseInt(envConfig.expire_in_access_token) : undefined
       }
     })
   }
@@ -63,7 +63,7 @@ class UserServices {
       },
       privateKey: envConfig.secret_key_refresh_token,
       options: {
-        expiresIn: envConfig.expire_in_refresh_token // 100 ngày
+        expiresIn: envConfig.expire_in_refresh_token ? parseInt(envConfig.expire_in_refresh_token) : undefined // 100 ngày
       }
     })
   }
@@ -78,7 +78,7 @@ class UserServices {
       },
       privateKey: envConfig.secret_key_email_verify_token,
       options: {
-        expiresIn: envConfig.expire_in_email_verify_token // 7 ngày
+        expiresIn: envConfig.expire_in_email_verify_token ? parseInt(envConfig.expire_in_email_verify_token) : undefined // 7 ngày
       }
     })
   }
@@ -101,7 +101,9 @@ class UserServices {
       },
       privateKey: envConfig.secret_key_forgot_password_token,
       options: {
-        expiresIn: envConfig.expire_in_forgot_password_token // 7 ngày
+        expiresIn: envConfig.expire_in_forgot_password_token
+          ? parseInt(envConfig.expire_in_forgot_password_token)
+          : undefined // 7 ngày
       }
     })
   }
@@ -178,7 +180,7 @@ class UserServices {
       )
     ])
 
-    await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
+    // await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
 
     return {
       accessToken,

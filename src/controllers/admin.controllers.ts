@@ -45,6 +45,22 @@ export const getStatistical_Product_Controller = async (req: Request<ParamsDicti
   })
 }
 
+export const getStatistical_User_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { year, month } = req.query
+  const { totalCustomer, totalStaff, top10CustomerBuyTheMost, rateReturningCustomers } =
+    await adminServices.getStatisticalUser(Number(month), Number(year))
+
+  res.json({
+    message: AdminMessage.GET_STATISTICAL,
+    result: {
+      totalCustomer,
+      totalStaff,
+      top10CustomerBuyTheMost,
+      rateReturningCustomers
+    }
+  })
+}
+
 export const createCustomerController = async (
   req: Request<ParamsDictionary, any, CreateCustomerBodyReq>,
   res: Response
@@ -75,6 +91,8 @@ export const getCustomersController = async (
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+
+      sortBy: string
     }
   >,
   res: Response
@@ -89,7 +107,9 @@ export const getCustomersController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+
+    sortBy
   } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCustomers(
     Number(limit),
@@ -101,7 +121,9 @@ export const getCustomersController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+
+    sortBy
   )
   res.json({
     message: AdminMessage.GET_CUSTOMERS,
@@ -167,11 +189,12 @@ export const getCategoriesController = async (
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+      sortBy: string
     }
   >,
   res: Response
 ) => {
-  const { limit, page, name, created_at_start, created_at_end, updated_at_start, updated_at_end } = req.query
+  const { limit, page, name, created_at_start, created_at_end, updated_at_start, updated_at_end, sortBy } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getCategories(
     Number(limit),
     Number(page),
@@ -179,7 +202,8 @@ export const getCategoriesController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    sortBy
   )
 
   res.json({
@@ -265,11 +289,13 @@ export const getBrandsController = async (
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+      sortBy: string
     }
   >,
   res: Response
 ) => {
-  const { limit, page, name, id, created_at_start, created_at_end, updated_at_start, updated_at_end } = req.query
+  const { limit, page, name, id, created_at_start, created_at_end, updated_at_start, updated_at_end, sortBy } =
+    req.query
   const { result, total, totalOfPage, limitRes, pageRes, listTotalProduct } = await adminServices.getBrands(
     id,
     Number(limit),
@@ -278,7 +304,8 @@ export const getBrandsController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    sortBy
   )
 
   res.json({
@@ -368,6 +395,7 @@ export const getProductController = async (
       price_min: string
       price_max: string
       status: string
+      sortBy: string
     }
   >,
   res: Response
@@ -384,7 +412,8 @@ export const getProductController = async (
     updated_at_end,
     price_min,
     price_max,
-    status
+    status,
+    sortBy
   } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getProducts(
     Number(limit),
@@ -398,7 +427,8 @@ export const getProductController = async (
     updated_at_end,
     price_min,
     price_max,
-    status
+    status,
+    sortBy
   )
   res.json({
     message: AdminMessage.GET_PRODUCTS,
@@ -483,6 +513,7 @@ export const getSuppliersController = async (
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+      sortBy: string
     }
   >,
   res: Response
@@ -497,7 +528,8 @@ export const getSuppliersController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    sortBy
   } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getSuppliers(
     Number(limit),
@@ -509,7 +541,8 @@ export const getSuppliersController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    sortBy
   )
 
   res.json({
@@ -606,6 +639,26 @@ export const createSupplyController = async (
   })
 }
 
+export const getPriceProductController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      name: string
+    }
+  >,
+  res: Response
+) => {
+  const { name } = req.query
+  const { priceProduct } = await adminServices.getSellPriceProduct(name)
+
+  res.json({
+    message: AdminMessage.GET_PRICE_SELLING,
+    result: priceProduct
+  })
+}
+
 export const getSuppliesController = async (
   req: Request<
     ParamsDictionary,
@@ -620,6 +673,7 @@ export const getSuppliesController = async (
       created_at_end: string
       updated_at_start: string
       updated_at_end: string
+      sortBy: string
     }
   >,
   res: Response
@@ -632,7 +686,8 @@ export const getSuppliesController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    sortBy
   } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getSupplies(
     Number(limit),
@@ -642,7 +697,8 @@ export const getSuppliesController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end
+    updated_at_end,
+    sortBy
   )
 
   res.json({
@@ -711,6 +767,7 @@ export const getReceiptsController = async (
       quantity: string
       price_min: string
       price_max: string
+      sortBy: string
     }
   >,
   res: Response
@@ -726,7 +783,8 @@ export const getReceiptsController = async (
     updated_at_end,
     quantity,
     price_max,
-    price_min
+    price_min,
+    sortBy
   } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getReceipts(
     Number(limit),
@@ -739,7 +797,8 @@ export const getReceiptsController = async (
     updated_at_end,
     quantity,
     price_max,
-    price_min
+    price_min,
+    sortBy
   )
 
   res.json({
