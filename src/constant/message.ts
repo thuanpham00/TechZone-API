@@ -207,3 +207,7 @@ export const ReceiptMessage = {
   PRODUCT_ID_OR_SUPPLIER_ID_IS_INVALID: "Id sản phẩm hoặc Id nhà cung cấp không hợp lệ!",
   PRICE_PER_UNIT_IS_SUCCESS: "Lấy giá nhập thành công!"
 }
+
+export const EmailMessage = {
+  GET_LIST_EMAIL_LOG_IS_SUCCESS : "Lấy danh sách email log thành công"
+}

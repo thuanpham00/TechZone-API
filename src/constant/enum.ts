@@ -33,3 +33,15 @@ export enum OrderStatus {
   delivered = "Đã giao hàng",
   cancelled = "Đã hủy"
 }
+
+export enum TypeEmailResend {
+  verifyEmail = "Xác thực email",
+  resendEmail = "Gửi lại email xác thực",
+  forgotPassword = "Quên mật khẩu",
+  orderConfirmation = "Xác nhận đơn hàng"
+}
+
+export enum StatusEmailResend {
+  sent = "Đã gửi",
+  failed = "Lỗi"
+}

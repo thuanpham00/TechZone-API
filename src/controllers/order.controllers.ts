@@ -9,11 +9,7 @@ import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
 import { OrderMessage, UserMessage } from "~/constant/message"
 
-export const createOrderController = async (
-  req: Request<ParamsDictionary, any, CreateOrderBodyReq>,
-  res: Response,
-  next: NextFunction
-) => {
+export const createOrderController = async (req: Request<ParamsDictionary, any, CreateOrderBodyReq>, res: Response) => {
   const { user_id } = req.decode_authorization as TokenPayload
   const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
   if (!findUser) {

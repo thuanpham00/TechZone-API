@@ -13,3 +13,7 @@ export const getNameImage = (fileName: string) => {
 export const getValueObject = (object: { [key: string]: { [x: string]: any } }) => {
   return Object.keys(object) as string[]
 }
+
+export function formatCurrency(current: number) {
+  return new Intl.NumberFormat("de-DE").format(current)
+}

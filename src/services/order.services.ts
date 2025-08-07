@@ -3,7 +3,11 @@ import { CreateOrderBodyReq } from "~/models/requests/product.requests"
 import databaseServices from "./database.services"
 import { Order } from "~/models/schema/favourite_cart.order.schema"
 import { ObjectId } from "mongodb"
-import { OrderStatus } from "~/constant/enum"
+import { OrderStatus, StatusEmailResend, TypeEmailResend } from "~/constant/enum"
+import { sendNotificationOrderBuyCustomer } from "~/utils/ses"
+import dayjs from "dayjs"
+import { formatCurrency } from "~/utils/common"
+import { EmailLog } from "~/models/schema/email.schema"
 
 class OrderServices {
   async getOrder(user_id: string) {
@@ -43,7 +47,7 @@ class OrderServices {
 
     const { customer_info, totalAmount, status, note } = body
     const listIdProductOrder = body.products.map((item) => item.product_id)
-    await Promise.all([
+    const [order] = await Promise.all([
       databaseServices.order.insertOne(
         new Order({
           user_id: new ObjectId(user_id),
@@ -65,7 +69,7 @@ class OrderServices {
             }
           }
         }
-      ), 
+      ),
       // cập nhật số lượng tồn của sản phẩm và lượt mua
       ...productOrder.map((item) => {
         databaseServices.product.updateOne(
@@ -82,6 +86,30 @@ class OrderServices {
     const cartUser = await databaseServices.cart.findOne({ user_id: new ObjectId(user_id) })
     if (cartUser?.products.length === 0) {
       await databaseServices.cart.deleteOne({ user_id: new ObjectId(user_id) })
+    }
+
+    const today = new Date()
+    const formattedDate = dayjs(today).format("HH:mm DD/MM/YYYY")
+    const bodyEmailSend = {
+      id: order.insertedId,
+      customerName: body.customer_info.name,
+      customerPhone: body.customer_info.phone,
+      shippingAddress: body.customer_info.address,
+      totalAmount: formatCurrency(body.totalAmount),
+      createdAt: formattedDate
+    }
+    if (order) {
+      const sendMail = await sendNotificationOrderBuyCustomer(body.customer_info.email, bodyEmailSend)
+      const resendId = sendMail.data?.id
+      await databaseServices.emailLog.insertOne(
+        new EmailLog({
+          to: body.customer_info.email,
+          subject: `Đặt hàng thành công - TECHZONE xác nhận đơn hàng #${order.insertedId}`,
+          type: TypeEmailResend.orderConfirmation,
+          status: StatusEmailResend.sent,
+          resend_id: resendId as string
+        })
+      )
     }
 
     return {

@@ -9,6 +9,8 @@ import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schem
 import { envConfig } from "~/utils/config"
 import { Cart, Favourite } from "~/models/schema/favourite_cart.order.schema"
 import { Order } from "~/models/schema/favourite_cart.order.schema"
+import { Conversation } from "~/models/schema/conversation.schema"
+import { EmailLog } from "~/models/schema/email.schema"
 config()
 
 const URI = `mongodb+srv://${envConfig.user_name}:${envConfig.password}@cluster0.1nx8m.mongodb.net/${envConfig.name_database}?retryWrites=true&w=majority`
@@ -116,6 +118,14 @@ class DatabaseServices {
 
   get order(): Collection<Order> {
     return this.db.collection(envConfig.collection_order)
+  }
+
+  get emailLog(): Collection<EmailLog> {
+    return this.db.collection(envConfig.collection_email_log)
+  }
+
+  get conversation(): Collection<Conversation> {
+    return this.db.collection(envConfig.collection_conversation)
   }
 }
 

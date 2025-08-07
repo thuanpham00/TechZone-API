@@ -56,6 +56,7 @@ export type CreateOrderBodyReq = {
     name: string // người nhận
     phone: string
     address: string
+    email: string
   }
   products: {
     product_id: string // ref tới bảng Product (để tra cứu thêm nếu cần)

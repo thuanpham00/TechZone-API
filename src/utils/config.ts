@@ -44,6 +44,8 @@ export const envConfig = {
   collection_favourite: process.env.COLLECTION_FAVOURITE as string,
   collection_cart: process.env.COLLECTION_CART as string,
   collection_order: process.env.COLLECTION_ORDER as string,
+  collection_email_log: process.env.COLLECTION_EMAIL as string,
+  collection_conversation: process.env.COLLECTION_CONVERSATION as string,
 
   aws_region: process.env.AWS_REGION as string,
   aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY as string,
@@ -62,5 +64,9 @@ export const envConfig = {
   vnp_TmnCode: process.env.vnp_TmnCode as string,
   vnp_HashSecret: process.env.vnp_HashSecret as string,
   vnp_Url: process.env.vnp_Url as string,
-  vnp_ReturnUrl: process.env.vnp_ReturnUrl as string
+  vnp_ReturnUrl: process.env.vnp_ReturnUrl as string,
+
+  api_key_resend: process.env.API_KEY_RESEND as string,
+
+  resend_email_from: process.env.RESEND_EMAIL_FROM as string
 }

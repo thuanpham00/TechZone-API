@@ -629,7 +629,6 @@ adminRouter.get(
   accessTokenValidator,
   verifyUserValidator,
   checkRole([RoleType.ADMIN]),
-  queryValidator,
   wrapRequestHandler(getPriceProductController)
 )
 

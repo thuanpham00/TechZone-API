@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Confirmation</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f6f8;
+        margin: 0;
+        padding: 0;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+      .header {
+        background-color: #0d6efd;
+        color: #ffffff;
+        text-align: center;
+        padding: 30px 20px;
+      }
+      .header img {
+        width: 64px;
+        margin-bottom: 12px;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+      .content {
+        padding: 30px 24px;
+      }
+      .content h2 {
+        font-size: 20px;
+        margin-bottom: 12px;
+        color: #222;
+      }
+      .order-summary {
+        background: #f1f3f5;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+      }
+      .order-summary p {
+        margin: 4px 0;
+        font-size: 15px;
+      }
+      .footer {
+        text-align: center;
+        font-size: 13px;
+        color: #888;
+        padding: 15px 20px 20px;
+      }
+      @media (max-width: 600px) {
+        .content {
+          padding: 20px 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img src="https://miro.medium.com/v2/resize:fit:400/1*zu5RtlGpRR0_NcJ94mT4Nw.png" alt="Logo" />
+        <h1>TECHZONE</h1>
+      </div>
+
+      <div class="content">
+        <h2>Đặt hàng thành công!</h2>
+        <p>Cảm ơn bạn đã mua sắm tại TECHZONE. Dưới đây là thông tin đơn hàng của bạn:</p>
+
+        <div class="order-summary">
+          <p><strong>Mã đơn hàng:</strong> {{orderId}}</p>
+          <p><strong>Ngày đặt:</strong> {{orderDate}}</p>
+          <p><strong>Khách hàng:</strong> {{customerName}}</p>
+          <p><strong>Số điện thoại:</strong> {{customerPhone}}</p>
+          <p><strong>Địa chỉ giao hàng:</strong> {{shippingAddress}}</p>
+          <p><strong>Tổng tiền:</strong> {{totalAmount}} đ</p>
+        </div>
+
+        <p>
+          Bạn có thể theo dõi trạng thái đơn hàng và lịch sử mua hàng bất kỳ lúc nào tại website TECHZONE bằng cách nhấn
+          vào nút bên dưới hoặc truy cập trang <strong>"Đơn hàng của tôi"</strong>.
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td align="center">
+              <a
+                href="{{orderLink}}"
+                style="
+                  display: inline-block;
+                  background-color: #0d6efd;
+                  color: #fff;
+                  padding: 12px 24px;
+                  text-decoration: none;
+                  border-radius: 6px;
+                  font-weight: bold;
+                "
+              >
+                Xem chi tiết đơn hàng
+              </a>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="footer">
+        Cảm ơn bạn đã tin tưởng TECHZONE — Laptop, PC, Màn hình, Điện thoại, Linh kiện Chính Hãng.<br />
+        Đây là email tự động. Vui lòng không phản hồi lại email này.
+      </div>
+    </div>
+  </body>
+</html>
