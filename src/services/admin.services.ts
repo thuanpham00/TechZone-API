@@ -26,12 +26,10 @@ import { hashPassword } from "~/utils/scripto"
 import { User } from "~/models/schema/users.schema"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { sendVerifyRegisterEmail } from "~/utils/ses"
-import { Order } from "~/models/schema/favourite_cart.order.schema"
-import { title } from "process"
 
 class AdminServices {
   async getStatisticalSell(month: number, year: number) {
-    let filterMonthYear: any = {}
+    let filterMonthYear : any = {}
     if (month && year) {
       filterMonthYear = {
         $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]

@@ -16,7 +16,8 @@ import helmet from "helmet"
 import ordersRoute from "./routes/order.routes"
 import paymentRoute from "./routes/payment.routes"
 import rateLimit from "express-rate-limit"
-import emailRouter from "./routes/email.routes"
+import emailRoute from "./routes/email.routes"
+import conversationRoute from "./routes/conversation.routes"
 
 config()
 
@@ -54,7 +55,8 @@ app.use("/collections", collectionsRoute)
 app.use("/orders", ordersRoute)
 app.use("/static", staticRoute)
 app.use("/payment", paymentRoute)
-app.use("/email", emailRouter)
+app.use("/email", emailRoute)
+app.use("/conversation", conversationRoute)
 
 // admin
 app.use("/admin", adminRouter)

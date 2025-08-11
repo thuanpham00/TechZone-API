@@ -4,14 +4,14 @@ import { getDomainListResendController, getEmailResendListController } from "~/c
 import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
-const emailRouter = Router()
+const emailRoute = Router()
 
 /**
  * Description: Get list email sent from resend
  * Path: /
  * Method: GET
  */
-emailRouter.get(
+emailRoute.get(
   "/",
   accessTokenValidator,
   verifyUserValidator,
@@ -24,7 +24,7 @@ emailRouter.get(
  * Path: /
  * Method: GET
  */
-emailRouter.get(
+emailRoute.get(
   "/domain",
   accessTokenValidator,
   verifyUserValidator,
@@ -32,4 +32,4 @@ emailRouter.get(
   wrapRequestHandler(getDomainListResendController)
 )
 
-export default emailRouter
+export default emailRoute

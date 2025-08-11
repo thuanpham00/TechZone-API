@@ -1,5 +1,5 @@
 import { config } from "dotenv"
-import { RoleType, TokenType, UserVerifyStatus } from "~/constant/enum"
+import { RoleType, StatusEmailResend, TokenType, TypeEmailResend, UserVerifyStatus } from "~/constant/enum"
 import { signToken, verifyToken } from "~/utils/jwt"
 import databaseServices from "./database.services"
 import { RegisterReqBody, updateMeReqBody } from "~/models/requests/user.requests"
@@ -13,6 +13,7 @@ import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
 import { sendForgotPasswordToken, sendVerifyRegisterEmail } from "~/utils/ses"
 import { envConfig } from "~/utils/config"
+import { EmailLog } from "~/models/schema/email.schema"
 config()
 
 class UserServices {
@@ -178,7 +179,17 @@ class UserServices {
       )
     ])
 
-    await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
+    const sendMail = await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
+    const resendId = sendMail.data?.id
+    await databaseServices.emailLog.insertOne(
+      new EmailLog({
+        to: payload.email,
+        subject: `Vui lòng xác minh email của bạn`,
+        type: TypeEmailResend.verifyEmail,
+        status: StatusEmailResend.sent,
+        resend_id: resendId as string
+      })
+    )
 
     return {
       accessToken,
@@ -419,7 +430,19 @@ class UserServices {
 
     const emailUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) }).then((res) => res?.email)
 
-    emailUser && (await sendVerifyRegisterEmail(emailUser, emailVerifyToken))
+    if (emailUser) {
+      const sendMail = await sendVerifyRegisterEmail(emailUser, emailVerifyToken)
+      const resendId = sendMail.data?.id
+      await databaseServices.emailLog.insertOne(
+        new EmailLog({
+          to: emailUser,
+          subject: `Vui lòng xác minh email của bạn`,
+          type: TypeEmailResend.resendEmail,
+          status: StatusEmailResend.sent,
+          resend_id: resendId as string
+        })
+      )
+    }
 
     return {
       message: UserMessage.RESEND_VERIFY_EMAIL_IS_SUCCESS
@@ -453,7 +476,17 @@ class UserServices {
         }
       }
     )
-    await sendForgotPasswordToken(email, forgotPasswordToken)
+    const sendMail = await sendForgotPasswordToken(email, forgotPasswordToken)
+    const resendId = sendMail.data?.id
+    await databaseServices.emailLog.insertOne(
+      new EmailLog({
+        to: email,
+        subject: `Vui lòng đặt lại mật khẩu của bạn`,
+        type: TypeEmailResend.forgotPassword,
+        status: StatusEmailResend.sent,
+        resend_id: resendId as string
+      })
+    )
     return {
       message: UserMessage.CHECK_EMAIL_TO_RESET_PASSWORD
     }
