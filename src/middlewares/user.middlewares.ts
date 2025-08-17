@@ -481,7 +481,7 @@ export const updateMeValidator = validate(
           options: async (value, { req }) => {
             // console.log(req.body)
             const { id } = req.params as Record<string, string>
-            console.log(id)
+
             const user = await databaseServices.users.findOne({ _id: new ObjectId(id) })
             if (!user) {
               throw new ErrorWithStatus({

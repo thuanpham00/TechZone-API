@@ -26,7 +26,7 @@ class CollectionServices {
       $match["name"] = { $regex: "rtx 4060", $options: "i" }
     } else if (slug.includes("3060")) {
       $match["name"] = { $regex: "rtx 3060", $options: "i" }
-    }
+    } 
 
     if (condition.category) {
       const categoryId = await databaseServices.category.findOne({ name: condition.category }).then((res) => res?._id)

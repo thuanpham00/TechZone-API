@@ -209,5 +209,10 @@ export const ReceiptMessage = {
 }
 
 export const EmailMessage = {
-  GET_LIST_EMAIL_LOG_IS_SUCCESS : "Lấy danh sách email log thành công"
+  GET_LIST_EMAIL_LOG_IS_SUCCESS: "Lấy danh sách email log thành công"
+}
+
+export const ConversationMessage = {
+  GET_LIST_USER_TYPE_IS_SUCCESS: "Lấy danh sách người dùng thành công",
+  GET_CONVERSATION_IS_SUCCESS: "Lấy danh sách hội thoại thành công"
 }

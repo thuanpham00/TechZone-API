@@ -142,7 +142,7 @@ userRoute.get("/me", accessTokenValidator, wrapRequestHandler(getMeController))
  * Header: {Authorization: Bearer <access_token>}
  * Body: updateMeReqBody
  */
-userRoute.patch(
+userRoute.put(
   "/me",
   accessTokenValidator,
   verifyUserValidator,

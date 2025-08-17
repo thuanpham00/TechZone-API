@@ -11,6 +11,7 @@ import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
 
 export const slugConditionMap = {
+  laptop: { category: "Laptop" },
   "laptop-asus-hoc-tap-va-lam-viec": { brand: "ASUS", category: "Laptop" },
   "laptop-acer-hoc-tap-va-lam-viec": { brand: "ACER", category: "Laptop" },
   "laptop-msi-hoc-tap-va-lam-viec": { brand: "MSI", category: "Laptop" },
@@ -20,6 +21,7 @@ export const slugConditionMap = {
   "laptop-tren-20-trieu": { price: { $gte: 20000000 }, category: "Laptop" },
   "top-10-laptop-ban-chay": { category: "Laptop" },
 
+  "laptop-gaming": { category: "Laptop Gaming" },
   "top-10-laptop-gaming-ban-chay": { category: "Laptop Gaming" },
   "laptop-gaming-asus": { category: "Laptop Gaming", brand: "ASUS" },
   "laptop-gaming-acer": { category: "Laptop Gaming", brand: "ACER" },
@@ -29,6 +31,7 @@ export const slugConditionMap = {
   "laptop-gaming-tu-20-den-25-trieu": { price: { $gte: 20000000, $lt: 25000000 }, category: "Laptop Gaming" },
   "laptop-gaming-tren-25-trieu": { price: { $gte: 25000000 }, category: "Laptop Gaming" },
 
+  "pc-gvn": { category: "PC GVN" },
   "pc-gvn-rtx-5090": { category: "PC GVN", brand: "GVN" },
   "pc-gvn-rtx-5080": { category: "PC GVN", brand: "GVN" },
   "pc-gvn-rtx-5070Ti": { category: "PC GVN", brand: "GVN" },
@@ -38,14 +41,31 @@ export const slugConditionMap = {
   "pc-gvn-rtx-3060": { category: "PC GVN", brand: "GVN" },
   "top-10-pc-ban-chay": { category: "PC GVN" },
 
+  "man-hinh": { category: "Màn hình" },
   "top-10-man-hinh-ban-chay": { category: "Màn hình" },
   "man-hinh-samsung": { category: "Màn hình", brand: "SAMSUNG" },
   "man-hinh-asus": { category: "Màn hình", brand: "ASUS" },
   "man-hinh-dell": { category: "Màn hình", brand: "DELL" },
+  "man-hinh-viewsonic": { category: "Màn hình", brand: "VIEWSONIC" },
+  "man-hinh-acer": { category: "Màn hình", brand: "ACER" },
   "man-hinh-duoi-5-trieu": { price: { $lt: 5000000 }, category: "Màn hình" },
   "man-hinh-tu-5-den-10-trieu": { price: { $gte: 5000000, $lt: 10000000 }, category: "Màn hình" },
   "man-hinh-tu-10-den-20-trieu": { price: { $gte: 10000000, $lt: 20000000 }, category: "Màn hình" },
-  "man-hinh-tren-20-trieu": { price: { $gte: 20000000 }, category: "Màn hình" }
+  "man-hinh-tren-20-trieu": { price: { $gte: 20000000 }, category: "Màn hình" },
+
+  "ban-phim": { category: "Bàn phím" },
+  "ban-phim-akko": { category: "Bàn phím", brand: "AKKO" },
+  "ban-phim-aula": { category: "Bàn phím", brand: "AULA" },
+  "ban-phim-dareu": { category: "Bàn phím", brand: "DARE-U" },
+  "ban-phim-keychron": { category: "Bàn phím", brand: "KEYCHRON" },
+  "ban-phim-corsair": { category: "Bàn phím", brand: "CORSAIR" },
+  "ban-phim-asus": { category: "Bàn phím", brand: "ASUS" },
+  "ban-phim-logitech": { category: "Bàn phím", brand: "LOGITECH" },
+  "ban-phim-razer": { category: "Bàn phím", brand: "RAZER" },
+  "ban-phim-duoi-1-trieu": { price: { $lt: 1000000 }, category: "Bàn phím" },
+  "ban-phim-tu-1-den-2-trieu": { price: { $gte: 1000000, $lt: 2000000 }, category: "Bàn phím" },
+  "ban-phim-tu-2-den-3-trieu": { price: { $gte: 2000000, $lt: 3000000 }, category: "Bàn phím" },
+  "ban-phim-tren-3-trieu": { price: { $gte: 3000000 }, category: "Bàn phím" }
 }
 
 export const getCollectionsController = async (

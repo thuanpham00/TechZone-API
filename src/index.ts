@@ -18,10 +18,10 @@ import paymentRoute from "./routes/payment.routes"
 import rateLimit from "express-rate-limit"
 import emailRoute from "./routes/email.routes"
 import conversationRoute from "./routes/conversation.routes"
-
+import { createServer } from "http"
+import { initialSocket } from "./socket"
 config()
 
-const app = express()
 const PORT = envConfig.port
 
 // giới hạn số lượng request với rate limit
@@ -34,6 +34,7 @@ const limiter = rateLimit({
   // store: ... , // Redis, Memcached, etc. See below.
 })
 
+const app = express()
 app.use(express.json()) // biến request từ object thành json
 app.use(cookieParse())
 app.use(helmet()) // bảo mật cho server
@@ -47,6 +48,9 @@ app.use(
   })
 )
 app.use(limiter)
+
+const httpServer = createServer(app) // tạo 1 server đựa trên app của Express
+
 // client
 app.use("/users", userRoute)
 app.use("/products", productRoute)
@@ -70,9 +74,11 @@ databaseServices.connect().then(() => {
 
 initFolder()
 
-app.use(defaultErrorHandler)
+app.use(defaultErrorHandler) // middleware toàn cục để xử lý lỗi chung.
 
-app.listen(PORT, () => {
+initialSocket(httpServer)
+
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })
 

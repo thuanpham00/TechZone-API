@@ -6,7 +6,6 @@ interface ConversationType {
   receiver_id: ObjectId
   content: string
   created_at?: Date
-  updated_at?: Date
 }
 
 export class Conversation {
@@ -15,7 +14,6 @@ export class Conversation {
   receiver_id: ObjectId
   content: string
   created_at: Date
-  updated_at: Date
   constructor(conversation: ConversationType) {
     const date = new Date()
     this._id = conversation._id || new ObjectId()
@@ -23,6 +21,5 @@ export class Conversation {
     this.receiver_id = conversation.receiver_id
     this.content = conversation.content
     this.created_at = conversation.created_at || date
-    this.updated_at = conversation.updated_at || date
   }
 }
