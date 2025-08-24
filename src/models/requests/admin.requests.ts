@@ -33,5 +33,6 @@ export type CreateCustomerBodyReq = {
   dateOfBirth: string
   password: string
   confirmPassword: string
+  role: string
   avatar?: string
 }

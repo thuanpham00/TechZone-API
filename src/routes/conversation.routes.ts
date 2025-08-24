@@ -1,7 +1,5 @@
 import { Router } from "express"
-import { RoleType } from "~/constant/enum"
 import { getConversationsController, getListUserTypeController } from "~/controllers/conversation.controllers"
-import { getEmailResendListController } from "~/controllers/email.controllers"
 import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -16,7 +14,7 @@ conversationRoute.get(
   "/list-user-type",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(getListUserTypeController)
 )
 

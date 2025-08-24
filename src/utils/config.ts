@@ -46,6 +46,8 @@ export const envConfig = {
   collection_order: process.env.COLLECTION_ORDER as string,
   collection_email_log: process.env.COLLECTION_EMAIL as string,
   collection_conversation: process.env.COLLECTION_CONVERSATION as string,
+  collection_role: process.env.COLLECTION_ROLES as string,
+  collection_permissions: process.env.COLLECTION_PERMISSIONS as string,
 
   aws_region: process.env.AWS_REGION as string,
   aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY as string,

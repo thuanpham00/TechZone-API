@@ -482,17 +482,19 @@ export const updateMeValidator = validate(
             // console.log(req.body)
             const { id } = req.params as Record<string, string>
 
-            const user = await databaseServices.users.findOne({ _id: new ObjectId(id) })
-            if (!user) {
-              throw new ErrorWithStatus({
-                message: UserMessage.USER_NOT_FOUND,
-                status: httpStatus.NOTFOUND
-              })
-            }
-            // nếu số điện thoại trống thì bỏ qua
-            // nếu đã từng có số điện thoại thì bắt buộc có
-            if (user.numberPhone !== "" && value === "") {
-              throw new Error(UserMessage.NUMBER_PHONE_IS_REQUIRED)
+            if (id) {
+              const user = await databaseServices.users.findOne({ _id: new ObjectId(id) })
+              if (!user) {
+                throw new ErrorWithStatus({
+                  message: UserMessage.USER_NOT_FOUND,
+                  status: httpStatus.NOTFOUND
+                })
+              }
+              // nếu số điện thoại trống thì bỏ qua
+              // nếu đã từng có số điện thoại thì bắt buộc có
+              if (user.numberPhone !== "" && value === "") {
+                throw new Error(UserMessage.NUMBER_PHONE_IS_REQUIRED)
+              }
             }
             if (value === "") {
               return true
@@ -514,18 +516,54 @@ export const updateMeValidator = validate(
   )
 )
 
-export const checkRole = (roleCheck: RoleType[] | RoleType) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+export const checkRole = () => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const { role } = req.decode_authorization as TokenPayload
-    if (roleCheck.includes(role)) {
-      return next()
+
+    if (!role) {
+      return next(
+        new ErrorWithStatus({
+          message: UserMessage.PERMISSION_DENIED,
+          status: httpStatus.FORBIDDEN
+        })
+      )
     }
-    next(
-      new ErrorWithStatus({
-        message: UserMessage.PERMISSION_DENIED,
-        status: httpStatus.FORBIDDEN
-      })
+
+    const roles = await databaseServices.role
+      .aggregate([
+        {
+          $match: { _id: new ObjectId(role) }
+        },
+        {
+          $lookup: {
+            from: "permissions", // collection Permission
+            localField: "permissions", // role.permissions (ObjectId[])
+            foreignField: "_id", // permission._id
+            as: "permissions"
+          }
+        }
+      ])
+      .toArray()
+
+    // Kiểm tra api hiện tại có nằm trong permissions không
+    const rolePermission = roles[0]
+    const { method, route, baseUrl } = req
+    const fullPath = baseUrl + route?.path
+
+    const hasPermission = rolePermission.permissions.some(
+      (p: any) => p.api_endpoints.method === method && p.api_endpoints.path === fullPath
     )
+
+    if (!hasPermission) {
+      return next(
+        new ErrorWithStatus({
+          message: UserMessage.PERMISSION_DENIED,
+          status: httpStatus.FORBIDDEN
+        })
+      )
+    }
+
+    next()
   }
 }
 

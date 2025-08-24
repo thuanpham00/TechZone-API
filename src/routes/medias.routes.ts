@@ -1,5 +1,4 @@
 import { Router } from "express"
-import { RoleType } from "~/constant/enum"
 import {
   uploadBannerProductController,
   uploadImageListProductController,
@@ -21,7 +20,7 @@ mediasRoute.post(
   "/upload-image-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(uploadImageListProductController)
 )
 
@@ -36,7 +35,7 @@ mediasRoute.post(
   "/upload-banner-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(uploadBannerProductController)
 )
 
@@ -51,7 +50,7 @@ mediasRoute.post(
   "/upload-image-user",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN, RoleType.USER]),
+  checkRole(),
   wrapRequestHandler(uploadImageUserController)
 )
 

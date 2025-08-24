@@ -1,5 +1,4 @@
 import { Router } from "express"
-import { RoleType } from "~/constant/enum"
 import { getDomainListResendController, getEmailResendListController } from "~/controllers/email.controllers"
 import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
@@ -15,7 +14,7 @@ emailRoute.get(
   "/",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(getEmailResendListController)
 )
 
@@ -28,7 +27,7 @@ emailRoute.get(
   "/domain",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(getDomainListResendController)
 )
 

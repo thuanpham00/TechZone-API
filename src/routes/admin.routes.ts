@@ -1,5 +1,4 @@
 import { Router } from "express"
-import { RoleType } from "~/constant/enum"
 import {
   createBrandController,
   createCategoryController,
@@ -83,7 +82,7 @@ adminRouter.get(
   "/statistical-sell",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(getStatistical_Sell_Controller)
 )
 
@@ -97,7 +96,7 @@ adminRouter.get(
   "/statistical-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(getStatistical_Product_Controller)
 )
 
@@ -111,7 +110,7 @@ adminRouter.get(
   "/statistical-user",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   wrapRequestHandler(getStatistical_User_Controller)
 )
 
@@ -126,7 +125,7 @@ adminRouter.post(
   "/customers",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkEmailExistValidator,
   wrapRequestHandler(createCustomerController)
 )
@@ -142,7 +141,7 @@ adminRouter.get(
   "/customers",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   wrapRequestHandler(getCustomersController)
 )
@@ -158,7 +157,7 @@ adminRouter.get(
   "/customers/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(getCustomerDetailController)
 )
@@ -175,7 +174,7 @@ adminRouter.put(
   "/customers/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   updateMeValidator,
   filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
@@ -193,7 +192,7 @@ adminRouter.delete(
   "/customers/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(deleteCustomerController)
 )
@@ -209,7 +208,7 @@ adminRouter.post(
   "/categories",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkCategoryValidator,
   wrapRequestHandler(createCategoryController)
 )
@@ -225,7 +224,7 @@ adminRouter.get(
   "/categories",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   wrapRequestHandler(getCategoriesController)
 )
@@ -241,7 +240,7 @@ adminRouter.get(
   "/categories/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(getCategoryDetailController)
 )
@@ -255,7 +254,6 @@ adminRouter.get(
   "/name-categories",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getNameCategoriesController)
 )
 
@@ -271,7 +269,7 @@ adminRouter.put(
   "/categories/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   updateCategoryValidator,
   filterMiddleware<UpdateCategoryBodyReq>(["name"]),
@@ -290,7 +288,7 @@ adminRouter.delete(
   "/categories/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   deleteCategoryValidator,
   wrapRequestHandler(deleteCategoryController)
@@ -307,7 +305,7 @@ adminRouter.post(
   "/brands",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkBrandValidator,
   wrapRequestHandler(createBrandController)
 )
@@ -323,7 +321,7 @@ adminRouter.get(
   "/brands",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   getBrandsValidator,
   wrapRequestHandler(getBrandsController)
@@ -340,7 +338,7 @@ adminRouter.get(
   "/brands/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(getBrandDetailController)
 )
@@ -354,7 +352,6 @@ adminRouter.get(
   "/name-brands",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getNameBrandsController)
 )
 
@@ -370,7 +367,7 @@ adminRouter.put(
   "/brands/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   updateCategoryValidator,
   filterMiddleware<UpdateCategoryBodyReq>(["name"]),
@@ -389,7 +386,7 @@ adminRouter.delete(
   "/brands/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   deleteBrandValidator,
   wrapRequestHandler(deleteBrandController)
@@ -406,7 +403,7 @@ adminRouter.get(
   "/products",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   wrapRequestHandler(getProductController)
 )
@@ -422,7 +419,7 @@ adminRouter.post(
   "/products",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   parseFormData,
   // createProductValidator,
   wrapRequestHandler(createProductController)
@@ -437,7 +434,6 @@ adminRouter.get(
   "/name-products",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getNameProductsController)
 )
 
@@ -455,7 +451,7 @@ adminRouter.post(
   "/suppliers",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   createSupplierValidator,
   wrapRequestHandler(createSupplierController)
 )
@@ -471,7 +467,7 @@ adminRouter.get(
   "/suppliers",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   wrapRequestHandler(getSuppliersController)
 )
@@ -487,7 +483,7 @@ adminRouter.get(
   "/suppliers/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(getSupplierDetailController)
 )
@@ -501,7 +497,6 @@ adminRouter.get(
   "/name-suppliers",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getNameSuppliersController)
 )
 
@@ -515,7 +510,6 @@ adminRouter.get(
   "/not-linked-to-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
   getProductIdFromProductNameValidator,
   wrapRequestHandler(getNameSuppliersNotLinkedToProductController)
 )
@@ -529,7 +523,6 @@ adminRouter.get(
   "/linked-to-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
   getProductIdFromProductNameValidator,
   wrapRequestHandler(getNameSuppliersLinkedToProductController)
 )
@@ -543,7 +536,7 @@ adminRouter.get(
   "/get-pricePerUnit",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   getProductIdAndSupplierIdValidator,
   wrapRequestHandler(getPricePerUnitBasedOnProductAndSupplierController)
 )
@@ -560,7 +553,7 @@ adminRouter.put(
   "/suppliers/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   updateSupplierValidator,
   filterMiddleware<UpdateSupplierBodyReq>(["address", "contactName", "email", "name", "phone", "description"]),
@@ -578,7 +571,7 @@ adminRouter.delete(
   "/suppliers/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   deleteSupplierValidator,
   wrapRequestHandler(deleteSupplierController)
@@ -596,7 +589,7 @@ adminRouter.post(
   "/supplies",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   createSupplyValidator,
   wrapRequestHandler(createSupplyController)
 )
@@ -612,7 +605,7 @@ adminRouter.get(
   "/supplies",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   wrapRequestHandler(getSuppliesController)
 )
@@ -628,7 +621,6 @@ adminRouter.get(
   "/supplies/price-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
   wrapRequestHandler(getPriceProductController)
 )
 
@@ -643,7 +635,7 @@ adminRouter.get(
   "/supplies/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(getSupplyDetailController)
 )
@@ -660,7 +652,7 @@ adminRouter.put(
   "/supplies/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   updateSupplyValidator,
   filterMiddleware<UpdateSupplyBodyReq>([
@@ -685,7 +677,7 @@ adminRouter.delete(
   "/supplies/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(deleteSupplyController)
 )
@@ -701,7 +693,7 @@ adminRouter.post(
   "/receipts",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   createReceiptValidator,
   wrapRequestHandler(createReceiptController)
 )
@@ -717,7 +709,7 @@ adminRouter.get(
   "/receipts",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   wrapRequestHandler(getReceiptsController)
 )
@@ -733,7 +725,7 @@ adminRouter.get(
   "/orders",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   queryValidator,
   wrapRequestHandler(getOrdersController)
 )
@@ -749,7 +741,7 @@ adminRouter.get(
   "/orders/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(getOrderDetailController)
 )
@@ -765,7 +757,7 @@ adminRouter.put(
   "/orders/:id",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole([RoleType.ADMIN]),
+  checkRole(),
   checkIdValidator,
   wrapRequestHandler(updateStatusOrderController)
 )

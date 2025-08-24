@@ -17,7 +17,7 @@ export enum MediaType {
 
 export enum RoleType {
   ADMIN = "Admin",
-  USER = "User"
+  CUSTOMER = "Customer"
 }
 
 export enum ProductStatus {

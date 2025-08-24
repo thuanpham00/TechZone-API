@@ -9,15 +9,15 @@ import { hashPassword } from "~/utils/scripto"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { UserMessage } from "~/constant/message"
 import axios from "axios"
-import { ErrorWithStatus } from "~/models/errors"
-import httpStatus from "~/constant/httpStatus"
 import { sendForgotPasswordToken, sendVerifyRegisterEmail } from "~/utils/ses"
 import { envConfig } from "~/utils/config"
 import { EmailLog } from "~/models/schema/email.schema"
+import { ErrorWithStatus } from "~/models/errors"
+import httpStatus from "~/constant/httpStatus"
 config()
 
 class UserServices {
-  private signAccessToken({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
+  private signAccessToken({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: string }) {
     return signToken({
       payload: {
         user_id,
@@ -40,7 +40,7 @@ class UserServices {
   }: {
     user_id: string
     verify: UserVerifyStatus
-    role: RoleType
+    role: string
     exp?: number
   }) {
     if (exp) {
@@ -69,7 +69,7 @@ class UserServices {
     })
   }
 
-  signEmailVerifyToken({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
+  signEmailVerifyToken({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: string }) {
     return signToken({
       payload: {
         user_id,
@@ -91,7 +91,7 @@ class UserServices {
   }: {
     user_id: string
     verify: UserVerifyStatus
-    role: RoleType
+    role: string
   }) {
     return signToken({
       payload: {
@@ -114,7 +114,7 @@ class UserServices {
   }: {
     user_id: string
     verify: UserVerifyStatus
-    role: RoleType
+    role: string
   }) {
     return Promise.all([
       this.signAccessToken({ user_id, verify, role }),
@@ -132,11 +132,15 @@ class UserServices {
   }
 
   async register(payload: RegisterReqBody) {
+    // ví dụ payload.role = "USER" thì tìm trong collection roles có document nào có name = "USER" không rồi lấy ra _id
+
+    const roleId = (await databaseServices.role.findOne({ name: payload.role }).then((res) => res?._id)) as ObjectId
+
     const user_id = new ObjectId()
     const emailVerifyToken = await this.signEmailVerifyToken({
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Unverified, // mới tạo tài khoản thì chưa xác thực
-      role: payload.role ? payload.role : RoleType.USER
+      role: roleId.toString()
     })
     const body = {
       ...payload,
@@ -144,25 +148,15 @@ class UserServices {
       password: hashPassword(payload.password),
       email_verify_token: emailVerifyToken,
       numberPhone: payload.phone,
-      role: payload.role
+      role: roleId
     }
     const [, token] = await Promise.all([
-      databaseServices.users.insertOne(
-        payload.role
-          ? new User(body)
-          : new User({
-              ...payload,
-              _id: user_id,
-              password: hashPassword(payload.password),
-              email_verify_token: emailVerifyToken,
-              numberPhone: payload.phone
-            })
-      ),
+      databaseServices.users.insertOne(new User(body)),
       // tạo cặp AccessToken và RefreshToken mới
       this.signAccessTokenAndRefreshToken({
         user_id: user_id.toString(),
         verify: UserVerifyStatus.Unverified, // mới tạo tài khoản thì chưa xác thực
-        role: payload.role ? payload.role : RoleType.USER
+        role: roleId.toString()
       })
     ])
     const [accessToken, refreshToken] = token
@@ -191,19 +185,24 @@ class UserServices {
       })
     )
 
+    const userContainsRole = {
+      ...user,
+      role: payload.role
+    }
+
     return {
       accessToken,
       refreshToken,
-      user
+      user: userContainsRole
     }
   }
 
-  async login({ user_id, verify, role }: { user_id: string; verify: UserVerifyStatus; role: RoleType }) {
+  async login({ user_id, verify, roleId }: { user_id: string; verify: UserVerifyStatus; roleId: string }) {
     // tạo cặp AccessToken và RefreshToken mới
     const [accessToken, refreshToken] = await this.signAccessTokenAndRefreshToken({
       user_id: user_id,
       verify: verify,
-      role: role
+      role: roleId
     })
     const { iat, exp } = await this.decodeRefreshToken(refreshToken)
     const [user] = await Promise.all([
@@ -279,13 +278,14 @@ class UserServices {
     const findEmail = await databaseServices.users.findOne({ email: userInfo.email })
     // đã tồn tại email trong db thì đăng nhập vào
     // còn chưa tồn tại thì tạo mới
+    const roleId = findEmail?.role.toString()
     if (findEmail) {
       const user_id = findEmail._id
       const verify_user = findEmail.verify
       const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken({
         user_id: user_id.toString(),
         verify: verify_user,
-        role: RoleType.USER
+        role: roleId as string
       })
 
       const { iat, exp } = await this.decodeRefreshToken(refresh_token)
@@ -308,7 +308,8 @@ class UserServices {
         name: userInfo.name,
         password: random,
         confirm_password: random,
-        phone: ""
+        phone: "",
+        role: roleId as string
       })
       // vẫn tạo mới email-verify-token - cần thêm bước verify-email
       return {
@@ -336,17 +337,17 @@ class UserServices {
     user_id,
     verify,
     exp,
-    role
+    roleId
   }: {
     token: string
     user_id: string
     verify: UserVerifyStatus
     exp: number
-    role: RoleType
+    roleId: string
   }) {
     const [accessTokenNew, refreshTokenNew] = await Promise.all([
-      this.signAccessToken({ user_id: user_id, verify: verify, role: role }),
-      this.signRefreshToken({ user_id: user_id, verify: verify, role: role, exp: exp }),
+      this.signAccessToken({ user_id: user_id, verify: verify, role: roleId }),
+      this.signRefreshToken({ user_id: user_id, verify: verify, role: roleId, exp: exp }),
       databaseServices.refreshToken.deleteOne({ token: token })
     ])
 
@@ -366,13 +367,13 @@ class UserServices {
     }
   }
 
-  async verifyEmail({ user_id, role }: { user_id: string; role: RoleType }) {
+  async verifyEmail({ user_id, roleId }: { user_id: string; roleId: string }) {
     const [token] = await Promise.all([
       // tạo cặp AccessToken và RefreshToken mới
       this.signAccessTokenAndRefreshToken({
         user_id: user_id,
         verify: UserVerifyStatus.Verified,
-        role: role
+        role: roleId
       }),
       databaseServices.users.updateOne(
         {
@@ -408,11 +409,11 @@ class UserServices {
     }
   }
 
-  async resendEmailVerify({ user_id, role }: { user_id: string; role: RoleType }) {
+  async resendEmailVerify({ user_id, roleId }: { user_id: string; roleId: string }) {
     const emailVerifyToken = await this.signEmailVerifyToken({
       user_id: user_id,
       verify: UserVerifyStatus.Unverified,
-      role: role
+      role: roleId
     })
     await databaseServices.users.updateOne(
       {
@@ -452,18 +453,18 @@ class UserServices {
   async forgotPassword({
     user_id,
     verify,
-    role,
+    roleId,
     email
   }: {
     user_id: string
     verify: UserVerifyStatus
-    role: RoleType
+    roleId: string
     email: string
   }) {
     const forgotPasswordToken = await this.signForgotPasswordToken({
       user_id: user_id,
       verify: verify,
-      role
+      role: roleId
     })
     await databaseServices.users.updateOne(
       { _id: new ObjectId(user_id) },

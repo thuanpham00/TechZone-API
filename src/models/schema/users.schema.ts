@@ -7,7 +7,7 @@ type UserType = {
 
   email: string
   password: string
-  role?: RoleType
+  role: ObjectId
 
   numberPhone?: string
   date_of_birth?: Date
@@ -24,7 +24,7 @@ export class User {
   name: string
   email: string
   password: string
-  role: RoleType
+  role: ObjectId
   numberPhone: string
   date_of_birth: Date
   avatar: string
@@ -40,7 +40,7 @@ export class User {
     this.name = user.name || ""
     this.email = user.email
     this.password = user.password
-    this.role = user.role || RoleType.USER // mặc định là user
+    this.role = user.role
     this.numberPhone = user.numberPhone || ""
     this.date_of_birth = user.date_of_birth || new Date(1990, 0, 1)
     this.avatar = user.avatar || ""

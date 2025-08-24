@@ -7,7 +7,7 @@ export type RegisterReqBody = {
   confirm_password: string
   name: string
   phone: string
-  role?: RoleType
+  role: string
 }
 
 export type updateMeReqBody = {
@@ -26,7 +26,7 @@ export interface TokenPayload extends JwtPayload {
   user_id: string
   tokenType: TokenType
   verify: UserVerifyStatus
-  role: RoleType
+  role: string
   exp: number
   iat: number
 }

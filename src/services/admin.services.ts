@@ -29,7 +29,7 @@ import { sendVerifyRegisterEmail } from "~/utils/ses"
 
 class AdminServices {
   async getStatisticalSell(month: number, year: number) {
-    let filterMonthYear : any = {}
+    let filterMonthYear: any = {}
     if (month && year) {
       filterMonthYear = {
         $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
@@ -435,23 +435,13 @@ class AdminServices {
   }
 
   async createCustomer(payload: CreateCustomerBodyReq) {
+    const roleId = (await databaseServices.role.findOne({ name: payload.role }).then((res) => res?._id)) as ObjectId
+
     const emailVerifyToken = await userServices.signEmailVerifyToken({
       user_id: payload.id,
       verify: UserVerifyStatus.Unverified,
-      role: RoleType.USER
+      role: roleId.toString()
     })
-
-    const body = {
-      ...payload,
-      _id: new ObjectId(payload.id),
-      password: hashPassword(payload.password),
-      email_verify_token: emailVerifyToken,
-      role: RoleType.USER
-    }
-
-    if (payload.avatar) {
-      body.avatar = payload.avatar
-    }
 
     const [, token] = await Promise.all([
       databaseServices.users.insertOne(
@@ -461,14 +451,15 @@ class AdminServices {
           password: hashPassword(payload.password),
           email_verify_token: emailVerifyToken,
           numberPhone: payload.phone,
-          date_of_birth: new Date(payload.dateOfBirth)
+          date_of_birth: new Date(payload.dateOfBirth),
+          role: roleId
         })
       ),
       // tạo cặp AccessToken và RefreshToken mới
       userServices.signAccessTokenAndRefreshToken({
         user_id: payload.id,
         verify: UserVerifyStatus.Unverified, // mới tạo tài khoản thì chưa xác thực
-        role: RoleType.USER
+        role: roleId.toString()
       })
     ])
 
@@ -507,7 +498,9 @@ class AdminServices {
 
     sortBy?: string
   ) {
-    const $match: any = { role: "User" }
+    const idRoleCustomer = await databaseServices.role.findOne({ name: RoleType.CUSTOMER }).then((res) => res?._id)
+
+    const $match: any = { role: idRoleCustomer }
     if (email) {
       $match["email"] = { $regex: email, $options: "i" }
     }

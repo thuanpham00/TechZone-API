@@ -11,6 +11,7 @@ import { Cart, Favourite } from "~/models/schema/favourite_cart.order.schema"
 import { Order } from "~/models/schema/favourite_cart.order.schema"
 import { Conversation } from "~/models/schema/conversation.schema"
 import { EmailLog } from "~/models/schema/email.schema"
+import { Permission, Role } from "~/models/schema/role_permission.schema"
 config()
 
 const URI = `mongodb+srv://${envConfig.user_name}:${envConfig.password}@cluster0.1nx8m.mongodb.net/${envConfig.name_database}?retryWrites=true&w=majority`
@@ -126,6 +127,14 @@ class DatabaseServices {
 
   get conversation(): Collection<Conversation> {
     return this.db.collection(envConfig.collection_conversation)
+  }
+
+  get role(): Collection<Role> {
+    return this.db.collection(envConfig.collection_role)
+  }
+
+  get permissions(): Collection<Permission> {
+    return this.db.collection(envConfig.collection_permissions)
   }
 }
 

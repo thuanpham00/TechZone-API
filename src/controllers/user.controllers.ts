@@ -52,8 +52,11 @@ export const loginController = async (
   const { user } = req as Request
   const user_id = (user._id as ObjectId)?.toString()
   const verify = user.verify
-  const role = user.role
-  const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify, role })
+  const role = user.role.toString()
+
+  const findRole = await databaseServices.role.findOne({ _id: new ObjectId(role) })
+  const roleName = findRole?.name as string
+  const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify, roleId: role })
 
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true, // chặn client javascript không thể truy cập
@@ -65,11 +68,16 @@ export const loginController = async (
 
   // client gọi api xuống server và server tạo cookie trả về và lưu vào trình duyệt tự động (client phải nằm trong ds cho phép của server)
 
+  const userContainsRole = {
+    ...userInfo,
+    role: roleName
+  }
+
   res.json({
     message: UserMessage.LOGIN_IS_SUCCESS,
     result: {
       accessToken,
-      userInfo
+      userInfo: userContainsRole
     }
   })
 }
@@ -123,7 +131,7 @@ export const refreshTokenController = async (
     token: refresh_token,
     user_id: user_id,
     verify: verify,
-    role: role,
+    roleId: role,
     exp: exp
   })
 
@@ -150,6 +158,7 @@ export const verifyEmailController = async (
 ) => {
   const { user_id, role } = req.decode_emailVerifyToken as TokenPayload
   const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+
   if (!user) {
     throw new ErrorWithStatus({
       message: UserMessage.USER_NOT_FOUND,
@@ -162,7 +171,7 @@ export const verifyEmailController = async (
       status: httpStatus.UNAUTHORIZED
     })
   }
-  const { accessToken, refreshToken } = await userServices.verifyEmail({ user_id: user_id, role: role })
+  const { accessToken, refreshToken } = await userServices.verifyEmail({ user_id: user_id, roleId: role })
 
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
@@ -201,7 +210,7 @@ export const resendEmailVerifyController = async (
       status: httpStatus.UNAUTHORIZED
     })
   }
-  const result = await userServices.resendEmailVerify({ user_id: user_id, role: role })
+  const result = await userServices.resendEmailVerify({ user_id: user_id, roleId: role })
   res.json({
     message: result.message
   })
@@ -214,12 +223,12 @@ export const forgotPasswordController = async (
 ) => {
   const user_id = req.user._id?.toString()
   const verify = req.user.verify
-  const role = req.user.role
+  const role = req.user.role.toString()
   const { email } = req.body
   const result = await userServices.forgotPassword({
     user_id: user_id as string,
     verify: verify,
-    role: role,
+    roleId: role,
     email: email
   })
   res.json({
