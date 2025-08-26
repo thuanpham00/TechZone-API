@@ -26,10 +26,13 @@ import {
   getNameSuppliersNotLinkedToProductController,
   getOrderDetailController,
   getOrdersController,
+  getPermissionsBasedOnIdRoleController,
+  getPermissionsController,
   getPricePerUnitBasedOnProductAndSupplierController,
   getPriceProductController,
   getProductController,
   getReceiptsController,
+  getRolesController,
   getStatistical_Product_Controller,
   getStatistical_Sell_Controller,
   getStatistical_User_Controller,
@@ -40,6 +43,7 @@ import {
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
+  updatePermissionsBasedOnIdRoleController,
   updateStatusOrderController,
   updateSupplierDetailController,
   updateSupplyDetailController
@@ -536,7 +540,6 @@ adminRouter.get(
   "/get-pricePerUnit",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole(),
   getProductIdAndSupplierIdValidator,
   wrapRequestHandler(getPricePerUnitBasedOnProductAndSupplierController)
 )
@@ -761,5 +764,62 @@ adminRouter.put(
   checkIdValidator,
   wrapRequestHandler(updateStatusOrderController)
 )
+
+/**
+ * Description: get roles
+ * Path: /roles
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/roles",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getRolesController)
+)
+
+/**
+ * Description: get permissions
+ * Path: /permissions
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/permissions",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getPermissionsController)
+)
+
+/**
+ * Description: get permissions base on role id
+ * Path: /permissions/:idRole
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/permissions/:idRole",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getPermissionsBasedOnIdRoleController)
+)
+
+/**
+ * Description: update permissions base on role id
+ * Path: /permissions/:idRole
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.put(
+  "/permissions/:idRole",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(updatePermissionsBasedOnIdRoleController)
+)
+
 
 export default adminRouter

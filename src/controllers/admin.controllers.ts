@@ -896,3 +896,54 @@ export const updateStatusOrderController = async (req: Request, res: Response) =
     message: message
   })
 }
+
+export const getRolesController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { result } = await adminServices.getRoles()
+
+  res.json({
+    message: AdminMessage.GET_ROLES,
+    result: {
+      result
+    }
+  })
+}
+
+export const getPermissionsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { result } = await adminServices.getPermissions()
+
+  res.json({
+    message: AdminMessage.GET_ROLES,
+    result: {
+      result
+    }
+  })
+}
+
+export const getPermissionsBasedOnIdRoleController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response
+) => {
+  const { idRole } = req.params
+  const { result } = await adminServices.getPermissionsBasedOnIdRole(idRole)
+
+  res.json({
+    message: AdminMessage.GET_ROLES,
+    result: {
+      result
+    }
+  })
+}
+
+export const updatePermissionsBasedOnIdRoleController = async (
+  req: Request<ParamsDictionary, any, any>,
+  res: Response
+) => {
+  const { idRole } = req.params
+  const { listPermissions, type } = req.body
+  const { result } = await adminServices.updatePermissionsBasedOnIdRole(idRole, listPermissions, type)
+
+  res.json({
+    message: AdminMessage.UPDATE_PERMISSIONS_BASED_ON_ID_ROLE,
+    result
+  })
+}

@@ -27,6 +27,7 @@ conversationRoute.get(
   "/receiver/:receiverId",
   accessTokenValidator,
   verifyUserValidator,
+  checkRole(),
   wrapRequestHandler(getConversationsController)
 )
 

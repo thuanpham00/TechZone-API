@@ -167,7 +167,11 @@ export const AdminMessage = {
 
   UPDATE_STATUS_ORDER: "Cập nhật trạng thái đơn hàng thành công!",
 
-  GET_PRICE_SELLING: "Lấy giá sản phẩm thành công!"
+  GET_PRICE_SELLING: "Lấy giá sản phẩm thành công!",
+
+  GET_ROLES: "Lấy danh sách vai trò thành công!",
+
+  UPDATE_PERMISSIONS_BASED_ON_ID_ROLE: "Cập nhật quyền dựa trên id vai trò thành công!"
 }
 
 export const SupplierMessage = {

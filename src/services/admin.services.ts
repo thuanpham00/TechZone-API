@@ -2234,6 +2234,82 @@ class AdminServices {
       message: AdminMessage.UPDATE_STATUS_ORDER
     }
   } // ok
+
+  async getRoles() {
+    const [result] = await Promise.all([
+      databaseServices.role
+        .aggregate([
+          {
+            $sort: { created_at: -1 }
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result
+    }
+  }
+  async getPermissions() {
+    const [result] = await Promise.all([databaseServices.permissions.aggregate([]).toArray()])
+
+    return {
+      result
+    }
+  }
+
+  async getPermissionsBasedOnIdRole(idRole: string) {
+    const [result] = await Promise.all([
+      databaseServices.role
+        .aggregate([
+          {
+            $match: { _id: new ObjectId(idRole) }
+          },
+          {
+            $lookup: {
+              from: "permissions",
+              localField: "permissions",
+              foreignField: "_id",
+              as: "permissions"
+            }
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result: result[0]
+    }
+  }
+
+  async updatePermissionsBasedOnIdRole(idRole: string, permissions: string[], type: string) {
+    const typeUpdate =
+      type === "remove"
+        ? {
+            $pull: {
+              permissions: {
+                $in: permissions.map((item) => new ObjectId(item))
+              }
+            },
+            $currentDate: { updated_at: true }
+          }
+        : {
+            $addToSet: {
+              permissions: {
+                $each: permissions.map((item) => new ObjectId(item))
+              }
+            },
+            $currentDate: { updated_at: true }
+          }
+
+    const updatedRole = await databaseServices.role.findOneAndUpdate({ _id: new ObjectId(idRole) }, typeUpdate as any, {
+      returnDocument: "after"
+    })
+
+    return {
+      result: updatedRole
+    }
+  }
 }
 
 const adminServices = new AdminServices()

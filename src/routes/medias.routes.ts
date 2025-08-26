@@ -20,7 +20,6 @@ mediasRoute.post(
   "/upload-image-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole(),
   wrapRequestHandler(uploadImageListProductController)
 )
 
@@ -35,7 +34,6 @@ mediasRoute.post(
   "/upload-banner-product",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole(),
   wrapRequestHandler(uploadBannerProductController)
 )
 
@@ -50,7 +48,6 @@ mediasRoute.post(
   "/upload-image-user",
   accessTokenValidator,
   verifyUserValidator,
-  checkRole(),
   wrapRequestHandler(uploadImageUserController)
 )
 
