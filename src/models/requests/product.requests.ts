@@ -90,3 +90,8 @@ export type specificationType = {
 export type CreateFavouriteBodyReq = {
   products: ProductInFavourite
 }
+
+export type CreateRoleBodyReq = {
+  name: string
+  description: string
+}

@@ -9,6 +9,7 @@ import formidable from "formidable"
 import {
   CreateProductBodyReq,
   CreateReceiptBodyReq,
+  CreateRoleBodyReq,
   CreateSupplierBodyReq,
   CreateSupplyBodyReq
 } from "~/models/requests/product.requests"
@@ -908,11 +909,26 @@ export const getRolesController = async (req: Request<ParamsDictionary, any, any
   })
 }
 
+export const createRoleController = async (req: Request<ParamsDictionary, any, CreateRoleBodyReq>, res: Response) => {
+  const { message } = await adminServices.createRole(req.body)
+  res.json({
+    message
+  })
+}
+
+export const updateRoleController = async (req: Request<ParamsDictionary, any, CreateRoleBodyReq>, res: Response) => {
+  const { idRole } = req.params
+  const { message } = await adminServices.updateRole(idRole, req.body)
+  res.json({
+    message
+  })
+}
+
 export const getPermissionsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { result } = await adminServices.getPermissions()
 
   res.json({
-    message: AdminMessage.GET_ROLES,
+    message: AdminMessage.GET_PERMISSIONS,
     result: {
       result
     }
@@ -927,7 +943,7 @@ export const getPermissionsBasedOnIdRoleController = async (
   const { result } = await adminServices.getPermissionsBasedOnIdRole(idRole)
 
   res.json({
-    message: AdminMessage.GET_ROLES,
+    message: AdminMessage.GET_PERMISSIONS_BASED_ON_ROLE,
     result: {
       result
     }

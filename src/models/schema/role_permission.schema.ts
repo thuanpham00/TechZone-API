@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb"
 interface RoleType {
   _id?: ObjectId
   name: string // VD: "Admin", "Customer"
-  description?: string
+  description: string
   permissions?: ObjectId[] // tham chiếu sang Permission[]
   created_at?: Date
   updated_at?: Date
@@ -20,7 +20,7 @@ export class Role {
     const date = new Date()
     this._id = role._id || new ObjectId()
     this.name = role.name
-    this.description = role.description || ""
+    this.description = role.description
     this.permissions = role.permissions || []
     this.created_at = role.created_at || date
     this.updated_at = role.updated_at || date

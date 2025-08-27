@@ -612,3 +612,12 @@ export const createReceiptValidator = validate(
     ["body"]
   )
 )
+
+export const checkRoleExitsValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { name } = req.body
+  const checkRole = await databaseServices.role.findOne({ name: name })
+  if (checkRole) {
+    return next(new ErrorWithStatus({ message: AdminMessage.ROLE_IS_INVALID, status: httpStatus.BAD_REQUESTED }))
+  }
+  next()
+}

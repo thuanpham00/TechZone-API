@@ -12,6 +12,7 @@ import { AdminMessage, ReceiptMessage, SupplyMessage } from "~/constant/message"
 import {
   CreateProductBodyReq,
   CreateReceiptBodyReq,
+  CreateRoleBodyReq,
   CreateSupplierBodyReq,
   CreateSupplyBodyReq,
   specificationType
@@ -26,6 +27,7 @@ import { hashPassword } from "~/utils/scripto"
 import { User } from "~/models/schema/users.schema"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { sendVerifyRegisterEmail } from "~/utils/ses"
+import { Role } from "~/models/schema/role_permission.schema"
 
 class AdminServices {
   async getStatisticalSell(month: number, year: number) {
@@ -2250,6 +2252,25 @@ class AdminServices {
       result
     }
   }
+
+  async createRole(body: CreateRoleBodyReq) {
+    await databaseServices.role.insertOne(new Role({ name: body.name, description: body.description }))
+    return {
+      message: AdminMessage.CREATE_ROLE_DETAIL
+    }
+  }
+
+  async updateRole(idRole: string, body: CreateRoleBodyReq) {
+    
+    await databaseServices.role.updateOne(
+      { _id: new ObjectId(idRole) },
+      { $set: { ...body }, $currentDate: { updated_at: true } }
+    )
+    return {
+      message: AdminMessage.UPDATE_ROLE_DETAIL
+    }
+  }
+
   async getPermissions() {
     const [result] = await Promise.all([databaseServices.permissions.aggregate([]).toArray()])
 

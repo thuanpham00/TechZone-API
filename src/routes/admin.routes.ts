@@ -5,6 +5,7 @@ import {
   createCustomerController,
   createProductController,
   createReceiptController,
+  createRoleController,
   createSupplierController,
   createSupplyController,
   deleteBrandController,
@@ -44,6 +45,7 @@ import {
   updateCategoryDetailController,
   updateCustomerDetailController,
   updatePermissionsBasedOnIdRoleController,
+  updateRoleController,
   updateStatusOrderController,
   updateSupplierDetailController,
   updateSupplyDetailController
@@ -53,6 +55,7 @@ import {
   checkCategoryValidator,
   checkEmailExistValidator,
   checkIdValidator,
+  checkRoleExitsValidator,
   createProductValidator,
   createReceiptValidator,
   createSupplierValidator,
@@ -352,12 +355,7 @@ adminRouter.get(
  * Path: /name-brands
  * Method: GET
  */
-adminRouter.get(
-  "/name-brands",
-  accessTokenValidator,
-  verifyUserValidator,
-  wrapRequestHandler(getNameBrandsController)
-)
+adminRouter.get("/name-brands", accessTokenValidator, verifyUserValidator, wrapRequestHandler(getNameBrandsController))
 
 /**
  * Description: update brand detail
@@ -780,6 +778,35 @@ adminRouter.get(
 )
 
 /**
+ * Description: create role
+ * Path: /roles
+ * Method: POST
+ * Headers: {Authorization: AT}
+ */
+adminRouter.post(
+  "/roles",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkRoleExitsValidator,
+  wrapRequestHandler(createRoleController)
+)
+
+/**
+ * Description: update role
+ * Path: /roles
+ * Method: PUT
+ * Headers: {Authorization: AT}
+ */
+adminRouter.put(
+  "/roles/:idRole",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(updateRoleController)
+)
+
+/**
  * Description: get permissions
  * Path: /permissions
  * Method: GET
@@ -820,6 +847,5 @@ adminRouter.put(
   checkRole(),
   wrapRequestHandler(updatePermissionsBasedOnIdRoleController)
 )
-
 
 export default adminRouter
