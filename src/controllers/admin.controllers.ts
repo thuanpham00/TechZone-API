@@ -924,6 +924,14 @@ export const updateRoleController = async (req: Request<ParamsDictionary, any, C
   })
 }
 
+export const deleteRoleController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { idRole } = req.params
+  const { message } = await adminServices.deleteRole(idRole)
+  res.json({
+    message
+  })
+}
+
 export const getPermissionsController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { result } = await adminServices.getPermissions()
 
@@ -961,5 +969,51 @@ export const updatePermissionsBasedOnIdRoleController = async (
   res.json({
     message: AdminMessage.UPDATE_PERMISSIONS_BASED_ON_ID_ROLE,
     result
+  })
+}
+
+export const getStaffsController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      // email: string
+      // name: string
+      // phone: string
+      // verify: string
+      // created_at_start: string
+      // created_at_end: string
+      // updated_at_start: string
+      // updated_at_end: string
+
+      sortBy: string
+    }
+  >,
+  res: Response
+) => {
+  const {
+    limit,
+    page,
+
+    sortBy
+  } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getStaffs(
+    Number(limit),
+    Number(page),
+
+    sortBy
+  )
+  res.json({
+    message: AdminMessage.GET_CUSTOMERS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
   })
 }

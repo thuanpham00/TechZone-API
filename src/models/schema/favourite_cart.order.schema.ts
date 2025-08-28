@@ -78,6 +78,8 @@ interface OrderType {
     address: string
   }
   products: ProductInOrder[]
+  subTotal: number
+  shipping_fee: number
   totalAmount: number
   status?: OrderStatus
   status_history?: {
@@ -98,6 +100,8 @@ export class Order {
     address: string
   }
   products: ProductInOrder[]
+  subTotal: number
+  shipping_fee: number
   totalAmount: number
   status: OrderStatus
   status_history: {
@@ -117,6 +121,8 @@ export class Order {
       address: order.customer_info.address
     }
     this.products = order.products
+    this.shipping_fee = order.shipping_fee
+    this.subTotal = order.subTotal
     this.totalAmount = order.totalAmount
     this.status = order.status || OrderStatus.pending
     this.status_history = order.status_history || []

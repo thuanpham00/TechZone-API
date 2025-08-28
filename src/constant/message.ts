@@ -176,7 +176,9 @@ export const AdminMessage = {
   UPDATE_PERMISSIONS_BASED_ON_ID_ROLE: "Cập nhật quyền của vai trò thành công!",
   ROLE_IS_INVALID: "Vai trò đã tồn tại!",
   CREATE_ROLE_DETAIL: "Thêm vai trò thành công!",
-  UPDATE_ROLE_DETAIL: "Cập nhật vai trò thành công!"
+  UPDATE_ROLE_DETAIL: "Cập nhật vai trò thành công!",
+
+  CANNOT_DELETE_ROLE: "Vai trò đang được sử dụng không thể xóa!"
 }
 
 export const SupplierMessage = {

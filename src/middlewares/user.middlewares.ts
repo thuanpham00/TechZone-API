@@ -14,7 +14,6 @@ import { config } from "dotenv"
 import { JsonWebTokenError } from "jsonwebtoken"
 import { ObjectId } from "mongodb"
 import { TokenPayload } from "~/models/requests/user.requests"
-import { ParamsDictionary } from "express-serve-static-core"
 import { envConfig } from "~/utils/config"
 
 config()

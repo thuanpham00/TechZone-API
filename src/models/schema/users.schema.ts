@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb"
-import { RoleType, UserVerifyStatus } from "~/constant/enum"
+import { UserVerifyStatus } from "~/constant/enum"
 
 type UserType = {
   _id?: ObjectId
@@ -15,6 +15,15 @@ type UserType = {
   email_verify_token?: string
   forgot_password_token?: string
   verify?: UserVerifyStatus
+
+  employeeInfo?: {
+    department: string // phòng ban
+    hire_date: Date // ngày vào làm
+    contract_type: string // loại hợp đồng
+    salary: number // lương
+    status: "active" | "inactive" | "suspended"
+  }
+
   created_at?: Date
   updated_at?: Date
 }
@@ -32,6 +41,13 @@ export class User {
   forgot_password_token: string
   verify: UserVerifyStatus
 
+  employeeInfo?: {
+    hire_date: Date // ngày vào làm
+    contract_type: string // loại hợp đồng
+    salary: number // lương
+    status: "active" | "inactive" | "suspended"
+  }
+
   created_at: Date
   updated_at: Date
   constructor(user: UserType) {
@@ -47,6 +63,9 @@ export class User {
     this.email_verify_token = user.email_verify_token || ""
     this.forgot_password_token = user.forgot_password_token || ""
     this.verify = user.verify || UserVerifyStatus.Unverified
+
+    this.employeeInfo = user.employeeInfo
+
     this.created_at = user.created_at || date
     this.updated_at = user.updated_at || date
   }

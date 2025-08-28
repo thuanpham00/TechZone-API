@@ -4,6 +4,7 @@ interface RoleType {
   _id?: ObjectId
   name: string // VD: "Admin", "Customer"
   description: string
+  key: string
   permissions?: ObjectId[] // tham chiếu sang Permission[]
   created_at?: Date
   updated_at?: Date
@@ -13,6 +14,7 @@ export class Role {
   _id?: ObjectId
   name: string
   description: string
+  key: string
   permissions: ObjectId[]
   created_at: Date
   updated_at: Date
@@ -21,6 +23,7 @@ export class Role {
     this._id = role._id || new ObjectId()
     this.name = role.name
     this.description = role.description
+    this.key = role.key
     this.permissions = role.permissions || []
     this.created_at = role.created_at || date
     this.updated_at = role.updated_at || date

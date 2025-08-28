@@ -66,6 +66,8 @@ export type CreateOrderBodyReq = {
     image: string
     discount?: number
   }[]
+  subTotal: number
+  shipping_fee: number
   totalAmount: number
   status?: OrderStatus
   note?: string

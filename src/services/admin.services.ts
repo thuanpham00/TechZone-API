@@ -500,7 +500,7 @@ class AdminServices {
 
     sortBy?: string
   ) {
-    const idRoleCustomer = await databaseServices.role.findOne({ name: RoleType.CUSTOMER }).then((res) => res?._id)
+    const idRoleCustomer = await databaseServices.role.findOne({ key: "CUSTOMER" }).then((res) => res?._id)
 
     const $match: any = { role: idRoleCustomer }
     if (email) {
@@ -2254,18 +2254,31 @@ class AdminServices {
   }
 
   async createRole(body: CreateRoleBodyReq) {
-    await databaseServices.role.insertOne(new Role({ name: body.name, description: body.description }))
+    await databaseServices.role.insertOne(
+      new Role({
+        name: body.name,
+        description: body.description,
+        key: body.name.toUpperCase().replace(/\s+/g, "_"),
+        permissions: []
+      })
+    )
     return {
       message: AdminMessage.CREATE_ROLE_DETAIL
     }
   }
 
   async updateRole(idRole: string, body: CreateRoleBodyReq) {
-    
     await databaseServices.role.updateOne(
       { _id: new ObjectId(idRole) },
       { $set: { ...body }, $currentDate: { updated_at: true } }
     )
+    return {
+      message: AdminMessage.UPDATE_ROLE_DETAIL
+    }
+  }
+
+  async deleteRole(idRole: string) {
+    await databaseServices.role.deleteOne({ _id: new ObjectId(idRole) })
     return {
       message: AdminMessage.UPDATE_ROLE_DETAIL
     }
@@ -2329,6 +2342,74 @@ class AdminServices {
 
     return {
       result: updatedRole
+    }
+  }
+
+  async getStaffs(limit?: number, page?: number, sortBy?: string) {
+    const allRole = await databaseServices.role.find({}).toArray()
+
+    const groupRoleExcludeAdminAndCustomer = allRole
+      .filter((role) => role.key !== "ADMIN" && role.key !== "CUSTOMER")
+      .map((item) => item._id)
+    const $match: any = { role: { $in: groupRoleExcludeAdminAndCustomer } }
+
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.users
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $project: {
+              email_verify_token: 0,
+              forgot_password_token: 0,
+              password: 0
+            }
+          },
+          {
+            $sort: { created_at: sortBy === "new" ? -1 : 1 }
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          }
+        ])
+        .toArray(),
+      databaseServices.users
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+      databaseServices.users
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray()
+    ])
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
     }
   }
 }

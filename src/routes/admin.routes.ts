@@ -11,6 +11,7 @@ import {
   deleteBrandController,
   deleteCategoryController,
   deleteCustomerController,
+  deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
   getBrandDetailController,
@@ -34,6 +35,7 @@ import {
   getProductController,
   getReceiptsController,
   getRolesController,
+  getStaffsController,
   getStatistical_Product_Controller,
   getStatistical_Sell_Controller,
   getStatistical_User_Controller,
@@ -62,6 +64,7 @@ import {
   createSupplyValidator,
   deleteBrandValidator,
   deleteCategoryValidator,
+  deleteRoleValidator,
   deleteSupplierValidator,
   getBrandsValidator,
   getProductIdAndSupplierIdValidator,
@@ -807,6 +810,21 @@ adminRouter.put(
 )
 
 /**
+ * Description: update role
+ * Path: /roles
+ * Method: PUT
+ * Headers: {Authorization: AT}
+ */
+adminRouter.delete(
+  "/roles/:idRole",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  deleteRoleValidator,
+  wrapRequestHandler(deleteRoleController)
+)
+
+/**
  * Description: get permissions
  * Path: /permissions
  * Method: GET
@@ -847,5 +865,66 @@ adminRouter.put(
   checkRole(),
   wrapRequestHandler(updatePermissionsBasedOnIdRoleController)
 )
+// 42 per
 
+
+/**
+ * Description: get staff
+ * Path: /staffs
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/staffs",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getStaffsController)
+)
+
+/**
+ * Description: create staff
+ * Path: /staffs
+ * Method: POST
+ * Headers: {Authorization: AT}
+ */
+adminRouter.post(
+  "/staffs",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkRoleExitsValidator,
+  wrapRequestHandler(createRoleController)
+)
+
+/**
+ * Description: update staff
+ * Path: /roles
+ * Method: PUT
+ * Headers: {Authorization: AT}
+ */
+adminRouter.put(
+  "/staffs/:idStaff",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(updateRoleController)
+)
+
+/**
+ * Description: update staff
+ * Path: /roles
+ * Method: PUT
+ * Headers: {Authorization: AT}
+ */
+adminRouter.delete(
+  "/staffs/:idStaff",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  deleteRoleValidator,
+  wrapRequestHandler(deleteRoleController)
+)
 export default adminRouter
+
+// 50 permissions

@@ -45,7 +45,7 @@ class OrderServices {
       product_id: new ObjectId(item.product_id)
     }))
 
-    const { customer_info, totalAmount, status, note } = body
+    const { customer_info, totalAmount, status, note, shipping_fee, subTotal } = body
     const listIdProductOrder = body.products.map((item) => item.product_id)
     const [order] = await Promise.all([
       databaseServices.order.insertOne(
@@ -53,6 +53,8 @@ class OrderServices {
           user_id: new ObjectId(user_id),
           customer_info,
           products: productOrder,
+          subTotal,
+          shipping_fee,
           totalAmount,
           status,
           note

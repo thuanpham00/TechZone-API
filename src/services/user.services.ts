@@ -1,5 +1,5 @@
 import { config } from "dotenv"
-import { RoleType, StatusEmailResend, TokenType, TypeEmailResend, UserVerifyStatus } from "~/constant/enum"
+import { StatusEmailResend, TokenType, TypeEmailResend, UserVerifyStatus } from "~/constant/enum"
 import { signToken, verifyToken } from "~/utils/jwt"
 import databaseServices from "./database.services"
 import { RegisterReqBody, updateMeReqBody } from "~/models/requests/user.requests"
