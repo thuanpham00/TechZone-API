@@ -14,11 +14,8 @@ import {
   deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
-  getBrandDetailController,
   getBrandsController,
   getCategoriesController,
-  getCategoryDetailController,
-  getCustomerDetailController,
   getCustomersController,
   getNameBrandsController,
   getNameCategoriesController,
@@ -26,7 +23,6 @@ import {
   getNameSuppliersController,
   getNameSuppliersLinkedToProductController,
   getNameSuppliersNotLinkedToProductController,
-  getOrderDetailController,
   getOrdersController,
   getPermissionsBasedOnIdRoleController,
   getPermissionsController,
@@ -39,10 +35,8 @@ import {
   getStatistical_Product_Controller,
   getStatistical_Sell_Controller,
   getStatistical_User_Controller,
-  getSupplierDetailController,
   getSuppliersController,
   getSuppliesController,
-  getSupplyDetailController,
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
@@ -157,22 +151,6 @@ adminRouter.get(
 )
 
 /**
- * Description: get customer
- * Path: /customers/:id
- * Method: GET
- * Headers: {Authorization: AT}
- * Params: {id: string}
- */
-adminRouter.get(
-  "/customers/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole(),
-  checkIdValidator,
-  wrapRequestHandler(getCustomerDetailController)
-)
-
-/**
  * Description: update customer
  * Path: /customers/:id
  * Method: PUT
@@ -237,22 +215,6 @@ adminRouter.get(
   checkRole(),
   queryValidator,
   wrapRequestHandler(getCategoriesController)
-)
-
-/**
- * Description: get category
- * Path: /categories/:id
- * Method: GET
- * Headers: {Authorization: AT}
- * Params: {id: string}
- */
-adminRouter.get(
-  "/categories/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole(),
-  checkIdValidator,
-  wrapRequestHandler(getCategoryDetailController)
 )
 
 /**
@@ -335,22 +297,6 @@ adminRouter.get(
   queryValidator,
   getBrandsValidator,
   wrapRequestHandler(getBrandsController)
-)
-
-/**
- * Description: get brand
- * Path: /brands/:id
- * Method: get
- * Headers: {Authorization: AT}
- * Params: {id: string}
- */
-adminRouter.get(
-  "/brands/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole(),
-  checkIdValidator,
-  wrapRequestHandler(getBrandDetailController)
 )
 
 /**
@@ -475,22 +421,6 @@ adminRouter.get(
   checkRole(),
   queryValidator,
   wrapRequestHandler(getSuppliersController)
-)
-
-/**
- * Description: get supplier detail
- * Path: /suppliers/:id
- * Method: GET
- * Headers: {Authorization: AT}
- * Params: {id: string}
- */
-adminRouter.get(
-  "/suppliers/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole(),
-  checkIdValidator,
-  wrapRequestHandler(getSupplierDetailController)
 )
 
 /**
@@ -629,22 +559,6 @@ adminRouter.get(
 )
 
 /**
- * Description: get supply detail
- * Path: /suppliers/:id
- * Method: GET
- * Headers: {Authorization: AT}
- * Params: {id: string}
- */
-adminRouter.get(
-  "/supplies/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole(),
-  checkIdValidator,
-  wrapRequestHandler(getSupplyDetailController)
-)
-
-/**
  * Description: update supply detail
  * Path: /suppliers/:id
  * Method: put
@@ -732,22 +646,6 @@ adminRouter.get(
   checkRole(),
   queryValidator,
   wrapRequestHandler(getOrdersController)
-)
-
-/**
- * Description: get order detail
- * Path: /orders/:id
- * Method: GET
- * Headers: {Authorization: AT}
- * Params: {id: string}
- */
-adminRouter.get(
-  "/orders/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole(),
-  checkIdValidator,
-  wrapRequestHandler(getOrderDetailController)
 )
 
 /**
@@ -866,7 +764,6 @@ adminRouter.put(
   wrapRequestHandler(updatePermissionsBasedOnIdRoleController)
 )
 // 42 per
-
 
 /**
  * Description: get staff

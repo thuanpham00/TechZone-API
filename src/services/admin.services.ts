@@ -608,20 +608,6 @@ class AdminServices {
     }
   }
 
-  async getCustomerDetail(id: string) {
-    const result = await databaseServices.users.findOne(
-      { _id: new ObjectId(id) },
-      {
-        projection: {
-          email_verify_token: 0,
-          forgot_password_token: 0,
-          password: 0
-        }
-      }
-    )
-    return result
-  }
-
   async deleteCustomer(id: string) {
     const result = await databaseServices.users.deleteOne({ _id: new ObjectId(id) })
     return result
@@ -730,11 +716,6 @@ class AdminServices {
       totalOfPage: totalOfPage[0]?.total || 0
     }
   } // đã sửa (lk category & brand)
-
-  async getCategoryDetail(id: string) {
-    const result = await databaseServices.category.findOne({ _id: new ObjectId(id) })
-    return result
-  } // ok
 
   async getNameCategoriesFilter() {
     const result = await databaseServices.category.find({}).toArray()
@@ -882,11 +863,6 @@ class AdminServices {
       listTotalProduct
     }
   } // đã sửa (lk category & brand)
-
-  async getBrandDetail(id: string) {
-    const result = await databaseServices.brand.findOne({ _id: new ObjectId(id) })
-    return result
-  }
 
   async getNameBrandsFilter() {
     const result = await databaseServices.brand.find({}).toArray()
@@ -1430,11 +1406,6 @@ class AdminServices {
     }
   }
 
-  async getSupplierDetail(id: string) {
-    const result = await databaseServices.supplier.findOne({ _id: new ObjectId(id) })
-    return result
-  } // ok
-
   async getNameSuppliersFilter() {
     const result = await databaseServices.supplier.find({}).toArray()
     const listName = result.map((item) => item.name)
@@ -1768,61 +1739,6 @@ class AdminServices {
       totalOfPage: totalOfPage[0]?.total || 0
     }
   }
-
-  async getSupplyDetail(id: string) {
-    const result = await databaseServices.supply
-      .aggregate([
-        {
-          $match: {
-            _id: new ObjectId(id)
-          }
-        },
-        {
-          $lookup: {
-            from: "product",
-            localField: "productId",
-            foreignField: "_id",
-            as: "productId"
-          }
-        },
-        {
-          $addFields: {
-            productId: {
-              $map: {
-                input: "$productId",
-                as: "productItem",
-                in: {
-                  name: "$$productItem.name"
-                }
-              }
-            }
-          }
-        },
-        {
-          $lookup: {
-            from: "supplier",
-            localField: "supplierId",
-            foreignField: "_id",
-            as: "supplierId"
-          }
-        },
-        {
-          $addFields: {
-            supplierId: {
-              $map: {
-                input: "$supplierId",
-                as: "supplierItem",
-                in: {
-                  name: "$$supplierItem.name"
-                }
-              }
-            }
-          }
-        }
-      ])
-      .toArray()
-    return result
-  } // ok
 
   async updateSupply(id: string, body: UpdateSupplyBodyReq) {
     const [productId, supplierId] = await Promise.all([
@@ -2210,11 +2126,6 @@ class AdminServices {
       totalOfPage: totalOfPage[0]?.total || 0
     }
   }
-
-  async getOrderDetail(id: string) {
-    const result = await databaseServices.order.findOne({ _id: new ObjectId(id) })
-    return result
-  } // ok
 
   async updateStatusOrder(id: string, status: OrderStatus) {
     await databaseServices.order.updateOne(

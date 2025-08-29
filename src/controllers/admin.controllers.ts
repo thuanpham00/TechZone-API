@@ -138,21 +138,6 @@ export const getCustomersController = async (
   })
 }
 
-export const getCustomerDetailController = async (
-  req: Request<ParamsDictionary, any, any, { limit: string; page: string }>,
-  res: Response
-) => {
-  const { id } = req.params
-  const result = await adminServices.getCustomerDetail(id)
-
-  res.json({
-    message: AdminMessage.GET_CUSTOMER,
-    result: {
-      result
-    }
-  })
-}
-
 export const updateCustomerDetailController = async (
   req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
   res: Response
@@ -223,18 +208,6 @@ export const getNameCategoriesController = async (req: Request, res: Response) =
   const result = await adminServices.getNameCategoriesFilter()
   res.json({
     message: AdminMessage.GET_CATEGORIES,
-    result: {
-      result
-    }
-  })
-}
-
-export const getCategoryDetailController = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const result = await adminServices.getCategoryDetail(id)
-
-  res.json({
-    message: AdminMessage.GET_BRAND_DETAIL,
     result: {
       result
     }
@@ -326,18 +299,6 @@ export const getNameBrandsController = async (req: Request<ParamsDictionary, any
   const result = await adminServices.getNameBrandsFilter()
   res.json({
     message: AdminMessage.GET_BRANDS,
-    result: {
-      result
-    }
-  })
-}
-
-export const getBrandDetailController = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const result = await adminServices.getBrandDetail(id)
-
-  res.json({
-    message: AdminMessage.GET_CATEGORY_DETAIL,
     result: {
       result
     }
@@ -558,18 +519,6 @@ export const getSuppliersController = async (
   })
 }
 
-export const getSupplierDetailController = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const result = await adminServices.getSupplierDetail(id)
-
-  res.json({
-    message: AdminMessage.GET_SUPPLIER_DETAIL,
-    result: {
-      result
-    }
-  })
-}
-
 export const getNameSuppliersController = async (req: Request, res: Response) => {
   const result = await adminServices.getNameSuppliersFilter()
   res.json({
@@ -710,18 +659,6 @@ export const getSuppliesController = async (
       page: pageRes,
       total,
       totalOfPage
-    }
-  })
-}
-
-export const getSupplyDetailController = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const result = await adminServices.getSupplyDetail(id)
-
-  res.json({
-    message: AdminMessage.GET_SUPPLY_DETAIL,
-    result: {
-      result
     }
   })
 }
@@ -875,16 +812,6 @@ export const getOrdersController = async (
       total,
       totalOfPage
     }
-  })
-}
-
-export const getOrderDetailController = async (req: Request, res: Response) => {
-  const { id } = req.params
-  const result = await adminServices.getOrderDetail(id)
-
-  res.json({
-    message: AdminMessage.GET_ORDER_DETAIL,
-    result
   })
 }
 
