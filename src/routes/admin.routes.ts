@@ -6,6 +6,7 @@ import {
   createProductController,
   createReceiptController,
   createRoleController,
+  createStaffController,
   createSupplierController,
   createSupplyController,
   deleteBrandController,
@@ -742,8 +743,8 @@ adminRouter.get(
  * Method: GET
  * Headers: {Authorization: AT}
  */
-adminRouter.get(
-  "/permissions/:idRole",
+adminRouter.post(
+  "/permissions/by-roles",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
@@ -790,8 +791,7 @@ adminRouter.post(
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
-  checkRoleExitsValidator,
-  wrapRequestHandler(createRoleController)
+  wrapRequestHandler(createStaffController)
 )
 
 /**

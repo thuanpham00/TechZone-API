@@ -2,6 +2,7 @@ import { ObjectId, WithId } from "mongodb"
 import databaseServices from "./database.services"
 import {
   CreateCustomerBodyReq,
+  CreateStaffBodyReq,
   UpdateBrandBodyReq,
   UpdateCategoryBodyReq,
   UpdateSupplierBodyReq,
@@ -21,7 +22,7 @@ import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
 import Specification from "~/models/schema/specification.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
-import { OrderStatus, ProductStatus, RoleType, UserVerifyStatus } from "~/constant/enum"
+import { OrderStatus, ProductStatus, UserVerifyStatus } from "~/constant/enum"
 import { userServices } from "./user.services"
 import { hashPassword } from "~/utils/scripto"
 import { User } from "~/models/schema/users.schema"
@@ -437,7 +438,7 @@ class AdminServices {
   }
 
   async createCustomer(payload: CreateCustomerBodyReq) {
-    const roleId = (await databaseServices.role.findOne({ name: payload.role }).then((res) => res?._id)) as ObjectId
+    const roleId = (await databaseServices.role.findOne({ key: payload.role }).then((res) => res?._id)) as ObjectId
 
     const emailVerifyToken = await userServices.signEmailVerifyToken({
       user_id: payload.id,
@@ -2196,19 +2197,22 @@ class AdminServices {
   }
 
   async getPermissions() {
-    const [result] = await Promise.all([databaseServices.permissions.aggregate([]).toArray()])
-
+    const result = await databaseServices.permissions.find({}).toArray()
     return {
       result
     }
   }
 
-  async getPermissionsBasedOnIdRole(idRole: string) {
+  async getPermissionsBasedOnIdRole(listIdRole: string[]) {
     const [result] = await Promise.all([
       databaseServices.role
         .aggregate([
           {
-            $match: { _id: new ObjectId(idRole) }
+            $match: {
+              _id: {
+                $in: listIdRole.map((item) => new ObjectId(item))
+              }
+            }
           },
           {
             $lookup: {
@@ -2217,14 +2221,20 @@ class AdminServices {
               foreignField: "_id",
               as: "permissions"
             }
+          },
+          {
+            $project: {
+              created_at: 0,
+              updated_at: 0,
+              "permissions.created_at": 0,
+              "permissions.updated_at": 0
+            }
           }
         ])
         .toArray()
     ])
 
-    return {
-      result: result[0]
-    }
+    return result
   }
 
   async updatePermissionsBasedOnIdRole(idRole: string, permissions: string[], type: string) {
@@ -2321,6 +2331,63 @@ class AdminServices {
       pageRes: page || 1,
       total: total[0]?.total || 0,
       totalOfPage: totalOfPage[0]?.total || 0
+    }
+  }
+
+  async createStaff(payload: CreateStaffBodyReq) {
+    const roleId = (await databaseServices.role.findOne({ name: payload.role }).then((res) => res?._id)) as ObjectId
+
+    const emailVerifyToken = await userServices.signEmailVerifyToken({
+      user_id: payload.id,
+      verify: UserVerifyStatus.Unverified,
+      role: roleId.toString()
+    })
+
+    const [, token] = await Promise.all([
+      databaseServices.users.insertOne(
+        new User({
+          ...payload,
+          _id: new ObjectId(payload.id),
+          password: hashPassword(payload.password),
+          email_verify_token: emailVerifyToken,
+          numberPhone: payload.phone,
+          date_of_birth: new Date(payload.dateOfBirth),
+          employeeInfo: {
+            department: payload.department,
+            hire_date: new Date(payload.hire_date),
+            salary: payload.salary,
+            contract_type: payload.contract_type,
+            status: payload.status
+          },
+          role: roleId
+        })
+      ),
+      // tạo cặp AccessToken và RefreshToken mới
+      userServices.signAccessTokenAndRefreshToken({
+        user_id: payload.id,
+        verify: UserVerifyStatus.Unverified, // mới tạo tài khoản thì chưa xác thực
+        role: roleId.toString()
+      })
+    ])
+
+    const [accessToken, refreshToken] = token
+    const { exp, iat } = await userServices.decodeRefreshToken(refreshToken)
+
+    const [user] = await Promise.all([
+      databaseServices.users.findOne(
+        { _id: new ObjectId(payload.id) },
+        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+      ),
+      // thêm RefreshToken mới vào DB
+      databaseServices.refreshToken.insertOne(
+        new RefreshToken({ token: refreshToken, iat: iat, exp: exp, user_id: new ObjectId(payload.id) })
+      )
+    ])
+
+    await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
+
+    return {
+      user
     }
   }
 }

@@ -134,7 +134,7 @@ class UserServices {
   async register(payload: RegisterReqBody) {
     // ví dụ payload.role = "USER" thì tìm trong collection roles có document nào có name = "USER" không rồi lấy ra _id
 
-    const roleId = (await databaseServices.role.findOne({ name: payload.role }).then((res) => res?._id)) as ObjectId
+    const roleId = (await databaseServices.role.findOne({ key: payload.role }).then((res) => res?._id)) as ObjectId
 
     const user_id = new ObjectId()
     const emailVerifyToken = await this.signEmailVerifyToken({

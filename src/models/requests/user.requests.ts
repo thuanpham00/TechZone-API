@@ -1,4 +1,4 @@
-import { RoleType, TokenType, UserVerifyStatus } from "~/constant/enum"
+import { TokenType, UserVerifyStatus } from "~/constant/enum"
 import { JwtPayload } from "jsonwebtoken"
 
 export type RegisterReqBody = {

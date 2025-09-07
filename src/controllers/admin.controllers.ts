@@ -4,7 +4,7 @@ import { ParamsDictionary } from "express-serve-static-core"
 import { AdminMessage, ProductMessage, ReceiptMessage, UserMessage } from "~/constant/message"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
-import { CreateCustomerBodyReq, UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import { CreateCustomerBodyReq, CreateStaffBodyReq, UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
 import formidable from "formidable"
 import {
   CreateProductBodyReq,
@@ -874,8 +874,8 @@ export const getPermissionsBasedOnIdRoleController = async (
   req: Request<ParamsDictionary, any, any>,
   res: Response
 ) => {
-  const { idRole } = req.params
-  const { result } = await adminServices.getPermissionsBasedOnIdRole(idRole)
+  const { listIdRole } = req.body
+  const result = await adminServices.getPermissionsBasedOnIdRole(listIdRole)
 
   res.json({
     message: AdminMessage.GET_PERMISSIONS_BASED_ON_ROLE,
@@ -941,6 +941,20 @@ export const getStaffsController = async (
       page: pageRes,
       total,
       totalOfPage
+    }
+  })
+}
+
+export const createStaffController =  async (
+  req: Request<ParamsDictionary, any, CreateStaffBodyReq>,
+  res: Response
+) => {
+  const result = await adminServices.createStaff(req.body)
+
+  res.json({
+    message: AdminMessage.CREATE_CUSTOMER_DETAIL,
+    result: {
+      result
     }
   })
 }

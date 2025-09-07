@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb"
-import { UserVerifyStatus } from "~/constant/enum"
+import { EmployeeInfoStatus, UserVerifyStatus } from "~/constant/enum"
 
 type UserType = {
   _id?: ObjectId
@@ -21,7 +21,7 @@ type UserType = {
     hire_date: Date // ngày vào làm
     contract_type: string // loại hợp đồng
     salary: number // lương
-    status: "active" | "inactive" | "suspended"
+    status: EmployeeInfoStatus
   }
 
   created_at?: Date
@@ -45,7 +45,7 @@ export class User {
     hire_date: Date // ngày vào làm
     contract_type: string // loại hợp đồng
     salary: number // lương
-    status: "active" | "inactive" | "suspended"
+    status: EmployeeInfoStatus
   }
 
   created_at: Date

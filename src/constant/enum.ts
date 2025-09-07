@@ -16,8 +16,10 @@ export enum MediaType {
 }
 
 export enum RoleType {
-  ADMIN = "Admin",
-  CUSTOMER = "Customer"
+  ADMIN = "ADMIN", // quản trị viên cấp cao, có toàn quyền
+  SALES_STAFF = "SALES_STAFF", // nhân viên bán hàng (bao gồm thu ngân)
+  INVENTORY_STAFF = "INVENTORY_STAFF", // nhân viên kho
+  CUSTOMER = "CUSTOMER" // khách hàng, người dùng cuối
 }
 
 export enum ProductStatus {
@@ -44,4 +46,10 @@ export enum TypeEmailResend {
 export enum StatusEmailResend {
   sent = "Đã gửi",
   failed = "Lỗi"
+}
+
+export enum EmployeeInfoStatus {
+  Active = "active",
+  Inactive = "inactive",
+  Suspended = "Suspended"
 }
