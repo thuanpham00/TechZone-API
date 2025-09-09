@@ -47,6 +47,7 @@ import {
   updateSupplierDetailController,
   updateSupplyDetailController
 } from "~/controllers/admin.controllers"
+import { loginController } from "~/controllers/user.controllers"
 import {
   checkBrandValidator,
   checkCategoryValidator,
@@ -70,12 +71,20 @@ import {
   updateSupplyValidator
 } from "~/middlewares/admin.middlewares"
 import { filterMiddleware, parseFormData } from "~/middlewares/common.middlewares"
-import { accessTokenValidator, checkRole, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
+import { accessTokenValidator, checkRole, checkUserLogin, loginValidator, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { UpdateCategoryBodyReq, UpdateSupplierBodyReq, UpdateSupplyBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const adminRouter = Router()
+
+/**
+ * Description: Login user for admin
+ * Path: /login
+ * Method: POST
+ * Body: { email: string, password: string}
+ */
+adminRouter.post("/login", loginValidator, checkUserLogin("other"), wrapRequestHandler(loginController))
 
 /**
  * Description: get statistical sell dashboard
@@ -791,6 +800,7 @@ adminRouter.post(
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
+  checkEmailExistValidator,
   wrapRequestHandler(createStaffController)
 )
 

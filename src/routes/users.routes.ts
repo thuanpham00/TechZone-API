@@ -18,6 +18,7 @@ import { filterMiddleware } from "~/middlewares/common.middlewares"
 import {
   accessTokenValidator,
   changePasswordValidator,
+  checkUserLogin,
   emailVerifyValidator,
   forgotPasswordValidator,
   loginValidator,
@@ -47,7 +48,7 @@ userRoute.post("/register", registerValidator, wrapRequestHandler(registerContro
  * Method: POST
  * Body: { email: string, password: string}
  */
-userRoute.post("/login", loginValidator, wrapRequestHandler(loginController))
+userRoute.post("/login", loginValidator, checkUserLogin("customer"), wrapRequestHandler(loginController))
 
 /**
  * Description: Login google user

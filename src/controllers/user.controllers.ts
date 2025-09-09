@@ -50,6 +50,7 @@ export const loginController = async (
   next: NextFunction
 ) => {
   const { user } = req as Request
+  console.log(user);
   const user_id = (user._id as ObjectId)?.toString()
   const verify = user.verify
   const role = user.role.toString()

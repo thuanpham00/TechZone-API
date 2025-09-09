@@ -2281,6 +2281,19 @@ class AdminServices {
             $match
           },
           {
+            $lookup: {
+              from: "roles",
+              localField: "role",
+              foreignField: "_id",
+              as: "role"
+            }
+          },
+          {
+            $addFields: {
+              role: { $arrayElemAt: ["$role.name", 0] } // lấy phần tử đầu tiên của mảng name
+            }
+          },
+          {
             $project: {
               email_verify_token: 0,
               forgot_password_token: 0,
@@ -2325,6 +2338,9 @@ class AdminServices {
         ])
         .toArray()
     ])
+
+    console.log(result)
+
     return {
       result,
       limitRes: limit || 5,
@@ -2335,13 +2351,9 @@ class AdminServices {
   }
 
   async createStaff(payload: CreateStaffBodyReq) {
-    const roleId = (await databaseServices.role.findOne({ name: payload.role }).then((res) => res?._id)) as ObjectId
-
-    const emailVerifyToken = await userServices.signEmailVerifyToken({
-      user_id: payload.id,
-      verify: UserVerifyStatus.Unverified,
-      role: roleId.toString()
-    })
+    const roleId = (await databaseServices.role
+      .findOne({ _id: new ObjectId(payload.role) })
+      .then((res) => res?._id)) as ObjectId
 
     const [, token] = await Promise.all([
       databaseServices.users.insertOne(
@@ -2349,7 +2361,8 @@ class AdminServices {
           ...payload,
           _id: new ObjectId(payload.id),
           password: hashPassword(payload.password),
-          email_verify_token: emailVerifyToken,
+          email_verify_token: "",
+          verify: 1,
           numberPhone: payload.phone,
           date_of_birth: new Date(payload.dateOfBirth),
           employeeInfo: {
@@ -2383,8 +2396,6 @@ class AdminServices {
         new RefreshToken({ token: refreshToken, iat: iat, exp: exp, user_id: new ObjectId(payload.id) })
       )
     ])
-
-    await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
 
     return {
       user

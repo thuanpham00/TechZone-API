@@ -566,6 +566,34 @@ export const checkRole = () => {
   }
 }
 
+export const checkUserLogin = (typeUser: string) => async (req: Request, res: Response, next: NextFunction) => {
+  const user = req.user
+  const role = await databaseServices.role.findOne({ _id: user.role })
+  if (typeUser === "customer") {
+    if (role?.key === RoleType.CUSTOMER) {
+      return next()
+    } else {
+      return next(
+        new ErrorWithStatus({
+          message: UserMessage.PERMISSION_DENIED,
+          status: httpStatus.FORBIDDEN
+        })
+      )
+    }
+  } else if (typeUser === "other") {
+    if (role?.key === RoleType.ADMIN) {
+      return next()
+    } else {
+      return next(
+        new ErrorWithStatus({
+          message: UserMessage.PERMISSION_DENIED,
+          status: httpStatus.FORBIDDEN
+        })
+      )
+    }
+  }
+}
+
 // body phần truyền lên
 // params là tham số định danh như id
 // query là tham số truy vấn ví dụ page, limit, type ...
