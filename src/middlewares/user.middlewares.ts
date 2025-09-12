@@ -478,7 +478,6 @@ export const updateMeValidator = validate(
         // ...numberPhoneSchema,
         custom: {
           options: async (value, { req }) => {
-            // console.log(req.body)
             const { id } = req.params as Record<string, string>
 
             if (id) {
@@ -581,7 +580,7 @@ export const checkUserLogin = (typeUser: string) => async (req: Request, res: Re
       )
     }
   } else if (typeUser === "other") {
-    if (role?.key === RoleType.ADMIN) {
+    if (role?.key === RoleType.ADMIN || role?.key === RoleType.SALES_STAFF || role?.key === RoleType.INVENTORY_STAFF) {
       return next()
     } else {
       return next(

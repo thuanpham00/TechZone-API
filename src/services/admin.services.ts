@@ -16,7 +16,8 @@ import {
   CreateRoleBodyReq,
   CreateSupplierBodyReq,
   CreateSupplyBodyReq,
-  specificationType
+  specificationType,
+  UpdatePermissionsRole
 } from "~/models/requests/product.requests"
 import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
@@ -2237,32 +2238,30 @@ class AdminServices {
     return result
   }
 
-  async updatePermissionsBasedOnIdRole(idRole: string, permissions: string[], type: string) {
-    const typeUpdate =
-      type === "remove"
-        ? {
-            $pull: {
-              permissions: {
-                $in: permissions.map((item) => new ObjectId(item))
-              }
-            },
-            $currentDate: { updated_at: true }
-          }
-        : {
-            $addToSet: {
-              permissions: {
-                $each: permissions.map((item) => new ObjectId(item))
-              }
-            },
-            $currentDate: { updated_at: true }
-          }
+  async updatePermissionsBasedOnIdRole(payload: UpdatePermissionsRole[]) {
+    const results = await Promise.all(
+      payload.map(async (item) => {
+        const roleId = new ObjectId(item._id)
+        const addIds = item.add.map((id) => new ObjectId(id))
+        const removeIds = item.remove.map((id) => new ObjectId(id))
 
-    const updatedRole = await databaseServices.role.findOneAndUpdate({ _id: new ObjectId(idRole) }, typeUpdate as any, {
-      returnDocument: "after"
-    })
+        // Thêm quyền mới
+        if (addIds.length > 0) {
+          await databaseServices.role.updateOne({ _id: roleId }, { $addToSet: { permissions: { $each: addIds } } })
+        }
+
+        // Xoá quyền
+        if (removeIds.length > 0) {
+          await databaseServices.role.updateOne({ _id: roleId }, { $pull: { permissions: { $in: removeIds } as any } })
+        }
+
+        // Trả về role sau khi update
+        return databaseServices.role.findOne({ _id: roleId })
+      })
+    )
 
     return {
-      result: updatedRole
+      result: results
     }
   }
 
@@ -2338,8 +2337,6 @@ class AdminServices {
         ])
         .toArray()
     ])
-
-    console.log(result)
 
     return {
       result,

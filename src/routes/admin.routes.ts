@@ -767,7 +767,7 @@ adminRouter.post(
  * Headers: {Authorization: AT}
  */
 adminRouter.put(
-  "/permissions/:idRole",
+  "/permissions",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),

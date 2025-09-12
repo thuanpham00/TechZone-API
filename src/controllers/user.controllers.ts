@@ -50,13 +50,12 @@ export const loginController = async (
   next: NextFunction
 ) => {
   const { user } = req as Request
-  console.log(user);
   const user_id = (user._id as ObjectId)?.toString()
   const verify = user.verify
   const role = user.role.toString()
 
   const findRole = await databaseServices.role.findOne({ _id: new ObjectId(role) })
-  const roleName = findRole?.name as string
+  const roleName = findRole?.key as string
   const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify, roleId: role })
 
   res.cookie("refresh_token", refreshToken, {

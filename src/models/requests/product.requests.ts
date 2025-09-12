@@ -97,3 +97,9 @@ export type CreateRoleBodyReq = {
   name: string
   description: string
 }
+
+export type UpdatePermissionsRole = {
+  _id: string
+  add: string[]
+  remove: string[]
+}

@@ -29,6 +29,7 @@ export enum ProductStatus {
 }
 
 export enum OrderStatus {
+  loading = "Đang thực hiện",
   pending = "Chờ xác nhận",
   processing = "Đang xử lý",
   shipping = "Đang vận chuyển",

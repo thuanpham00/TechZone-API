@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { createPaymentController } from "~/controllers/payment.controllers"
+import { callBackVnpayController, createPaymentController } from "~/controllers/payment.controllers"
 import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -11,5 +11,12 @@ const paymentRoute = Router()
  * Method: POST
  */
 paymentRoute.post("/", accessTokenValidator, verifyUserValidator, wrapRequestHandler(createPaymentController))
+
+paymentRoute.post(
+  "/vnpay-callback",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(callBackVnpayController)
+)
 
 export default paymentRoute

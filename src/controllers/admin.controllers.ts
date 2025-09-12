@@ -4,14 +4,20 @@ import { ParamsDictionary } from "express-serve-static-core"
 import { AdminMessage, ProductMessage, ReceiptMessage, UserMessage } from "~/constant/message"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
-import { CreateCustomerBodyReq, CreateStaffBodyReq, UpdateBrandBodyReq, UpdateCategoryBodyReq } from "~/models/requests/admin.requests"
+import {
+  CreateCustomerBodyReq,
+  CreateStaffBodyReq,
+  UpdateBrandBodyReq,
+  UpdateCategoryBodyReq
+} from "~/models/requests/admin.requests"
 import formidable from "formidable"
 import {
   CreateProductBodyReq,
   CreateReceiptBodyReq,
   CreateRoleBodyReq,
   CreateSupplierBodyReq,
-  CreateSupplyBodyReq
+  CreateSupplyBodyReq,
+  UpdatePermissionsRole
 } from "~/models/requests/product.requests"
 import { File } from "formidable"
 
@@ -886,12 +892,11 @@ export const getPermissionsBasedOnIdRoleController = async (
 }
 
 export const updatePermissionsBasedOnIdRoleController = async (
-  req: Request<ParamsDictionary, any, any>,
+  req: Request<ParamsDictionary, any, UpdatePermissionsRole[]>,
   res: Response
 ) => {
-  const { idRole } = req.params
-  const { listPermissions, type } = req.body
-  const { result } = await adminServices.updatePermissionsBasedOnIdRole(idRole, listPermissions, type)
+  console.log(req.body)
+  const { result } = await adminServices.updatePermissionsBasedOnIdRole(req.body)
 
   res.json({
     message: AdminMessage.UPDATE_PERMISSIONS_BASED_ON_ID_ROLE,
@@ -945,10 +950,7 @@ export const getStaffsController = async (
   })
 }
 
-export const createStaffController =  async (
-  req: Request<ParamsDictionary, any, CreateStaffBodyReq>,
-  res: Response
-) => {
+export const createStaffController = async (req: Request<ParamsDictionary, any, CreateStaffBodyReq>, res: Response) => {
   const result = await adminServices.createStaff(req.body)
 
   res.json({

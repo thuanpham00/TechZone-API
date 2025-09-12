@@ -1,6 +1,16 @@
 import { Request, Response, NextFunction } from "express"
 import { envConfig } from "~/utils/config"
 import crypto from "crypto"
+import databaseServices from "~/services/database.services"
+import { ObjectId } from "mongodb"
+import { CreateOrderBodyReq } from "~/models/requests/product.requests"
+import { OrderStatus, StatusEmailResend, TypeEmailResend } from "~/constant/enum"
+import orderServices from "~/services/order.services"
+import { EmailLog } from "~/models/schema/email.schema"
+import { sendNotificationOrderBuyCustomer } from "~/utils/ses"
+import { formatCurrency } from "~/utils/common"
+import dayjs from "dayjs"
+import { TokenPayload } from "~/models/requests/user.requests"
 
 export const createPaymentController = async (req: Request, res: Response, next: NextFunction) => {
   const ipAddr =
@@ -19,39 +29,44 @@ export const createPaymentController = async (req: Request, res: Response, next:
     .toISOString()
     .replace(/[-T:\.Z]/g, "")
     .slice(0, 14)
-  const orderId = date.getTime().toString()
-  // Lấy các tham số từ yêu cầu POST.
-  const amount = req.body.amount
-  const orderInfo = req.body.orderDescription
-  const orderType = req.body.orderType
-  const locale = req.body.language || "vn"
-  const currCode = "VND"
 
-  let vnp_Params: Record<string, string> = {
-    vnp_Version: "2.1.0", // phiên bản api mà kết nối
-    vnp_Command: "pay", // mã cho giao dịch thanh toán
-    vnp_TmnCode: tmnCode, // mã website
-    vnp_Locale: locale, // ngôn ngữ giao diện hiển thị
-    vnp_CurrCode: currCode, // đơn vị sử dụng tiền tệ thanh toán
-    vnp_TxnRef: orderId, // mã id phân biệt đơn hàng
-    vnp_OrderInfo: orderInfo, // thông tin mô tả nội dung
-    vnp_OrderType: orderType, // mã danh mục hàng hóa
-    vnp_Amount: (amount * 100).toString(), // số tiền thanh toán
-    vnp_ReturnUrl: returnUrl, // url thông báo ket quả giao dịch trả về
-    vnp_IpAddr: ipAddr as string, // địa chỉ ip khách hàng
-    vnp_CreateDate: createDate // thời gian tạo đơn hàng
+  // lấy order body từ FE
+  const { customer_info, totalAmount, note, shipping_fee, subTotal, products } = req.body as CreateOrderBodyReq
+  const { user_id } = req.decode_authorization as TokenPayload
+  const orderResult = await orderServices.createOrder(user_id, {
+    customer_info,
+    totalAmount,
+    note,
+    shipping_fee,
+    subTotal,
+    products
+  })
+
+  const insertedId = orderResult // id order
+
+  const vnp_Params: Record<string, string> = {
+    vnp_Version: "2.1.0",
+    vnp_Command: "pay",
+    vnp_TmnCode: tmnCode,
+    vnp_Locale: "vn",
+    vnp_CurrCode: "VND",
+    vnp_TxnRef: insertedId.toString(),
+    vnp_OrderInfo: `Thanh toán đơn hàng #${insertedId}`,
+    vnp_OrderType: "billpayment",
+    vnp_Amount: (totalAmount * 100).toString(),
+    vnp_ReturnUrl: returnUrl,
+    vnp_IpAddr: ipAddr as string,
+    vnp_CreateDate: createDate
   }
-  vnp_Params = sortObject(vnp_Params)
-  // Tạo chữ ký HMAC và thêm vào các tham số
-  const signData = new URLSearchParams(vnp_Params).toString()
+
+  const signData = new URLSearchParams(sortObject(vnp_Params)).toString()
   const hmac = crypto.createHmac("sha512", secretKey)
   const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex")
   vnp_Params["vnp_SecureHash"] = signed
 
-  // Tạo URL thanh toán và chuyển hướng khách hàng
   vnpUrl += "?" + new URLSearchParams(vnp_Params).toString()
 
-  res.json({ url: vnpUrl }) // Trả về URL thanh toán dưới dạng JSON
+  res.json({ url: vnpUrl })
 }
 
 function sortObject(obj: Record<string, string>): Record<string, string> {
@@ -61,6 +76,56 @@ function sortObject(obj: Record<string, string>): Record<string, string> {
     sorted[key] = obj[key]
   })
   return sorted
+}
+
+export const callBackVnpayController = async (req: Request, res: Response, next: NextFunction) => {
+  const { orderId } = req.body
+  const findOrder = await databaseServices.order.findOne({ _id: new ObjectId(orderId) })
+  if (findOrder) {
+    const today = new Date()
+    const formattedDate = dayjs(today).format("HH:mm DD/MM/YYYY")
+    const bodyEmailSend = {
+      id: findOrder._id,
+      customerName: findOrder.customer_info.name,
+      customerPhone: findOrder.customer_info.phone,
+      shippingAddress: findOrder.customer_info.address,
+      totalAmount: formatCurrency(findOrder.totalAmount),
+      createdAt: formattedDate
+    }
+
+    const [sendMail] = await Promise.all([
+      sendNotificationOrderBuyCustomer(findOrder.customer_info.email, bodyEmailSend),
+      databaseServices.order.updateOne(
+        { _id: new ObjectId(findOrder._id) },
+        {
+          $set: {
+            status: OrderStatus.pending
+          },
+          $currentDate: { updated_at: true }
+        }
+      )
+    ])
+    const resendId = sendMail.data?.id
+    await databaseServices.emailLog.insertOne(
+      new EmailLog({
+        to: findOrder.customer_info.email,
+        subject: `Đặt hàng thành công - TECHZONE xác nhận đơn hàng #${findOrder._id}`,
+        type: TypeEmailResend.orderConfirmation,
+        status: StatusEmailResend.sent,
+        resend_id: resendId as string
+      })
+    )
+
+    res.json({
+      message: "Cập nhật trạng thái đơn hàng thành công"
+    })
+    return
+  }
+
+  res.json({
+    message: "Không tìm thấy đơn hàng"
+  })
+  return
 }
 /**
  * 

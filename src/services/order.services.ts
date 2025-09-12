@@ -3,11 +3,7 @@ import { CreateOrderBodyReq } from "~/models/requests/product.requests"
 import databaseServices from "./database.services"
 import { Order } from "~/models/schema/favourite_cart.order.schema"
 import { ObjectId } from "mongodb"
-import { OrderStatus, StatusEmailResend, TypeEmailResend } from "~/constant/enum"
-import { sendNotificationOrderBuyCustomer } from "~/utils/ses"
-import dayjs from "dayjs"
-import { formatCurrency } from "~/utils/common"
-import { EmailLog } from "~/models/schema/email.schema"
+import { OrderStatus } from "~/constant/enum"
 
 class OrderServices {
   async getOrder(user_id: string) {
@@ -45,7 +41,7 @@ class OrderServices {
       product_id: new ObjectId(item.product_id)
     }))
 
-    const { customer_info, totalAmount, status, note, shipping_fee, subTotal } = body
+    const { customer_info, totalAmount, note, shipping_fee, subTotal } = body
     const listIdProductOrder = body.products.map((item) => item.product_id)
     const [order] = await Promise.all([
       databaseServices.order.insertOne(
@@ -56,7 +52,7 @@ class OrderServices {
           subTotal,
           shipping_fee,
           totalAmount,
-          status,
+          status: OrderStatus.loading,
           note
         })
       ),
@@ -90,33 +86,7 @@ class OrderServices {
       await databaseServices.cart.deleteOne({ user_id: new ObjectId(user_id) })
     }
 
-    const today = new Date()
-    const formattedDate = dayjs(today).format("HH:mm DD/MM/YYYY")
-    const bodyEmailSend = {
-      id: order.insertedId,
-      customerName: body.customer_info.name,
-      customerPhone: body.customer_info.phone,
-      shippingAddress: body.customer_info.address,
-      totalAmount: formatCurrency(body.totalAmount),
-      createdAt: formattedDate
-    }
-    if (order) {
-      const sendMail = await sendNotificationOrderBuyCustomer(body.customer_info.email, bodyEmailSend)
-      const resendId = sendMail.data?.id
-      await databaseServices.emailLog.insertOne(
-        new EmailLog({
-          to: body.customer_info.email,
-          subject: `Đặt hàng thành công - TECHZONE xác nhận đơn hàng #${order.insertedId}`,
-          type: TypeEmailResend.orderConfirmation,
-          status: StatusEmailResend.sent,
-          resend_id: resendId as string
-        })
-      )
-    }
-
-    return {
-      message: OrderMessage.CREATE_ORDER_IS_SUCCESS
-    }
+    return order.insertedId
   }
 
   async updateStatusOrder(id: string, status: number) {

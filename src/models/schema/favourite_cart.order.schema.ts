@@ -76,6 +76,7 @@ interface OrderType {
     name: string // người nhận
     phone: string
     address: string
+    email: string
   }
   products: ProductInOrder[]
   subTotal: number
@@ -98,6 +99,7 @@ export class Order {
     name: string // người nhận
     phone: string
     address: string
+    email: string
   }
   products: ProductInOrder[]
   subTotal: number
@@ -118,7 +120,8 @@ export class Order {
     this.customer_info = {
       name: order.customer_info.name,
       phone: order.customer_info.phone,
-      address: order.customer_info.address
+      address: order.customer_info.address,
+      email: order.customer_info.email
     }
     this.products = order.products
     this.shipping_fee = order.shipping_fee
