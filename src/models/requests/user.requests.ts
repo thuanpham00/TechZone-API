@@ -15,6 +15,13 @@ export type updateMeReqBody = {
   date_of_birth?: string
   numberPhone?: string
   avatar?: string
+  employeeInfo?: {
+    contract_type?: string
+    department?: string
+    status?: string
+    hire_date?: string
+    salary?: number
+  }
 }
 
 export type LoginReqBody = {

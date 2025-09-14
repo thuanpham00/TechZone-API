@@ -25,6 +25,7 @@ export const UserMessage = {
 
   AVATAR_IS_REQUIRED: "Avatar bắt buộc!",
   ROLE_IS_INVALID: "Vai trò không hợp lệ!",
+  STATUS_STAFF_IS_INVALID: "Trạng thái tài khoản không hợp lệ!",
 
   EMAIL_OR_PASSWORD_IS_INCORRECT: "Email hoặc mật khẩu không chính xác!",
 

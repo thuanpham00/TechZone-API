@@ -1,5 +1,5 @@
 import { checkSchema, ParamSchema } from "express-validator"
-import { RoleType, UserVerifyStatus } from "~/constant/enum"
+import { EmployeeInfoStatus, RoleType, UserVerifyStatus } from "~/constant/enum"
 import { UserMessage } from "~/constant/message"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
@@ -19,6 +19,7 @@ import { envConfig } from "~/utils/config"
 config()
 
 const Role = convertEnumToArray(RoleType)
+const StatusStaff = convertEnumToArray(EmployeeInfoStatus)
 
 const passwordSchema: ParamSchema = {
   notEmpty: {
@@ -508,6 +509,26 @@ export const updateMeValidator = validate(
           }
         },
         optional: true
+      }
+    },
+    ["body"]
+  )
+)
+
+export const updateStaffValidator = validate(
+  checkSchema(
+    {
+      "employeeInfo.contract_type": {
+        in: ["body"],
+        optional: true
+      },
+      "employeeInfo.status": {
+        in: ["body"],
+        optional: true, // không bắt buộc
+        isIn: {
+          options: [StatusStaff],
+          errorMessage: UserMessage.STATUS_STAFF_IS_INVALID
+        }
       }
     },
     ["body"]

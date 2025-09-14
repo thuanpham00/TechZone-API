@@ -623,12 +623,12 @@ export const checkRoleExitsValidator = async (req: Request, res: Response, next:
 }
 
 export const deleteRoleValidator = async (req: Request, res: Response, next: NextFunction) => {
-  const { idRole } = req.params
-  const checkRole = await databaseServices.role.findOne({ _id: new ObjectId(idRole) })
+  const { id } = req.params
+  const checkRole = await databaseServices.role.findOne({ _id: new ObjectId(id) })
   if (checkRole && checkRole.permissions.length > 0) {
     return next(new ErrorWithStatus({ message: AdminMessage.CANNOT_DELETE_ROLE, status: httpStatus.BAD_REQUESTED }))
   }
-  const checkUserWithRole = await databaseServices.users.findOne({ role: new ObjectId(idRole) })
+  const checkUserWithRole = await databaseServices.users.findOne({ role: new ObjectId(id) })
   if (checkUserWithRole) {
     return next(new ErrorWithStatus({ message: AdminMessage.CANNOT_DELETE_ROLE, status: httpStatus.BAD_REQUESTED }))
   }

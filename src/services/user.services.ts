@@ -550,11 +550,36 @@ class UserServices {
   }
 
   async updateMe({ user_id, body }: { user_id: string; body: updateMeReqBody }) {
-    const payload = body.date_of_birth ? { ...body, date_of_birth: new Date(body.date_of_birth) } : { ...body }
+    const setData: any = {}
+
+    // Root fields
+    if (body.name) setData.name = body.name
+    if (body.avatar) setData.avatar = body.avatar
+    if (body.numberPhone) setData.numberPhone = body.numberPhone
+    if (body.date_of_birth) setData.date_of_birth = new Date(body.date_of_birth)
+
+    if (body.employeeInfo) {
+      if (body.employeeInfo.contract_type) {
+        setData["employeeInfo.contract_type"] = body.employeeInfo.contract_type
+      }
+      if (body.employeeInfo.department) {
+        setData["employeeInfo.department"] = body.employeeInfo.department
+      }
+      if (body.employeeInfo.status) {
+        setData["employeeInfo.status"] = body.employeeInfo.status
+      }
+      if (body.employeeInfo.status) {
+        setData["employeeInfo.status"] = body.employeeInfo.status
+      }
+      if (body.employeeInfo.hire_date) {
+        setData["employeeInfo.hire_date"] = new Date(body.employeeInfo.hire_date)
+      }
+    }
+
     const user = await databaseServices.users.findOneAndUpdate(
       { _id: new ObjectId(user_id) },
       {
-        $set: { ...(payload as updateMeReqBody & { date_of_birth?: Date }) },
+        $set: setData,
         $currentDate: {
           updated_at: true
         }

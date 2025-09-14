@@ -42,6 +42,7 @@ export class User {
   verify: UserVerifyStatus
 
   employeeInfo?: {
+    department: string // phòng ban
     hire_date: Date // ngày vào làm
     contract_type: string // loại hợp đồng
     salary: number // lương

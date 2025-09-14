@@ -50,7 +50,7 @@ export enum StatusEmailResend {
 }
 
 export enum EmployeeInfoStatus {
-  Active = "active",
-  Inactive = "inactive",
+  Active = "Active",
+  Inactive = "Inactive",
   Suspended = "Suspended"
 }

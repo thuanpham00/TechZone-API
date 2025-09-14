@@ -71,7 +71,15 @@ import {
   updateSupplyValidator
 } from "~/middlewares/admin.middlewares"
 import { filterMiddleware, parseFormData } from "~/middlewares/common.middlewares"
-import { accessTokenValidator, checkRole, checkUserLogin, loginValidator, updateMeValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
+import {
+  accessTokenValidator,
+  checkRole,
+  checkUserLogin,
+  loginValidator,
+  updateMeValidator,
+  updateStaffValidator,
+  verifyUserValidator
+} from "~/middlewares/user.middlewares"
 import { UpdateCategoryBodyReq, UpdateSupplierBodyReq, UpdateSupplyBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
@@ -710,7 +718,7 @@ adminRouter.post(
  * Headers: {Authorization: AT}
  */
 adminRouter.put(
-  "/roles/:idRole",
+  "/roles/:id",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
@@ -719,29 +727,17 @@ adminRouter.put(
 )
 
 /**
- * adminRouter.put(
-  "/customers/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  checkRole(),
-  checkIdValidator,
-  updateMeValidator,
-  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
-  wrapRequestHandler(updateCustomerDetailController)
-)
- */
-
-/**
  * Description: update role
  * Path: /roles
  * Method: PUT
  * Headers: {Authorization: AT}
  */
 adminRouter.delete(
-  "/roles/:idRole",
+  "/roles/:id",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
+  checkIdValidator,
   deleteRoleValidator,
   wrapRequestHandler(deleteRoleController)
 )
@@ -825,11 +821,13 @@ adminRouter.post(
  * Headers: {Authorization: AT}
  */
 adminRouter.put(
-  "/staffs/:idStaff",
+  "/staffs/:id",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
-  wrapRequestHandler(updateRoleController)
+  updateMeValidator,
+  updateStaffValidator,
+  wrapRequestHandler(updateCustomerDetailController)
 )
 
 /**
@@ -839,7 +837,7 @@ adminRouter.put(
  * Headers: {Authorization: AT}
  */
 adminRouter.delete(
-  "/staffs/:idStaff",
+  "/staffs/:id",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),

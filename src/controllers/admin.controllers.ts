@@ -145,7 +145,7 @@ export const getCustomersController = async (
 }
 
 export const updateCustomerDetailController = async (
-  req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
+  req: Request<ParamsDictionary, any, updateMeReqBody>,
   res: Response
 ) => {
   const { id } = req.params
@@ -850,16 +850,16 @@ export const createRoleController = async (req: Request<ParamsDictionary, any, C
 }
 
 export const updateRoleController = async (req: Request<ParamsDictionary, any, CreateRoleBodyReq>, res: Response) => {
-  const { idRole } = req.params
-  const { message } = await adminServices.updateRole(idRole, req.body)
+  const { id } = req.params
+  const { message } = await adminServices.updateRole(id, req.body)
   res.json({
     message
   })
 }
 
 export const deleteRoleController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
-  const { idRole } = req.params
-  const { message } = await adminServices.deleteRole(idRole)
+  const { id } = req.params
+  const { message } = await adminServices.deleteRole(id)
   res.json({
     message
   })
