@@ -455,7 +455,7 @@ class AdminServices {
           password: hashPassword(payload.password),
           email_verify_token: emailVerifyToken,
           numberPhone: payload.phone,
-          date_of_birth: new Date(payload.dateOfBirth),
+          date_of_birth: new Date(payload.date_of_birth),
           role: roleId
         })
       ),
@@ -2361,7 +2361,7 @@ class AdminServices {
           email_verify_token: "",
           verify: 1,
           numberPhone: payload.phone,
-          date_of_birth: new Date(payload.dateOfBirth),
+          date_of_birth: new Date(payload.date_of_birth),
           employeeInfo: {
             department: payload.department,
             hire_date: new Date(payload.hire_date),

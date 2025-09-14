@@ -714,8 +714,22 @@ adminRouter.put(
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
+  checkIdValidator,
   wrapRequestHandler(updateRoleController)
 )
+
+/**
+ * adminRouter.put(
+  "/customers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkIdValidator,
+  updateMeValidator,
+  filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
+  wrapRequestHandler(updateCustomerDetailController)
+)
+ */
 
 /**
  * Description: update role
@@ -834,4 +848,4 @@ adminRouter.delete(
 )
 export default adminRouter
 
-// 50 permissions
+// 40 permissions

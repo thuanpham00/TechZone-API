@@ -70,5 +70,12 @@ export const envConfig = {
 
   api_key_resend: process.env.API_KEY_RESEND as string,
 
-  resend_email_from: process.env.RESEND_EMAIL_FROM as string
+  resend_email_from: process.env.RESEND_EMAIL_FROM as string,
+
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID as string,
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY as string,
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID as string,
+  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME as string,
+  R2_ENDPOINT: process.env.R2_ENDPOINT as string,
+  R2_LINK_PUBLIC: process.env.R2_LINK_PUBLIC as string
 }

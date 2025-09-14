@@ -12,6 +12,11 @@ const paymentRoute = Router()
  */
 paymentRoute.post("/", accessTokenValidator, verifyUserValidator, wrapRequestHandler(createPaymentController))
 
+/**
+ * Description: Cập nhật Thanh toán đơn hàng
+ * Path: /vnpay-callback
+ * Method: POST
+ */
 paymentRoute.post(
   "/vnpay-callback",
   accessTokenValidator,

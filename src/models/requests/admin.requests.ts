@@ -32,7 +32,7 @@ export type CreateCustomerBodyReq = {
   name: string
   email: string
   phone: string
-  dateOfBirth: string
+  date_of_birth: string
   password: string
   confirmPassword: string
   role: string
@@ -44,7 +44,7 @@ export type CreateStaffBodyReq = {
   name: string
   email: string
   phone: string
-  dateOfBirth: string
+  date_of_birth: string
   password: string
   confirmPassword: string
   role: string  

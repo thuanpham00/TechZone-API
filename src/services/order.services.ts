@@ -42,7 +42,6 @@ class OrderServices {
     }))
 
     const { customer_info, totalAmount, note, shipping_fee, subTotal } = body
-    const listIdProductOrder = body.products.map((item) => item.product_id)
     const [order] = await Promise.all([
       databaseServices.order.insertOne(
         new Order({
@@ -55,36 +54,8 @@ class OrderServices {
           status: OrderStatus.loading,
           note
         })
-      ),
-      databaseServices.cart.updateOne(
-        {
-          user_id: new ObjectId(user_id)
-        },
-        {
-          $pull: {
-            products: {
-              product_id: { $in: listIdProductOrder.map((id) => new ObjectId(id)) }
-            }
-          }
-        }
-      ),
-      // cập nhật số lượng tồn của sản phẩm và lượt mua
-      ...productOrder.map((item) => {
-        databaseServices.product.updateOne(
-          {
-            _id: new ObjectId(item.product_id)
-          },
-          {
-            $inc: { stock: -item.quantity, sold: item.quantity }
-          }
-        )
-      })
+      )
     ])
-
-    const cartUser = await databaseServices.cart.findOne({ user_id: new ObjectId(user_id) })
-    if (cartUser?.products.length === 0) {
-      await databaseServices.cart.deleteOne({ user_id: new ObjectId(user_id) })
-    }
 
     return order.insertedId
   }

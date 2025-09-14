@@ -9,8 +9,7 @@ import { CompleteMultipartUploadCommandOutput } from "@aws-sdk/client-s3"
 import { getNameImage } from "~/utils/common"
 import { config } from "dotenv"
 import { File } from "formidable"
-import databaseServices from "./database.services"
-import { ObjectId } from "mongodb"
+import { uploadToR2 } from "~/utils/r2_cloudflare"
 config()
 
 class MediaServices {
@@ -62,7 +61,7 @@ class MediaServices {
     sharp.cache(false)
     await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
     const mime = (await import("mime")).default
-    const s3Result = await uploadFileToS3({
+    const s3Result = await uploadToR2({
       fileName: "image/" + nameCategory + "/" + idProduct + "/banner/" + newFullName,
       filePath: newPath,
       ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
@@ -83,7 +82,7 @@ class MediaServices {
     sharp.cache(false)
     await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
     const mime = (await import("mime")).default
-    const s3Result = await uploadFileToS3({
+    const s3Result = await uploadToR2({
       fileName: "avatar/" + userId + "/" + newFullName,
       filePath: newPath,
       ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh

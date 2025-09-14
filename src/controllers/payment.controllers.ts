@@ -82,6 +82,42 @@ export const callBackVnpayController = async (req: Request, res: Response, next:
   const { orderId } = req.body
   const findOrder = await databaseServices.order.findOne({ _id: new ObjectId(orderId) })
   if (findOrder) {
+    const productOrder = findOrder.products.map((item) => ({
+      ...item,
+      product_id: new ObjectId(item.product_id)
+    }))
+
+    // cập nhật giỏ hàng
+    await Promise.all([
+      databaseServices.cart.updateOne(
+        {
+          user_id: findOrder.user_id
+        },
+        {
+          $pull: {
+            products: {
+              product_id: { $in: productOrder.map((id) => new ObjectId(id.product_id)) }
+            }
+          }
+        }
+      ), // cập nhật số lượng tồn của sản phẩm và lượt mua
+      ...productOrder.map((item) => {
+        databaseServices.product.updateOne(
+          {
+            _id: new ObjectId(item.product_id)
+          },
+          {
+            $inc: { stock: -item.quantity, sold: item.quantity }
+          }
+        )
+      })
+    ])
+
+    const cartUser = await databaseServices.cart.findOne({ user_id: new ObjectId(findOrder.user_id) })
+    if (cartUser?.products.length === 0) {
+      await databaseServices.cart.deleteOne({ user_id: new ObjectId(findOrder.user_id) })
+    }
+
     const today = new Date()
     const formattedDate = dayjs(today).format("HH:mm DD/MM/YYYY")
     const bodyEmailSend = {
