@@ -103,3 +103,7 @@ export type UpdatePermissionsRole = {
   add: string[]
   remove: string[]
 }
+
+export type GetCollectionQuery = {
+  status?: string
+}

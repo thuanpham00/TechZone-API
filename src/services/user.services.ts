@@ -559,7 +559,7 @@ class UserServices {
     if (body.date_of_birth) setData.date_of_birth = new Date(body.date_of_birth)
 
     if (body.employeeInfo) {
-      if (body.employeeInfo.contract_type) {
+      if (body.employeeInfo.contract_type) { 
         setData["employeeInfo.contract_type"] = body.employeeInfo.contract_type
       }
       if (body.employeeInfo.department) {

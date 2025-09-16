@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import { CollectionMessage, UserMessage } from "~/constant/message"
 import collectionServices from "~/services/collection.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { GetCollectionReq } from "~/models/requests/product.requests"
+import { GetCollectionQuery, GetCollectionReq } from "~/models/requests/product.requests"
 import { TokenPayload } from "~/models/requests/user.requests"
 import { CartProduct, ProductInFavourite } from "~/models/schema/favourite_cart.order.schema"
 import databaseServices from "~/services/database.services"
@@ -68,14 +68,92 @@ export const slugConditionMap = {
   "ban-phim-tren-3-trieu": { price: { $gte: 3000000 }, category: "Bàn phím" }
 }
 
+export const getFilterBaseOnCategory = async (req: Request, res: Response) => {
+  const category = req.query.category
+  const findCategory = await databaseServices.category.findOne({ name: category })
+  // Lấy spec liên quan đến category
+  if (category === "Laptop") {
+    const [specs_screen_size, specs_ssd, specs_ram, specs_cpu] = await Promise.all([
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Màn hình"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Ổ cứng"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Ram"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Cpu"
+        })
+        .toArray()
+    ])
+
+    const screenSizes = new Set<number>()
+    const storages = new Set<string>()
+    const rams = new Set<string>()
+    const cpus = new Set<string>()
+
+    specs_screen_size.forEach((spec) => {
+      const value = spec.value.toString()
+
+      const inchMatch = value.match(/(\d{2}\.?\d*)\s*inch/i)
+      if (inchMatch) screenSizes.add(parseFloat(inchMatch[1]))
+    })
+
+    specs_ssd.forEach((spec) => {
+      const value = spec.value.toString()
+      const storageMatch = value.match(/(\d+(?:\.\d+)?)\s*(TB|GB)/i)
+      if (storageMatch) {
+        storages.add(`${storageMatch[1]}${storageMatch[2].toUpperCase()}`)
+      }
+    })
+
+    specs_ram.forEach((spec) => {
+      const value = spec.value.toString()
+      const ramMatch = value.match(/(\d+(?:\.\d+)?)\s*GB/i)
+      if (ramMatch) {
+        rams.add(`${ramMatch[1]}GB`)
+      }
+    })
+
+    specs_cpu.forEach((spec) => {
+      const value = spec.value.toString()
+      const cpuMatch = value.match(/(Core™\s*i[579]|Ryzen™(?:\s*AI)?\s*7)/i)
+      if (cpuMatch) {
+        cpus.add(cpuMatch[1]) // Thêm "Core™ i7" hoặc "Ryzen™ AI 7"
+      }
+    })
+    res.json({
+      screen_size_list: Array.from(screenSizes).sort((a, b) => a - b),
+      ssd_list: Array.from(storages),
+      ram_list: Array.from(rams),
+      cpu_list: Array.from(cpus)
+    })
+    return
+  }
+}
+
 export const getCollectionsController = async (
-  req: Request<ParamsDictionary, any, any, GetCollectionReq>,
+  req: Request<ParamsDictionary, any, any, GetCollectionQuery>,
   res: Response,
   next: NextFunction
 ) => {
   const { slug } = req.params
+  const query = req.query
   const condition = (slugConditionMap as Record<string, any>)[slug]
-  const { result, total } = await collectionServices.getCollection(condition, slug)
+  const { result, total } = await collectionServices.getCollection(condition, slug, query)
   res.json({
     message: CollectionMessage.GET_COLLECTION_IS_SUCCESS,
     result,
@@ -84,7 +162,7 @@ export const getCollectionsController = async (
 }
 
 export const getCollectionsFavouriteController = async (
-  req: Request<ParamsDictionary, any, any, GetCollectionReq>,
+  req: Request<ParamsDictionary, any, any>,
   res: Response,
   next: NextFunction
 ) => {
@@ -183,7 +261,7 @@ export const clearProductInCartController = async (
 }
 
 export const getCollectionsCartController = async (
-  req: Request<ParamsDictionary, any, any, GetCollectionReq>,
+  req: Request<ParamsDictionary, any, any>,
   res: Response,
   next: NextFunction
 ) => {

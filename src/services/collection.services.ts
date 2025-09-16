@@ -1,12 +1,12 @@
 import Product from "~/models/schema/product.schema"
 import databaseServices from "./database.services"
 import { ObjectId } from "mongodb"
-import { ConditionQuery } from "~/models/requests/product.requests"
+import { ConditionQuery, GetCollectionQuery } from "~/models/requests/product.requests"
 import { Cart, CartProduct, Favourite, ProductInFavourite } from "~/models/schema/favourite_cart.order.schema"
 import { CollectionMessage } from "~/constant/message"
 
 class CollectionServices {
-  async getCollection(condition: ConditionQuery, slug: string) {
+  async getCollection(condition: ConditionQuery, slug: string, query: GetCollectionQuery) {
     const $match: any = {}
     let checkBanChay = false
     if (slug.includes("ban-chay")) {
@@ -26,7 +26,7 @@ class CollectionServices {
       $match["name"] = { $regex: "rtx 4060", $options: "i" }
     } else if (slug.includes("3060")) {
       $match["name"] = { $regex: "rtx 3060", $options: "i" }
-    } 
+    }
 
     if (condition.category) {
       const categoryId = await databaseServices.category.findOne({ name: condition.category }).then((res) => res?._id)
@@ -81,6 +81,10 @@ class CollectionServices {
       if ($match["$expr"]["$and"].length === 0) {
         delete $match["$expr"]
       }
+    }
+
+    if (query.status) {
+      $match["status"] = query.status
     }
 
     const basePipeline: any[] = [

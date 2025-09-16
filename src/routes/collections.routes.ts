@@ -1,4 +1,5 @@
 import { Router } from "express"
+import { ObjectId } from "mongodb"
 import {
   addProductToCartController,
   addProductToFavouriteController,
@@ -6,14 +7,23 @@ import {
   getCollectionsCartController,
   getCollectionsController,
   getCollectionsFavouriteController,
+  getFilterBaseOnCategory,
   removeProductToCartController,
   updateQuantityProductInCartController
 } from "~/controllers/collections.controllers"
 import { getCollectionValidator } from "~/middlewares/collection.middlewares"
 import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
+import databaseServices from "~/services/database.services"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const collectionsRoute = Router()
+
+/**
+ * Description: get bộ lọc theo danh mục
+ * Path: /
+ * Method: GET
+ */
+collectionsRoute.get("/filters", wrapRequestHandler(getFilterBaseOnCategory))
 
 /**
  * Description: Tạo danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
