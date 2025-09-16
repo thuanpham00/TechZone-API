@@ -3,7 +3,6 @@ import sharp from "sharp"
 import { Media } from "~/constant/common"
 import { UPLOAD_IMAGE_DIR } from "~/constant/dir"
 import fs from "fs"
-import { uploadFileToS3 } from "~/utils/s3"
 import { MediaType } from "~/constant/enum"
 import { CompleteMultipartUploadCommandOutput } from "@aws-sdk/client-s3"
 import { getNameImage } from "~/utils/common"
@@ -22,7 +21,7 @@ class MediaServices {
         sharp.cache(false)
         await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
         const mime = (await import("mime")).default
-        const s3Result = await uploadFileToS3({
+        const s3Result = await uploadToR2({
           fileName: "image/" + nameCategory + "/" + idProduct + "/medias/" + newFullName,
           filePath: newPath,
           ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
