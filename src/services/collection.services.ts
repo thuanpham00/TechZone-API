@@ -83,8 +83,17 @@ class CollectionServices {
       }
     }
 
+    console.log(query)
     if (query.status) {
       $match["status"] = query.status
+    }
+
+    if (query.screen_size) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: { $regex: `${query.screen_size}inch`, $options: "i" }, name: "Màn hình" })
+        .toArray()
+      console.log(res)
     }
 
     const basePipeline: any[] = [

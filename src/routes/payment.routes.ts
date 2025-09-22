@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { callBackVnpayController, createPaymentController } from "~/controllers/payment.controllers"
+import { callBackVnpayController, createOrderCODController, createPaymentController } from "~/controllers/payment.controllers"
 import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -22,6 +22,18 @@ paymentRoute.post(
   accessTokenValidator,
   verifyUserValidator,
   wrapRequestHandler(callBackVnpayController)
+)
+
+/**
+ * Description: Cập nhật Thanh toán đơn hàng
+ * Path: /vnpay-callback
+ * Method: POST
+ */
+paymentRoute.post(
+  "/create-order-cod",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(createOrderCODController)
 )
 
 export default paymentRoute

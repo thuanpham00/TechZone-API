@@ -1,4 +1,5 @@
 export const UserMessage = {
+  STAFF_IS_NOT_ACTIVE: "Tài khoản đã bị khóa! Vui lòng liên hệ quản trị viên",
   REQUIRED_LOGIN: "Vui lòng đăng nhập để tiếp tục!",
   VALIDATION_ERROR: "Lỗi xác thực!",
   EMAIL_IS_VALID: "Email không hợp lệ!",

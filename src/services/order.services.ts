@@ -3,7 +3,7 @@ import { CreateOrderBodyReq } from "~/models/requests/product.requests"
 import databaseServices from "./database.services"
 import { Order } from "~/models/schema/favourite_cart.order.schema"
 import { ObjectId } from "mongodb"
-import { OrderStatus } from "~/constant/enum"
+import { OrderStatus, TypeOrder } from "~/constant/enum"
 
 class OrderServices {
   async getOrder(user_id: string) {
@@ -41,7 +41,7 @@ class OrderServices {
       product_id: new ObjectId(item.product_id)
     }))
 
-    const { customer_info, totalAmount, note, shipping_fee, subTotal } = body
+    const { customer_info, totalAmount, note, shipping_fee, subTotal, type_order } = body
     const [order] = await Promise.all([
       databaseServices.order.insertOne(
         new Order({
@@ -51,8 +51,9 @@ class OrderServices {
           subTotal,
           shipping_fee,
           totalAmount,
-          status: OrderStatus.loading,
-          note
+          status: type_order === TypeOrder.cod ? OrderStatus.pending : OrderStatus.loading,
+          note,
+          type_order
         })
       )
     ])

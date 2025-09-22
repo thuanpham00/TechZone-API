@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb"
-import { OrderStatus } from "~/constant/enum"
+import { OrderStatus, TypeOrder } from "~/constant/enum"
 
 export interface ProductInFavourite {
   product_id: ObjectId // Tham chiếu tới bảng products
@@ -83,6 +83,7 @@ interface OrderType {
   shipping_fee: number
   totalAmount: number
   status?: OrderStatus
+  type_order?: TypeOrder
   status_history?: {
     status: OrderStatus
     updated_at: Date
@@ -105,6 +106,7 @@ export class Order {
   subTotal: number
   shipping_fee: number
   totalAmount: number
+  type_order: TypeOrder
   status: OrderStatus
   status_history: {
     status: OrderStatus
@@ -128,6 +130,7 @@ export class Order {
     this.subTotal = order.subTotal
     this.totalAmount = order.totalAmount
     this.status = order.status || OrderStatus.pending
+    this.type_order = order.type_order || TypeOrder.vnpay
     this.status_history = order.status_history || []
     this.note = order.note || ""
     this.created_at = order.created_at || date

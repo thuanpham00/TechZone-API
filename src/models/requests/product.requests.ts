@@ -1,6 +1,6 @@
 import { File } from "formidable"
 import { ProductInFavourite } from "../schema/favourite_cart.order.schema"
-import { OrderStatus } from "~/constant/enum"
+import { OrderStatus, TypeOrder } from "~/constant/enum"
 
 export type CreateProductBodyReq = {
   name: string
@@ -52,6 +52,7 @@ export type CreateReceiptBodyReq = {
 }
 
 export type CreateOrderBodyReq = {
+  type_order: TypeOrder
   customer_info: {
     name: string // người nhận
     phone: string
@@ -106,4 +107,5 @@ export type UpdatePermissionsRole = {
 
 export type GetCollectionQuery = {
   status?: string
+  screen_size?: string
 }

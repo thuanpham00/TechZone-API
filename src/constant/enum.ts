@@ -37,6 +37,11 @@ export enum OrderStatus {
   cancelled = "Đã hủy"
 }
 
+export enum TypeOrder {
+  cod = "cod",
+  vnpay = "vnpay"
+}
+
 export enum TypeEmailResend {
   verifyEmail = "Xác thực email",
   resendEmail = "Gửi lại email xác thực",

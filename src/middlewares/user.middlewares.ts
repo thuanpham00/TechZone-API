@@ -601,7 +601,18 @@ export const checkUserLogin = (typeUser: string) => async (req: Request, res: Re
       )
     }
   } else if (typeUser === "other") {
-    if (role?.key === RoleType.ADMIN || role?.key === RoleType.SALES_STAFF || role?.key === RoleType.INVENTORY_STAFF) {
+    if (role?.key === RoleType.ADMIN) {
+      return next()
+    }
+    if (role?.key === RoleType.SALES_STAFF || role?.key === RoleType.INVENTORY_STAFF) {
+      if (user.employeeInfo?.status !== EmployeeInfoStatus.Active) {
+        return next(
+          new ErrorWithStatus({
+            message: UserMessage.STAFF_IS_NOT_ACTIVE,
+            status: httpStatus.FORBIDDEN
+          })
+        )
+      }
       return next()
     } else {
       return next(

@@ -31,7 +31,8 @@ export const createPaymentController = async (req: Request, res: Response, next:
     .slice(0, 14)
 
   // lấy order body từ FE
-  const { customer_info, totalAmount, note, shipping_fee, subTotal, products } = req.body as CreateOrderBodyReq
+  const { customer_info, totalAmount, note, shipping_fee, subTotal, products, type_order } =
+    req.body as CreateOrderBodyReq
   const { user_id } = req.decode_authorization as TokenPayload
   const orderResult = await orderServices.createOrder(user_id, {
     customer_info,
@@ -39,12 +40,13 @@ export const createPaymentController = async (req: Request, res: Response, next:
     note,
     shipping_fee,
     subTotal,
-    products
+    products,
+    type_order
   })
 
   const insertedId = orderResult // id order
 
-  const vnp_Params: Record<string, string> = {
+  const vnp_Params: Record<string, any> = {
     vnp_Version: "2.1.0",
     vnp_Command: "pay",
     vnp_TmnCode: tmnCode,
@@ -52,7 +54,9 @@ export const createPaymentController = async (req: Request, res: Response, next:
     vnp_CurrCode: "VND",
     vnp_TxnRef: insertedId.toString(),
     vnp_OrderInfo: `Thanh toán đơn hàng #${insertedId}`,
-    vnp_OrderType: "billpayment",
+    vnp_OrderType: {
+      vnp_name_customer: customer_info.name
+    },
     vnp_Amount: (totalAmount * 100).toString(),
     vnp_ReturnUrl: returnUrl,
     vnp_IpAddr: ipAddr as string,
@@ -162,6 +166,94 @@ export const callBackVnpayController = async (req: Request, res: Response, next:
     message: "Không tìm thấy đơn hàng"
   })
   return
+}
+
+export const createOrderCODController = async (req: Request, res: Response, next: NextFunction) => {
+  const { customer_info, totalAmount, note, shipping_fee, subTotal, products, type_order } =
+    req.body as CreateOrderBodyReq
+  console.log(req.body)
+  const { user_id } = req.decode_authorization as TokenPayload
+  const orderID = await orderServices.createOrder(user_id, {
+    customer_info,
+    totalAmount,
+    note,
+    shipping_fee,
+    subTotal,
+    products,
+    type_order
+  })
+
+  // cập nhật giỏ hàng
+  await Promise.all([
+    databaseServices.cart.updateOne(
+      {
+        user_id: new ObjectId(user_id)
+      },
+      {
+        $pull: {
+          products: {
+            product_id: { $in: products.map((id) => new ObjectId(id.product_id)) }
+          }
+        }
+      }
+    ), // cập nhật số lượng tồn của sản phẩm và lượt mua
+    ...products.map((item) => {
+      databaseServices.product.updateOne(
+        {
+          _id: new ObjectId(item.product_id)
+        },
+        {
+          $inc: { stock: -item.quantity, sold: item.quantity }
+        }
+      )
+    })
+  ])
+
+  const cartUser = await databaseServices.cart.findOne({ user_id: new ObjectId(user_id) })
+  if (cartUser?.products.length === 0) {
+    await databaseServices.cart.deleteOne({ user_id: new ObjectId(user_id) })
+  }
+
+  const today = new Date()
+  const formattedDate = dayjs(today).format("HH:mm DD/MM/YYYY")
+  const bodyEmailSend = {
+    id: orderID,
+    customerName: customer_info.name,
+    customerPhone: customer_info.phone,
+    shippingAddress: customer_info.address,
+    totalAmount: formatCurrency(totalAmount),
+    createdAt: formattedDate
+  }
+
+  const [sendMail] = await Promise.all([
+    sendNotificationOrderBuyCustomer(customer_info.email, bodyEmailSend),
+    databaseServices.order.updateOne(
+      { _id: new ObjectId(orderID) },
+      {
+        $set: {
+          status: OrderStatus.pending
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+  ])
+  const resendId = sendMail.data?.id
+  await databaseServices.emailLog.insertOne(
+    new EmailLog({
+      to: customer_info.email,
+      subject: `Đặt hàng thành công - TECHZONE xác nhận đơn hàng #${orderID}`,
+      type: TypeEmailResend.orderConfirmation,
+      status: StatusEmailResend.sent,
+      resend_id: resendId as string
+    })
+  )
+
+  const findOrder = await databaseServices.order.findOne({ _id: new ObjectId(orderID) })
+
+  res.json({
+    message: "Tạo đơn hàng thành công",
+    findOrder
+  })
 }
 /**
  * 
