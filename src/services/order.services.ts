@@ -41,7 +41,29 @@ class OrderServices {
       product_id: new ObjectId(item.product_id)
     }))
 
-    const { customer_info, totalAmount, note, shipping_fee, subTotal, type_order } = body
+    const {
+      customer_info,
+      totalAmount,
+      note,
+      shipping_fee,
+      subTotal,
+      type_order,
+      voucher_id,
+      voucher_code,
+      discount_amount
+    } = body
+
+    // Nếu có voucher, validate và tăng used_count
+    if (voucher_id && voucher_code) {
+      await databaseServices.vouchers.updateOne(
+        { _id: new ObjectId(voucher_id) },
+        {
+          $inc: { used_count: 1 },
+          $currentDate: { updated_at: true }
+        }
+      )
+    }
+
     const [order] = await Promise.all([
       databaseServices.order.insertOne(
         new Order({
@@ -53,7 +75,10 @@ class OrderServices {
           totalAmount,
           status: type_order === TypeOrder.cod ? OrderStatus.pending : OrderStatus.loading,
           note,
-          type_order
+          type_order,
+          voucher_id: voucher_id ? new ObjectId(voucher_id) : undefined,
+          voucher_code: voucher_code || undefined,
+          discount_amount: discount_amount || 0
         })
       )
     ])

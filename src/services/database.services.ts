@@ -3,7 +3,7 @@ import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { User } from "~/models/schema/users.schema"
 import { config } from "dotenv"
 import Product from "~/models/schema/product.schema"
-import { Brand, Category } from "~/models/schema/brand_category.schema"
+import { Brand, Category, CategoryMenu } from "~/models/schema/brand_category.schema"
 import Specification from "~/models/schema/specification.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
 import { envConfig } from "~/utils/config"
@@ -12,6 +12,7 @@ import { Order } from "~/models/schema/favourite_cart.order.schema"
 import { Conversation } from "~/models/schema/conversation.schema"
 import { EmailLog } from "~/models/schema/email.schema"
 import { Permission, Role } from "~/models/schema/role_permission.schema"
+import { Voucher } from "~/models/schema/voucher.schema"
 config()
 
 const URI = `mongodb+srv://${envConfig.user_name}:${envConfig.password}@cluster0.1nx8m.mongodb.net/${envConfig.name_database}?retryWrites=true&w=majority`
@@ -93,6 +94,10 @@ class DatabaseServices {
     return this.db.collection(envConfig.collection_category)
   }
 
+  get category_menu(): Collection<CategoryMenu> {
+    return this.db.collection(envConfig.collection_category_menu)
+  }
+
   get specification(): Collection<Specification> {
     return this.db.collection(envConfig.collection_specification)
   }
@@ -135,6 +140,10 @@ class DatabaseServices {
 
   get permissions(): Collection<Permission> {
     return this.db.collection(envConfig.collection_permissions)
+  }
+
+  get vouchers(): Collection<Voucher> {
+    return this.db.collection(envConfig.collection_vouchers)
   }
 }
 

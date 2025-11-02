@@ -9,17 +9,18 @@ export const initFolder = () => {
   }
 }
 
-export const handleUploadImage = async (req: Request) => {
+export const handleUploadImage = async (req: Request, opts?: { required?: boolean }) => {
+  const { required = true } = opts || {}
   // do formidable v3 sử dụng ESModule mà dự án dùng commonJS nên cần chuyển formidable v3 sang commonJS để biên dịch chính xác
   const formidable = (await import("formidable")).default
   const form = formidable({
     uploadDir: UPLOAD_IMAGE_TEMP_DIR, // đường dẫn trỏ tới thư mục lưu
     maxFiles: 4, // up tối đa 4 file
     keepExtensions: true, // hiển thị đuôi file mở rộng
-    maxFileSize: 500 * 1024, // 500KB
-    maxTotalFileSize: 500 * 1024 * 4,
+    maxFileSize: 1000 * 1024, // 1mb
+    maxTotalFileSize: 2000 * 1024 * 4, // tổng tất cả file là 8mb
     filter: function ({ name, originalFilename, mimetype }) {
-      const valid = name === "image" && Boolean(mimetype?.includes("image/"))
+      const valid = Boolean(mimetype?.includes("image/"))
 
       // filter chỉ upload được hình ảnh
       if (!valid) {
@@ -35,12 +36,14 @@ export const handleUploadImage = async (req: Request) => {
       if (err) {
         return reject(err)
       }
-      // check nếu file rỗng
-      if (!Boolean(files.image)) {
+      const fileInput = files.image as File | File[] | undefined
+      const list = Array.isArray(fileInput) ? fileInput : fileInput ? [fileInput] : []
+
+      if (required && list.length === 0) {
         return reject(new Error("File is empty"))
       }
       // console.log(files)
-      resolve({ files: files.image as File[], fields: fields })
+      resolve({ files: list as File[], fields: fields })
     })
   })
 }

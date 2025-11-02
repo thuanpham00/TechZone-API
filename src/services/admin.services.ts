@@ -23,13 +23,16 @@ import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
 import Specification from "~/models/schema/specification.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
-import { OrderStatus, ProductStatus, UserVerifyStatus } from "~/constant/enum"
+import { OrderStatus, ProductStatus, UserVerifyStatus, VoucherStatus, VoucherType } from "~/constant/enum"
 import { userServices } from "./user.services"
 import { hashPassword } from "~/utils/scripto"
 import { User } from "~/models/schema/users.schema"
 import { RefreshToken } from "~/models/schema/refreshToken.schema"
 import { sendVerifyRegisterEmail } from "~/utils/ses"
 import { Role } from "~/models/schema/role_permission.schema"
+import { File } from "formidable"
+import { deleteFromR2ByUrl } from "~/utils/r2_cloudflare"
+import { Voucher } from "~/models/schema/voucher.schema"
 
 class AdminServices {
   async getStatisticalSell(month: number, year: number) {
@@ -615,8 +618,8 @@ class AdminServices {
     return result
   }
 
-  async createCategory(name: string) {
-    const result = await databaseServices.category.insertOne(new Category({ name }))
+  async createCategory(name: string, is_active: Boolean) {
+    const result = await databaseServices.category.insertOne(new Category({ name, is_active }))
     return result
   }
 
@@ -673,7 +676,7 @@ class AdminServices {
           {
             $match
           },
-          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -741,6 +744,208 @@ class AdminServices {
     }
   } // ok
 
+  async addMenuCategory(id_category: string, name: string, is_active: boolean, items: any[]) {
+    // Upload banner cho từng item (nếu có)
+    const itemsWithBanner = await Promise.all(
+      items.map(async (item) => {
+        let bannerUrl: string
+        if (item.banner) {
+          const { url } = await mediaServices.uploadBannerCategoryLink(item.banner, id_category)
+          bannerUrl = url
+
+          return {
+            id_item: new ObjectId(),
+            name: item.name,
+            slug: item.slug,
+            type_filter: item.type_filter,
+            banner: bannerUrl
+          }
+        }
+        return {
+          id_item: new ObjectId(),
+          name: item.name,
+          slug: item.slug,
+          type_filter: item.type_filter
+        }
+      })
+    )
+
+    // Thêm section mới vào category_menu
+    await databaseServices.category_menu.updateOne(
+      { category_id: new ObjectId(id_category) },
+      {
+        $push: {
+          sections: {
+            id_section: new ObjectId(),
+            name,
+            is_active,
+            items: itemsWithBanner
+          }
+        },
+        $currentDate: { updated_at: true }
+      },
+      { upsert: true }
+    )
+  }
+
+  async deleteMenuCategory(id: string) {
+    await databaseServices.category_menu.updateOne(
+      { "sections.id_section": new ObjectId(id) },
+      {
+        $pull: {
+          sections: { id_section: new ObjectId(id) }
+        }
+      }
+    )
+  }
+
+  async getMenuByCategoryId(id: string) {
+    const result = await databaseServices.category_menu.findOne({ category_id: new ObjectId(id) })
+    return result
+  }
+
+  async updateGroupNameMenu(id: string, id_section: string, name: string, is_active: boolean) {
+    const result = await databaseServices.category_menu.findOneAndUpdate(
+      { _id: new ObjectId(id), "sections.id_section": new ObjectId(id_section) },
+      { $set: { "sections.$.name": name, "sections.$.is_active": is_active }, $currentDate: { updated_at: true } },
+      { returnDocument: "after" }
+    )
+    return result
+  }
+
+  async createLinkCategoryMenu(
+    id: string,
+    id_category: string,
+    id_section: string,
+    name: string,
+    slug: string,
+    type_filter: string,
+    banner?: File
+  ) {
+    let urlImage = ""
+    if (banner) {
+      const { url } = await mediaServices.uploadBannerCategoryLink(banner, id_category)
+      urlImage = url
+    }
+    const payload = {
+      id_item: new ObjectId(),
+      name,
+      slug,
+      type_filter: type_filter
+    }
+    await databaseServices.category_menu.updateOne(
+      {
+        _id: new ObjectId(id),
+        "sections.id_section": new ObjectId(id_section)
+      },
+      {
+        $push: {
+          "sections.$.items": banner ? { ...payload, banner: urlImage } : payload
+        }
+      }
+    )
+  }
+
+  async updateLinkCategoryMenu(
+    idLink: string,
+    id_category: string,
+    name: string,
+    slug: string,
+    type_filter: string,
+    banner?: File
+  ) {
+    const itemId = new ObjectId(idLink)
+    const payload: any = {
+      name,
+      slug,
+      type_filter
+    }
+
+    // Nếu có gửi banner mới thì xóa ảnh cũ và upload ảnh mới
+    if (banner) {
+      // lấy ra ảnh banner hiện tại của item
+      const findItem = await databaseServices.category_menu
+        .aggregate([
+          { $match: { "sections.items.id_item": itemId } },
+          {
+            $unwind: "$sections"
+          },
+          { $unwind: "$sections.items" },
+          { $match: { "sections.items.id_item": itemId } },
+          { $project: { _id: 0, banner: "$sections.items.banner" } }
+        ])
+        .toArray()
+
+      const oldBannerUrl = findItem[0]?.banner as string | undefined
+
+      // 2) Xóa file trên R2 nếu có
+      if (oldBannerUrl) {
+        await deleteFromR2ByUrl(oldBannerUrl)
+      }
+
+      // 3) Upload ảnh mới
+      const { url } = await mediaServices.uploadBannerCategoryLink(banner, id_category)
+      payload.banner = url
+    }
+
+    const updateFields: any = {
+      "sections.$[].items.$[item].name": payload.name,
+      "sections.$[].items.$[item].slug": payload.slug,
+      "sections.$[].items.$[item].type_filter": payload.type_filter
+    }
+
+    if (payload.banner) {
+      updateFields["sections.$[].items.$[item].banner"] = payload.banner
+    }
+
+    await databaseServices.category_menu.updateOne(
+      {
+        "sections.items.id_item": itemId
+      },
+      {
+        $set: updateFields,
+        $currentDate: { updated_at: true }
+      },
+      {
+        arrayFilters: [{ "item.id_item": itemId }]
+      }
+    )
+  }
+
+  async deleteLinkCategoryMenu(idItem: string) {
+    const itemId = new ObjectId(idItem)
+
+    // 1) Tìm URL banner của item (nếu có)
+    const found = await databaseServices.category_menu
+      .aggregate([
+        { $match: { "sections.items.id_item": itemId } },
+        { $unwind: "$sections" },
+        { $unwind: "$sections.items" },
+        { $match: { "sections.items.id_item": itemId } },
+        { $project: { _id: 0, banner: "$sections.items.banner" } }
+      ])
+      .toArray()
+
+    const bannerUrl = found[0]?.banner as string | undefined
+
+    // 2) Xóa file trên R2 nếu có
+    if (bannerUrl) {
+      await deleteFromR2ByUrl(bannerUrl)
+    }
+
+    // 3) Xóa item khỏi mọi section chứa nó
+    await databaseServices.category_menu.updateOne(
+      { "sections.items.id_item": itemId },
+      {
+        $pull: {
+          "sections.$[].items": { id_item: itemId }
+        }
+      }
+    )
+
+    return { deleted: true }
+  }
+
   async getBrands(
     id: string,
     limit?: number,
@@ -795,7 +1000,7 @@ class AdminServices {
           {
             $match
           },
-          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -1049,7 +1254,7 @@ class AdminServices {
           {
             $match
           },
-          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -1170,7 +1375,7 @@ class AdminServices {
     const categoryCheck = await databaseServices.category.findOneAndUpdate(
       { name: category }, // nếu danh mục không tồn tại // thì thêm mới
       {
-        $setOnInsert: new Category({ name: category, brand_ids: [brandId] }) // nếu không tồn tại danh mục thì thêm mới (danh mục liên kết với thương hiệu)
+        $setOnInsert: new Category({ name: category, is_active: true, brand_ids: [brandId] }) // nếu không tồn tại danh mục thì thêm mới (danh mục liên kết với thương hiệu)
       },
       {
         upsert: true,
@@ -1362,7 +1567,7 @@ class AdminServices {
           {
             $match
           },
-          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -1696,7 +1901,7 @@ class AdminServices {
               }
             }
           },
-          { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
+          { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
           {
             $skip: limit && page ? limit * (page - 1) : 0
           },
@@ -1993,7 +2198,7 @@ class AdminServices {
         }
       },
       // Phân trang
-      { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
+      { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
       {
         $skip: limit && page ? limit * (page - 1) : 0
       },
@@ -2028,7 +2233,8 @@ class AdminServices {
     }
   }
 
-  async getOrders(
+  async getOrdersInProcess(
+    type_filter: string,
     limit?: number,
     page?: number,
     created_at_start?: string,
@@ -2042,6 +2248,13 @@ class AdminServices {
     status?: string
   ) {
     const $match: any = {}
+    if (type_filter === "completed") {
+      $match.status = OrderStatus.delivered // "Đã giao hàng"
+    } else if (type_filter === "canceled") {
+      $match.status = OrderStatus.cancelled // "Đã hủy"
+    } else if (type_filter === "in_process") {
+      $match.status = { $nin: [OrderStatus.delivered, OrderStatus.cancelled] } // Trừ đã giao và đã hủy
+    }
 
     if (created_at_start) {
       const startDate = new Date(created_at_start)
@@ -2094,7 +2307,7 @@ class AdminServices {
 
     const pipeline: any[] = [
       { $match },
-      { $sort: { created_at: sortBy === "new" ? -1 : 1 } },
+      { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
       {
         $skip: limit && page ? limit * (page - 1) : 0
       },
@@ -2148,7 +2361,106 @@ class AdminServices {
     return {
       message: AdminMessage.UPDATE_STATUS_ORDER
     }
-  } // ok
+  }
+
+  async getVouchers(limit?: number, page?: number, name?: string, code?: string, status?: string, sortBy?: string) {
+    const $match: any = {}
+
+    const pipeline: any[] = [
+      { $match },
+      // Phân trang
+      { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
+      {
+        $skip: limit && page ? limit * (page - 1) : 0
+      },
+      {
+        $limit: limit ? limit : 5
+      }
+    ]
+
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.vouchers.aggregate(pipeline).toArray(),
+      databaseServices.vouchers.aggregate([{ $match }, { $count: "total" }]).toArray(),
+      databaseServices.vouchers
+        .aggregate([
+          { $match },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          { $count: "total" }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
+    }
+  }
+
+  async createVoucher(body: {
+    code: string
+    description?: string
+    type: VoucherType
+    value: number
+    max_discount?: number
+    min_order_value: number
+    usage_limit?: number
+    start_date: string
+    end_date: string
+    status?: VoucherStatus
+  }) {
+    const startDate = new Date(body.start_date)
+    const endDate = new Date(body.end_date)
+
+    const result = await databaseServices.vouchers.insertOne(
+      new Voucher({
+        code: body.code,
+        description: body.description,
+        type: body.type,
+        value: body.value,
+        max_discount: body.max_discount,
+        min_order_value: body.min_order_value,
+        usage_limit: body.usage_limit,
+        used_count: 0,
+        start_date: startDate,
+        end_date: endDate,
+        status: body.status || VoucherStatus.active
+      })
+    )
+
+    const voucher = await databaseServices.vouchers.findOne({ _id: result.insertedId })
+    return voucher
+  }
+
+  async updateVoucher(
+    id: string,
+    body: {
+      code: string
+      description?: string
+      type: VoucherType
+      value: number
+      max_discount?: number
+      min_order_value: number
+      usage_limit?: number
+      start_date: string
+      end_date: string
+      status?: VoucherStatus
+    }
+  ) {
+    const updateData: any = { ...body }
+
+    await databaseServices.vouchers.updateOne({ _id: new ObjectId(id) }, { $set: updateData })
+    return {
+      message: AdminMessage.UPDATE_VOUCHER_SUCCESS
+    }
+  }
 
   async getRoles() {
     const [result] = await Promise.all([

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
 import { envConfig } from "./config"
 import { config } from "dotenv"
 import fs from "fs"
@@ -38,4 +38,23 @@ export async function uploadToR2({
   return {
     Location: `https://${envConfig.R2_LINK_PUBLIC}/${fileName}`
   }
+}
+
+export async function deleteFromR2(key: string) {
+  const command = new DeleteObjectCommand({
+    Bucket: envConfig.R2_BUCKET_NAME,
+    Key: key
+  })
+  await r2.send(command)
+  return { deleted: true }
+}
+
+export function getKeyFromR2Url(url: string) {
+  const prefix = `https://${envConfig.R2_LINK_PUBLIC}/`
+  return url.startsWith(prefix) ? url.slice(prefix.length) : url
+}
+
+export async function deleteFromR2ByUrl(url: string) {
+  const key = getKeyFromR2Url(url)
+  return deleteFromR2(key)
 }

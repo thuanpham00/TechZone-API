@@ -1,30 +1,38 @@
 import { Router } from "express"
 import {
+  addMenuCategoryController,
   createBrandController,
   createCategoryController,
   createCustomerController,
+  createLinkCategoryMenuController,
   createProductController,
   createReceiptController,
   createRoleController,
   createStaffController,
   createSupplierController,
   createSupplyController,
+  createVoucherController,
   deleteBrandController,
   deleteCategoryController,
   deleteCustomerController,
+  deleteLinkCategoryMenuController,
+  deleteMenuCategoryController,
   deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
   getBrandsController,
   getCategoriesController,
   getCustomersController,
+  getMenuByCategoryIdController,
   getNameBrandsController,
   getNameCategoriesController,
   getNameProductsController,
   getNameSuppliersController,
   getNameSuppliersLinkedToProductController,
   getNameSuppliersNotLinkedToProductController,
-  getOrdersController,
+  getOrdersInCanceledController,
+  getOrdersInCompletedController,
+  getOrdersInProcessController,
   getPermissionsBasedOnIdRoleController,
   getPermissionsController,
   getPricePerUnitBasedOnProductAndSupplierController,
@@ -38,14 +46,18 @@ import {
   getStatistical_User_Controller,
   getSuppliersController,
   getSuppliesController,
+  getVouchersController,
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
+  updateGroupNameMenuController,
+  updateLinkCategoryMenuController,
   updatePermissionsBasedOnIdRoleController,
   updateRoleController,
   updateStatusOrderController,
   updateSupplierDetailController,
-  updateSupplyDetailController
+  updateSupplyDetailController,
+  updateVoucherController
 } from "~/controllers/admin.controllers"
 import { loginController } from "~/controllers/user.controllers"
 import {
@@ -58,6 +70,7 @@ import {
   createReceiptValidator,
   createSupplierValidator,
   createSupplyValidator,
+  createVoucherValidator,
   deleteBrandValidator,
   deleteCategoryValidator,
   deleteRoleValidator,
@@ -68,7 +81,8 @@ import {
   queryValidator,
   updateCategoryValidator,
   updateSupplierValidator,
-  updateSupplyValidator
+  updateSupplyValidator,
+  updateVoucherValidator
 } from "~/middlewares/admin.middlewares"
 import { filterMiddleware, parseFormData } from "~/middlewares/common.middlewares"
 import {
@@ -83,9 +97,9 @@ import {
 import { UpdateCategoryBodyReq, UpdateSupplierBodyReq, UpdateSupplyBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
+import multer from "multer"
 
 const adminRouter = Router()
-
 /**
  * Description: Login user for admin
  * Path: /login
@@ -262,7 +276,7 @@ adminRouter.put(
   checkRole(),
   checkIdValidator,
   updateCategoryValidator,
-  filterMiddleware<UpdateCategoryBodyReq>(["name"]),
+  filterMiddleware<UpdateCategoryBodyReq>(["name", "is_active"]),
   checkCategoryValidator,
   wrapRequestHandler(updateCategoryDetailController)
 )
@@ -282,6 +296,97 @@ adminRouter.delete(
   checkIdValidator,
   deleteCategoryValidator,
   wrapRequestHandler(deleteCategoryController)
+)
+
+/**
+ * Description: add menu category
+ * Path: /name-categories
+ * Method: POST
+ */
+adminRouter.post(
+  "/category_menus/group",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(addMenuCategoryController)
+)
+
+/**
+ * Description: add menu category
+ * Path: /name-categories
+ * Method: POST
+ */
+adminRouter.delete(
+  "/category_menus/group/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(deleteMenuCategoryController)
+)
+
+/**
+ * Description: get menu category by id category
+ * Path: /name-categories
+ * Method: GET
+ */
+adminRouter.get(
+  "/category_menus/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getMenuByCategoryIdController)
+)
+
+/**
+ * Description: update name group category menu
+ * Path: /category_menus/:id/name-group
+ * Method: PUT
+ */
+adminRouter.put(
+  "/category_menus/:id/name-group",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(updateGroupNameMenuController)
+)
+
+/**
+ * Description: create link category menu
+ * Path: /category_menus/:id/link
+ * Method: POST
+ */
+adminRouter.post(
+  "/category_menus/:id/link",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(createLinkCategoryMenuController)
+)
+
+/**
+ * Description: delete link category menu
+ * Path: /category_links/:id
+ * Method: DELETE
+ */
+adminRouter.put(
+  "/category_links/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(updateLinkCategoryMenuController)
+)
+
+/**
+ * Description: delete link category menu
+ * Path: /category_links/:id
+ * Method: DELETE
+ */
+adminRouter.delete(
+  "/category_links/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(deleteLinkCategoryMenuController)
 )
 
 /**
@@ -651,19 +756,51 @@ adminRouter.get(
 )
 
 /**
- * Description: get orders from customer
- * Path: /orders
+ * Description: get orders in process from customer
+ * Path: /orders-process
  * Method: GET
  * Headers: {Authorization: AT}
  * Body: CreateSupplyBodyReq
  */
 adminRouter.get(
-  "/orders",
+  "/orders-process",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
   queryValidator,
-  wrapRequestHandler(getOrdersController)
+  wrapRequestHandler(getOrdersInProcessController)
+)
+
+/**
+ * Description: get orders completed from customer
+ * Path: /orders-completed
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/orders-completed",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  queryValidator,
+  wrapRequestHandler(getOrdersInCompletedController)
+)
+
+/**
+ * Description: get orders canceled from customer
+ * Path: /orders-canceled
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/orders-cancelled",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  queryValidator,
+  wrapRequestHandler(getOrdersInCanceledController)
 )
 
 /**
@@ -681,6 +818,55 @@ adminRouter.put(
   checkIdValidator,
   wrapRequestHandler(updateStatusOrderController)
 )
+
+/**
+ * Description: get vouchers list
+ * Path: /vouchers
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/vouchers",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  queryValidator,
+  wrapRequestHandler(getVouchersController)
+)
+
+/**
+ * Description: get vouchers list
+ * Path: /vouchers
+ * Method: POST
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.post(
+  "/vouchers",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  createVoucherValidator,
+  wrapRequestHandler(createVoucherController)
+)
+
+/**
+ * Description: get vouchers list
+ * Path: /vouchers
+ * Method: POST
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.put(
+  "/vouchers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  updateVoucherValidator,
+  wrapRequestHandler(updateVoucherController)
+)
+
 
 /**
  * Description: get roles
@@ -842,7 +1028,7 @@ adminRouter.delete(
   verifyUserValidator,
   checkRole(),
   deleteRoleValidator,
-  wrapRequestHandler(deleteRoleController)
+  wrapRequestHandler(deleteCustomerController)
 )
 export default adminRouter
 

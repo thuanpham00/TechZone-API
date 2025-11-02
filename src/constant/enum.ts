@@ -59,3 +59,14 @@ export enum EmployeeInfoStatus {
   Inactive = "Inactive",
   Suspended = "Suspended"
 }
+
+export enum VoucherType {
+  percentage = "percentage", // Giảm theo %
+  fixed = "fixed" // Giảm số tiền cố định
+}
+
+export enum VoucherStatus {
+  active = "active",
+  inactive = "inactive",
+  expired = "expired"
+}

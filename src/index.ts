@@ -20,6 +20,8 @@ import emailRoute from "./routes/email.routes"
 import conversationRoute from "./routes/conversation.routes"
 import { createServer } from "http"
 import { initialSocket } from "./socket"
+import categoryClientRoute from "./routes/category.routes"
+import voucherRoute from "./routes/voucher.routes"
 config()
 
 const PORT = envConfig.port
@@ -54,6 +56,7 @@ const httpServer = createServer(app) // tạo 1 server đựa trên app của Ex
 // client
 app.use("/users", userRoute)
 app.use("/products", productRoute)
+app.use("/categories", categoryClientRoute)
 app.use("/medias", mediasRoute)
 app.use("/collections", collectionsRoute)
 app.use("/orders", ordersRoute)
@@ -61,6 +64,7 @@ app.use("/static", staticRoute)
 app.use("/payment", paymentRoute)
 app.use("/email", emailRoute)
 app.use("/conversation", conversationRoute)
+app.use("/vouchers", voucherRoute)
 
 // admin
 app.use("/admin", adminRouter)

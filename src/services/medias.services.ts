@@ -21,7 +21,7 @@ class MediaServices {
         sharp.cache(false)
         await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
         const mime = (await import("mime")).default
-        const s3Result = await uploadToR2({
+        const r2Result = await uploadToR2({
           fileName: "image/" + nameCategory + "/" + idProduct + "/medias/" + newFullName,
           filePath: newPath,
           ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
@@ -30,7 +30,7 @@ class MediaServices {
         fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
 
         return {
-          url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
+          url: (r2Result as CompleteMultipartUploadCommandOutput).Location as string,
           type: MediaType.Image
         }
       })
@@ -60,7 +60,7 @@ class MediaServices {
     sharp.cache(false)
     await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
     const mime = (await import("mime")).default
-    const s3Result = await uploadToR2({
+    const r2Result = await uploadToR2({
       fileName: "image/" + nameCategory + "/" + idProduct + "/banner/" + newFullName,
       filePath: newPath,
       ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
@@ -69,7 +69,7 @@ class MediaServices {
     fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
 
     return {
-      url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
+      url: (r2Result as CompleteMultipartUploadCommandOutput).Location as string,
       type: MediaType.Image
     }
   }
@@ -91,6 +91,27 @@ class MediaServices {
 
     return {
       url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
+      type: MediaType.Image
+    }
+  }
+
+  async uploadBannerCategoryLink(file: File, idCategory: string) {
+    const newName = getNameImage(file.newFilename)
+    const newFullName = `${newName}.jpg`
+    const newPath = path.resolve(UPLOAD_IMAGE_DIR, newFullName)
+    sharp.cache(false)
+    await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
+    const mime = (await import("mime")).default
+    const r2Result = await uploadToR2({
+      fileName: "Category-Menu/" + idCategory + "/" + newFullName,
+      filePath: newPath,
+      ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
+    })
+    fs.unlinkSync(file.filepath) // xóa ảnh tạm
+    fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
+
+    return {
+      url: (r2Result as CompleteMultipartUploadCommandOutput).Location as string,
       type: MediaType.Image
     }
   }

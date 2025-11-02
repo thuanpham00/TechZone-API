@@ -31,8 +31,18 @@ export const createPaymentController = async (req: Request, res: Response, next:
     .slice(0, 14)
 
   // lấy order body từ FE
-  const { customer_info, totalAmount, note, shipping_fee, subTotal, products, type_order } =
-    req.body as CreateOrderBodyReq
+  const {
+    customer_info,
+    totalAmount,
+    note,
+    shipping_fee,
+    subTotal,
+    products,
+    type_order,
+    voucher_id,
+    voucher_code,
+    discount_amount
+  } = req.body as CreateOrderBodyReq
   const { user_id } = req.decode_authorization as TokenPayload
   const orderResult = await orderServices.createOrder(user_id, {
     customer_info,
@@ -41,7 +51,10 @@ export const createPaymentController = async (req: Request, res: Response, next:
     shipping_fee,
     subTotal,
     products,
-    type_order
+    type_order,
+    voucher_id,
+    voucher_code,
+    discount_amount
   })
 
   const insertedId = orderResult // id order
@@ -169,8 +182,18 @@ export const callBackVnpayController = async (req: Request, res: Response, next:
 }
 
 export const createOrderCODController = async (req: Request, res: Response, next: NextFunction) => {
-  const { customer_info, totalAmount, note, shipping_fee, subTotal, products, type_order } =
-    req.body as CreateOrderBodyReq
+  const {
+    customer_info,
+    totalAmount,
+    note,
+    shipping_fee,
+    subTotal,
+    products,
+    type_order,
+    voucher_id,
+    voucher_code,
+    discount_amount
+  } = req.body as CreateOrderBodyReq
   console.log(req.body)
   const { user_id } = req.decode_authorization as TokenPayload
   const orderID = await orderServices.createOrder(user_id, {
@@ -180,7 +203,10 @@ export const createOrderCODController = async (req: Request, res: Response, next
     shipping_fee,
     subTotal,
     products,
-    type_order
+    type_order,
+    voucher_id,
+    voucher_code,
+    discount_amount
   })
 
   // cập nhật giỏ hàng

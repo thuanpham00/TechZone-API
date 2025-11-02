@@ -84,8 +84,14 @@ export const checkCategoryValidator = validate(
     {
       name: {
         custom: {
-          options: async (value) => {
-            const findCategory = await databaseServices.category.findOne({ name: value })
+          options: async (value, { req }) => {
+            // nếu có params.id (trường hợp update) thì loại trừ chính nó
+            const excludeId = (req.params as Record<string, any>)?.id
+            const query: any = { name: value }
+            if (excludeId && ObjectId.isValid(excludeId)) {
+              query._id = { $ne: new ObjectId(excludeId) }
+            }
+            const findCategory = await databaseServices.category.findOne(query)
             if (findCategory) {
               throw new ErrorWithStatus({
                 message: AdminMessage.CATEGORY_IS_ALREADY,
@@ -545,7 +551,16 @@ export const updateSupplyValidator = validate(
         optional: true
       },
       importPrice: {
-        optional: true
+        optional: true,
+        custom: {
+          options: async (value, { req }) => {
+            const findProduct = await databaseServices.product.findOne({ name: req.body.productId })
+            if ((findProduct?.price as number) < value) {
+              throw new Error(SupplyMessage.IMPORT_PRICE_IS_INVALID)
+            }
+            return true
+          }
+        }
       },
       warrantyMonths: { optional: true },
       leadTimeDays: {
@@ -634,3 +649,293 @@ export const deleteRoleValidator = async (req: Request, res: Response, next: Nex
   }
   next()
 }
+
+export const createVoucherValidator = validate(
+  checkSchema(
+    {
+      code: {
+        notEmpty: {
+          errorMessage: "Mã voucher không được để trống"
+        },
+        isString: {
+          errorMessage: "Mã voucher phải là chuỗi"
+        },
+        trim: true,
+        isLength: {
+          options: { min: 3, max: 20 },
+          errorMessage: "Mã voucher từ 3-20 ký tự"
+        },
+        custom: {
+          options: async (value) => {
+            const voucher = await databaseServices.vouchers.findOne({ code: value })
+            if (voucher) {
+              throw new ErrorWithStatus({
+                message: "Mã voucher đã tồn tại",
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            return true
+          }
+        }
+      },
+      description: {
+        optional: true,
+        isString: {
+          errorMessage: "Mô tả phải là chuỗi"
+        }
+      },
+      type: {
+        notEmpty: {
+          errorMessage: "Loại voucher không được để trống"
+        },
+        isIn: {
+          options: [["percentage", "fixed"]],
+          errorMessage: "Loại voucher phải là 'percentage' hoặc 'fixed'"
+        }
+      },
+      value: {
+        notEmpty: {
+          errorMessage: "Giá trị không được để trống"
+        },
+        isNumeric: {
+          errorMessage: "Giá trị phải là số"
+        },
+        custom: {
+          options: (value, { req }) => {
+            if (req.body.type === "percentage") {
+              if (value <= 0 || value > 100) {
+                throw new Error("Giảm theo % phải từ 1-100")
+              }
+            } else if (req.body.type === "fixed") {
+              if (value <= 0) {
+                throw new Error("Giá trị giảm phải lớn hơn 0")
+              }
+            }
+            return true
+          }
+        }
+      },
+      max_discount: {
+        optional: true,
+        isNumeric: {
+          errorMessage: "Giảm tối đa phải là số"
+        },
+        custom: {
+          options: (value, { req }) => {
+            if (req.body.type === "percentage" && value && value <= 0) {
+              throw new Error("Giảm tối đa phải lớn hơn 0")
+            }
+            return true
+          }
+        }
+      },
+      min_order_value: {
+        notEmpty: {
+          errorMessage: "Giá trị đơn tối thiểu không được để trống"
+        },
+        isNumeric: {
+          errorMessage: "Giá trị đơn tối thiểu phải là số"
+        },
+        custom: {
+          options: (value) => {
+            if (value < 0) {
+              throw new Error("Giá trị đơn tối thiểu phải >= 0")
+            }
+            return true
+          }
+        }
+      },
+      usage_limit: {
+        optional: true,
+        isNumeric: {
+          errorMessage: "Số lượt sử dụng phải là số"
+        },
+        custom: {
+          options: (value) => {
+            if (value !== undefined && value !== null && value <= 0) {
+              throw new Error("Số lượt sử dụng phải lớn hơn 0")
+            }
+            return true
+          }
+        }
+      },
+      start_date: {
+        notEmpty: {
+          errorMessage: "Ngày bắt đầu không được để trống"
+        },
+        isISO8601: {
+          errorMessage: "Ngày bắt đầu không hợp lệ (định dạng ISO8601)"
+        }
+      },
+      end_date: {
+        notEmpty: {
+          errorMessage: "Ngày kết thúc không được để trống"
+        },
+        isISO8601: {
+          errorMessage: "Ngày kết thúc không hợp lệ (định dạng ISO8601)"
+        },
+        custom: {
+          options: (value, { req }) => {
+            const startDate = new Date(req.body.start_date)
+            const endDate = new Date(value)
+            if (startDate >= endDate) {
+              throw new Error("Ngày kết thúc phải sau ngày bắt đầu")
+            }
+            return true
+          }
+        }
+      },
+      status: {
+        optional: true,
+        isIn: {
+          options: [["active", "inactive", "expired"]],
+          errorMessage: "Trạng thái phải là 'active', 'inactive' hoặc 'expired'"
+        }
+      }
+    },
+    ["body"]
+  )
+)
+
+export const updateVoucherValidator = validate(
+  checkSchema(
+    {
+      code: {
+        optional: true,
+        isString: {
+          errorMessage: "Mã voucher phải là chuỗi"
+        },
+        trim: true,
+        isLength: {
+          options: { min: 3, max: 20 },
+          errorMessage: "Mã voucher từ 3-20 ký tự"
+        },
+        custom: {
+          options: async (value, { req }) => {
+            const excludeId = (req.params as Record<string, any>)?.id
+            const query: any = { code: value }
+            if (excludeId && ObjectId.isValid(excludeId)) {
+              query._id = { $ne: new ObjectId(excludeId) }
+            }
+            const voucher = await databaseServices.vouchers.findOne(query)
+            if (voucher) {
+              throw new ErrorWithStatus({
+                message: "Mã voucher đã tồn tại",
+                status: httpStatus.BAD_REQUESTED
+              })
+            }
+            return true
+          }
+        }
+      },
+      description: {
+        optional: true,
+        isString: {
+          errorMessage: "Mô tả phải là chuỗi"
+        }
+      },
+      type: {
+        optional: true,
+        isIn: {
+          options: [["percentage", "fixed"]],
+          errorMessage: "Loại voucher phải là 'percentage' hoặc 'fixed'"
+        }
+      },
+      value: {
+        optional: true,
+        isNumeric: {
+          errorMessage: "Giá trị phải là số"
+        },
+        custom: {
+          options: async (value, { req }) => {
+            const voucherId = (req.params as Record<string, any>)?.id
+            const existingVoucher = await databaseServices.vouchers.findOne({ _id: new ObjectId(voucherId) })
+            const type = req.body.type || existingVoucher?.type
+
+            if (type === "percentage" && (value <= 0 || value > 100)) {
+              throw new Error("Giảm theo % phải từ 1-100")
+            } else if (type === "fixed" && value <= 0) {
+              throw new Error("Giá trị giảm phải lớn hơn 0")
+            }
+            return true
+          }
+        }
+      },
+      max_discount: {
+        optional: true,
+        isNumeric: {
+          errorMessage: "Giảm tối đa phải là số"
+        },
+        custom: {
+          options: (value) => {
+            if (value && value <= 0) {
+              throw new Error("Giảm tối đa phải lớn hơn 0")
+            }
+            return true
+          }
+        }
+      },
+      min_order_value: {
+        optional: true,
+        isNumeric: {
+          errorMessage: "Giá trị đơn tối thiểu phải là số"
+        },
+        custom: {
+          options: (value) => {
+            if (value < 0) {
+              throw new Error("Giá trị đơn tối thiểu phải >= 0")
+            }
+            return true
+          }
+        }
+      },
+      usage_limit: {
+        optional: true,
+        isNumeric: {
+          errorMessage: "Số lượt sử dụng phải là số"
+        },
+        custom: {
+          options: (value) => {
+            if (value !== undefined && value !== null && value <= 0) {
+              throw new Error("Số lượt sử dụng phải lớn hơn 0")
+            }
+            return true
+          }
+        }
+      },
+      start_date: {
+        optional: true,
+        isISO8601: {
+          errorMessage: "Ngày bắt đầu không hợp lệ"
+        }
+      },
+      end_date: {
+        optional: true,
+        isISO8601: {
+          errorMessage: "Ngày kết thúc không hợp lệ"
+        },
+        custom: {
+          options: async (value, { req }) => {
+            const voucherId = (req.params as Record<string, any>)?.id
+            const existingVoucher = await databaseServices.vouchers.findOne({ _id: new ObjectId(voucherId) })
+            const startDate = new Date(req.body.start_date || existingVoucher?.start_date)
+            const endDate = new Date(value)
+
+            if (startDate >= endDate) {
+              throw new Error("Ngày kết thúc phải sau ngày bắt đầu")
+            }
+            return true
+          }
+        }
+      },
+      status: {
+        optional: true,
+        isIn: {
+          options: [["active", "inactive", "expired"]],
+          errorMessage: "Trạng thái phải là 'active', 'inactive' hoặc 'expired'"
+        }
+      }
+    },
+    ["body"]
+  )
+)

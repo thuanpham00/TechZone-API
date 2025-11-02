@@ -72,7 +72,7 @@ export const getFilterBaseOnCategory = async (req: Request, res: Response) => {
   const category = req.query.category
   const findCategory = await databaseServices.category.findOne({ name: category })
   // Lấy spec liên quan đến category
-  if (category === "Laptop") {
+  if (category === "Laptop" || category === "Laptop Gaming") {
     const [specs_screen_size, specs_ssd, specs_ram, specs_cpu] = await Promise.all([
       databaseServices.specification
         .find({
@@ -142,6 +142,15 @@ export const getFilterBaseOnCategory = async (req: Request, res: Response) => {
       cpu_list: Array.from(cpus)
     })
     return
+  } else if (category === "Màn hình") {
+    const [specs_resolution] = await Promise.all([
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Độ phân giải"
+        })
+        .toArray()
+    ])
   }
 }
 

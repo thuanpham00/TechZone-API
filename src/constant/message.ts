@@ -133,6 +133,20 @@ export const AdminMessage = {
   CREATE_CUSTOMER_DETAIL: "Thêm người dùng thành công!",
   GET_CUSTOMER: "Lấy thông tin khách hàng thành công!",
   GET_CATEGORIES: "Lấy danh sách danh mục thành công!",
+  GET_MENUS: "Lấy danh sách menu thành công!",
+  UPDATE_NAME_CATEGORY_DETAIL: "Cập nhật tên menu thành công!",
+
+  CREATE_CATEGORY_LINK: "Tạo liên kết danh mục thành công!",
+  UPDATE_CATEGORY_LINK: "Cập nhật liên kết danh mục thành công!",
+  DELETE_CATEGORY_LINK: "Xóa liên kết danh mục thành công!",
+  CREATE_GROUP_CATEGORY_MENU: "Thêm nhóm menu danh mục thành công!",
+  DELETE_GROUP_CATEGORY_MENU: "Xóa nhóm menu danh mục thành công!",
+
+  GET_VOUCHERS: "Lấy danh sách voucher thành công!",
+  CREATE_VOUCHER_SUCCESS: "Tạo voucher thành công!",
+  UPDATE_VOUCHER_SUCCESS: "Cập nhật voucher thành công!",
+  DELETE_VOUCHER_SUCCESS: "Xóa voucher thành công!",
+
   GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
   GET_SUPPLY_DETAIL: "Lấy thông tin chi tiết cung ứng thành công!",
   GET_SUPPLIER_DETAIL: "Lấy thông tin chi tiết nhà cung cấp thành công!",
@@ -166,6 +180,8 @@ export const AdminMessage = {
   DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!",
 
   GET_RECEIPTS: "Lấy danh sách đơn nhập hàng thành công!",
+  GET_ORDERS_IN_PROCESS: "Lấy danh sách đơn hàng đang xử lý thành công!",
+  GET_ORDERS_COMPLETED: "Lấy danh sách đơn hàng đã hoàn thành thành công!",
 
   UPDATE_STATUS_ORDER: "Cập nhật trạng thái đơn hàng thành công!",
 
@@ -228,4 +244,10 @@ export const EmailMessage = {
 export const ConversationMessage = {
   GET_LIST_USER_TYPE_IS_SUCCESS: "Lấy danh sách người dùng thành công",
   GET_CONVERSATION_IS_SUCCESS: "Lấy danh sách hội thoại thành công"
+}
+
+export const CategoryMessage = {
+  GET_CATEGORY_LIST_IS_SUCCESS: "Lấy danh sách danh mục thành công",
+  GET_CATEGORY_MENU_LIST_IS_SUCCESS: "Lấy danh sách menu danh mục thành công",
+  GET_BANNER_BASE_ON_SLUG_IS_SUCCESS: "Lấy banner dựa trên slug thành công"
 }

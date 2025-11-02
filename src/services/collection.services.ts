@@ -93,15 +93,62 @@ class CollectionServices {
         $match["status"] = query.status
       }
     }
-
+    const specConditions: any[] = []
     if (query.screen_size) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.screen_size}inch`, $options: "i" }, name: "Màn hình" })
         .toArray()
         .then((res) => res.map((item) => item._id))
-      console.log(res)
-      $match["specifications"] = { $in: res } // sản phẩm có thông số kĩ thuật nằm trong mảng res[" _id
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (query.cpu) {
+      const res = await databaseServices.specification
+        .find({ value: { $regex: `${query.cpu}`, $options: "i" }, name: "Cpu" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (query.ram) {
+      const res = await databaseServices.specification
+        .find({ value: { $regex: `${query.ram}`, $options: "i" }, name: "Ram" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+     if (query.ssd) {
+      const res = await databaseServices.specification
+        .find({ value: { $regex: `${query.ssd}`, $options: "i" }, name: "Ổ cứng" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (specConditions.length > 0) {
+      $match["$and"] = ($match["$and"] || []).concat(specConditions)
     }
 
     const basePipeline: any[] = [

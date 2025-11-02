@@ -10,7 +10,7 @@ import {
   UpdateBrandBodyReq,
   UpdateCategoryBodyReq
 } from "~/models/requests/admin.requests"
-import formidable from "formidable"
+import formidable, { File } from "formidable"
 import {
   CreateProductBodyReq,
   CreateReceiptBodyReq,
@@ -19,7 +19,7 @@ import {
   CreateSupplyBodyReq,
   UpdatePermissionsRole
 } from "~/models/requests/product.requests"
-import { File } from "formidable"
+import { handleUploadImage } from "~/utils/file"
 
 export const getStatistical_Sell_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { year, month } = req.query
@@ -156,10 +156,7 @@ export const updateCustomerDetailController = async (
   })
 }
 
-export const deleteCustomerController = async (
-  req: Request<ParamsDictionary, any, updateMeReqBody, { limit: string; page: string }>,
-  res: Response
-) => {
+export const deleteCustomerController = async (req: Request<ParamsDictionary, any, updateMeReqBody>, res: Response) => {
   const { id } = req.params
   const result = await adminServices.deleteCustomer(id)
   res.json({
@@ -224,8 +221,8 @@ export const createCategoryController = async (
   req: Request<ParamsDictionary, any, UpdateCategoryBodyReq>,
   res: Response
 ) => {
-  const { name } = req.body
-  const result = await adminServices.createCategory(name)
+  const { name, is_active } = req.body
+  const result = await adminServices.createCategory(name, is_active)
 
   res.json({
     message: AdminMessage.CREATE_CATEGORY_DETAIL,
@@ -252,6 +249,119 @@ export const deleteCategoryController = async (req: Request<{ id: string }, any,
 
   res.json({
     message: message
+  })
+}
+export const addMenuCategoryController = async (req: Request, res: Response) => {
+  try {
+    const { files, fields } = await handleUploadImage(req, { required: false })
+
+    const id_category = fields.id_category?.[0] as string
+    const name = fields.name?.[0] as string
+    const is_active = fields.is_active?.[0] === "true"
+
+    const items: any[] = []
+    let index = 0
+    let fileIndex = 0
+
+    while (fields[`items[${index}][name]`]) {
+      const item: any = {
+        name: fields[`items[${index}][name]`]?.[0] as string,
+        slug: fields[`items[${index}][slug]`]?.[0] as string,
+        type_filter: fields[`items[${index}][type_filter]`]?.[0] as string
+      }
+
+      if (files[fileIndex]) {
+        item.banner = files[fileIndex]
+        fileIndex++
+      }
+
+      items.push(item)
+      index++
+    }
+
+    await adminServices.addMenuCategory(id_category, name, is_active, items)
+
+    res.json({
+      message: AdminMessage.CREATE_GROUP_CATEGORY_MENU
+    })
+  } catch (error: any) {
+    console.error("Error in addMenuCategoryController:", error)
+    res.status(500).json({ message: "Internal server error", error: error.message })
+  }
+}
+
+export const deleteMenuCategoryController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  await adminServices.deleteMenuCategory(id)
+  res.json({
+    message: AdminMessage.DELETE_GROUP_CATEGORY_MENU
+  })
+}
+
+export const getMenuByCategoryIdController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  const result = await adminServices.getMenuByCategoryId(id)
+
+  res.json({
+    message: AdminMessage.GET_MENUS,
+    result
+  })
+}
+
+export const updateGroupNameMenuController = async (
+  req: Request<ParamsDictionary, any, { id_section: string; name: string; is_active: boolean }>,
+  res: Response
+) => {
+  const { id } = req.params
+  const { id_section, name, is_active } = req.body
+  await adminServices.updateGroupNameMenu(id, id_section, name, is_active)
+  res.json({
+    message: AdminMessage.UPDATE_NAME_CATEGORY_DETAIL
+  })
+}
+
+export const createLinkCategoryMenuController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    { id_section: string; name: string; slug: string; type_filter: string; image?: File }
+  >,
+  res: Response
+) => {
+  const { files, fields } = await handleUploadImage(req, { required: false })
+  const { id } = req.params
+  const id_section = fields.id_section?.[0] as string
+  const id_category = fields.id_category?.[0] as string
+  const name = fields.name?.[0] as string
+  const slug = fields.slug?.[0] as string
+  const type_filter = fields.type_filter?.[0] as string
+
+  await adminServices.createLinkCategoryMenu(id, id_category, id_section, name, slug, type_filter, files[0])
+
+  res.json({
+    message: AdminMessage.CREATE_CATEGORY_LINK
+  })
+}
+
+export const updateLinkCategoryMenuController = async (req: Request, res: Response) => {
+  const { files, fields } = await handleUploadImage(req, { required: false })
+  const { id } = req.params
+  const id_category = fields.id_category?.[0] as string
+  const name = fields.name?.[0] as string
+  const slug = fields.slug?.[0] as string
+  const type_filter = fields.type_filter?.[0] as string
+  await adminServices.updateLinkCategoryMenu(id, id_category, name, slug, type_filter, files[0])
+  res.json({
+    message: AdminMessage.UPDATE_CATEGORY_LINK
+  })
+}
+
+export const deleteLinkCategoryMenuController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  await adminServices.deleteLinkCategoryMenu(id)
+
+  res.json({
+    message: AdminMessage.DELETE_CATEGORY_LINK
   })
 }
 
@@ -757,7 +867,7 @@ export const getReceiptsController = async (
   })
 }
 
-export const getOrdersController = async (
+export const getOrdersInProcessController = async (
   req: Request<
     ParamsDictionary,
     any,
@@ -795,7 +905,8 @@ export const getOrdersController = async (
   const nameEncode = name && decodeURIComponent(name)
   const addressEncode = address && decodeURIComponent(address)
 
-  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getOrders(
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getOrdersInProcess(
+    "in_process",
     Number(limit),
     Number(page),
     created_at_start,
@@ -810,7 +921,137 @@ export const getOrdersController = async (
   )
 
   res.json({
-    message: AdminMessage.GET_RECEIPTS,
+    message: AdminMessage.GET_ORDERS_IN_PROCESS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
+
+export const getOrdersInCompletedController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      name: string
+      address: string
+      phone: string
+      status: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+
+      sortBy: string
+    }
+  >,
+  res: Response
+) => {
+  const {
+    limit,
+    page,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
+    sortBy,
+    name,
+    address,
+    phone,
+    status
+  } = req.query
+  const nameEncode = name && decodeURIComponent(name)
+  const addressEncode = address && decodeURIComponent(address)
+
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getOrdersInProcess(
+    "completed",
+    Number(limit),
+    Number(page),
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
+    sortBy,
+    nameEncode,
+    addressEncode,
+    phone,
+    status
+  )
+
+  res.json({
+    message: AdminMessage.GET_ORDERS_COMPLETED,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
+
+export const getOrdersInCanceledController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      name: string
+      address: string
+      phone: string
+      status: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+
+      sortBy: string
+    }
+  >,
+  res: Response
+) => {
+  const {
+    limit,
+    page,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
+    sortBy,
+    name,
+    address,
+    phone,
+    status
+  } = req.query
+  const nameEncode = name && decodeURIComponent(name)
+  const addressEncode = address && decodeURIComponent(address)
+
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getOrdersInProcess(
+    "canceled",
+    Number(limit),
+    Number(page),
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
+    sortBy,
+    nameEncode,
+    addressEncode,
+    phone,
+    status
+  )
+
+  res.json({
+    message: AdminMessage.GET_ORDERS_COMPLETED,
     result: {
       result,
       limit: limitRes,
@@ -828,6 +1069,56 @@ export const updateStatusOrderController = async (req: Request, res: Response) =
 
   res.json({
     message: message
+  })
+}
+
+export const getVouchersController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    { limit: string; page: string; name: string; code: string; status: string; sortBy: string }
+  >,
+  res: Response
+) => {
+  const { limit, page, name, code, status, sortBy } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getVouchers(
+    Number(limit),
+    Number(page),
+    name,
+    code,
+    status,
+    sortBy
+  )
+  res.json({
+    message: AdminMessage.GET_VOUCHERS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
+
+export const createVoucherController = async (req: Request, res: Response) => {
+  const result = await adminServices.createVoucher(req.body)
+
+  res.json({
+    message: AdminMessage.CREATE_VOUCHER_SUCCESS,
+    data: result
+  })
+}
+
+export const updateVoucherController = async (req: Request, res: Response) => {
+  const { id } = req.params
+
+  const result = await adminServices.updateVoucher(id, req.body)
+
+  res.json({
+    message: AdminMessage.UPDATE_VOUCHER_SUCCESS,
+    data: result
   })
 }
 

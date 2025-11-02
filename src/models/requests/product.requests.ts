@@ -72,6 +72,10 @@ export type CreateOrderBodyReq = {
   totalAmount: number
   status?: OrderStatus
   note?: string
+
+  voucher_id?: string
+  voucher_code?: string
+  discount_amount?: number
 }
 
 export type GetCollectionReq = {
@@ -108,4 +112,7 @@ export type UpdatePermissionsRole = {
 export type GetCollectionQuery = {
   status?: string
   screen_size?: string
+  cpu?: string
+  ram?: string
+  ssd?: string
 }

@@ -81,6 +81,9 @@ interface OrderType {
   products: ProductInOrder[]
   subTotal: number
   shipping_fee: number
+  discount_amount?: number // Số tiền giảm từ 1 voucher
+  voucher_id?: ObjectId // ID của 1 voucher duy nhất
+  voucher_code?: string // Mã voucher
   totalAmount: number
   status?: OrderStatus
   type_order?: TypeOrder
@@ -105,6 +108,9 @@ export class Order {
   products: ProductInOrder[]
   subTotal: number
   shipping_fee: number
+  discount_amount: number // Số tiền giảm từ 1 voucher
+  voucher_id?: ObjectId // ID của 1 voucher duy nhất
+  voucher_code?: string // Mã voucher
   totalAmount: number
   type_order: TypeOrder
   status: OrderStatus
@@ -127,6 +133,9 @@ export class Order {
     }
     this.products = order.products
     this.shipping_fee = order.shipping_fee
+    this.discount_amount = order.discount_amount || 0
+    this.voucher_id = order.voucher_id
+    this.voucher_code = order.voucher_code
     this.subTotal = order.subTotal
     this.totalAmount = order.totalAmount
     this.status = order.status || OrderStatus.pending

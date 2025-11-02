@@ -1,7 +1,8 @@
 import { EmployeeInfoStatus } from "~/constant/enum"
 
 export type UpdateCategoryBodyReq = {
-  name: string
+  name: string,
+  is_active: Boolean
 }
 
 export type UpdateBrandBodyReq = {

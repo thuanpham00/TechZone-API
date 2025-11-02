@@ -37,6 +37,7 @@ export const envConfig = {
   collection_product: process.env.COLLECTION_PRODUCT as string,
   collection_brand: process.env.COLLECTION_BRAND as string,
   collection_category: process.env.COLLECTION_CATEGORY as string,
+  collection_category_menu: process.env.COLLECTION_CATEGORY_MENU as string,
   collection_specification: process.env.COLLECTION_SPECIFICATION as string,
   collection_supplier: process.env.COLLECTION_SUPPLIER as string,
   collection_supply: process.env.COLLECTION_SUPPLY as string,
@@ -48,6 +49,7 @@ export const envConfig = {
   collection_conversation: process.env.COLLECTION_CONVERSATION as string,
   collection_role: process.env.COLLECTION_ROLES as string,
   collection_permissions: process.env.COLLECTION_PERMISSIONS as string,
+  collection_vouchers: process.env.COLLECTION_VOUCHERS as string,
 
   aws_region: process.env.AWS_REGION as string,
   aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY as string,
