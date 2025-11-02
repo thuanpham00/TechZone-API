@@ -83,9 +83,15 @@ class CollectionServices {
       }
     }
 
-    console.log(query)
     if (query.status) {
-      $match["status"] = query.status
+      if (query.status === "all") {
+        // không lọc
+        $match["status"] = {
+          $in: ["available", "out_of_stock", "discontinued"] // lấy hết
+        }
+      } else {
+        $match["status"] = query.status
+      }
     }
 
     if (query.screen_size) {
@@ -93,7 +99,9 @@ class CollectionServices {
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.screen_size}inch`, $options: "i" }, name: "Màn hình" })
         .toArray()
+        .then((res) => res.map((item) => item._id))
       console.log(res)
+      $match["specifications"] = { $in: res } // sản phẩm có thông số kĩ thuật nằm trong mảng res[" _id
     }
 
     const basePipeline: any[] = [
