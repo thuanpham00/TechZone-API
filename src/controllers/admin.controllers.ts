@@ -1122,6 +1122,16 @@ export const updateVoucherController = async (req: Request, res: Response) => {
   })
 }
 
+export const deleteVoucherController = async (req: Request, res: Response) => {
+  const { id } = req.params
+
+  const { message } = await adminServices.deleteVoucher(id)
+
+  res.json({
+    message
+  })
+}
+
 export const getRolesController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { result } = await adminServices.getRoles()
 

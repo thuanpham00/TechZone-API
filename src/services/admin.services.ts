@@ -2462,6 +2462,13 @@ class AdminServices {
     }
   }
 
+  async deleteVoucher(id: string) {
+    await databaseServices.vouchers.deleteOne({ _id: new ObjectId(id) })
+    return {
+      message: AdminMessage.DELETE_VOUCHER_SUCCESS
+    }
+  }
+
   async getRoles() {
     const [result] = await Promise.all([
       databaseServices.role

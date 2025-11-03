@@ -20,6 +20,7 @@ import {
   deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
+  deleteVoucherController,
   getBrandsController,
   getCategoriesController,
   getCustomersController,
@@ -867,6 +868,20 @@ adminRouter.put(
   wrapRequestHandler(updateVoucherController)
 )
 
+/**
+ * Description: delete voucher
+ * Path: /vouchers/:id
+ * Method: DELETE
+ * Headers: {Authorization: AT}
+ */
+adminRouter.delete(
+  "/vouchers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkIdValidator,
+  wrapRequestHandler(deleteVoucherController)
+)
 
 /**
  * Description: get roles
