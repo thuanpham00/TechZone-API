@@ -6,6 +6,9 @@ const dotenv_1 = require("dotenv");
 // const options = argv(process.argv.slice(2))
 // console.log(options)
 // export const isProduction = options.env === "production" // check mt production
+/**
+ * Gán NODE_ENV ở câu lệnh script thì ở file config.ts nó lấy ra được env.NODE_ENV thì nó sử dụng file env tương ứng với môi trường hiện tại đã gán
+ */
 const env = process.env.NODE_ENV;
 const envFileName = `.env.${env}`;
 console.log(envFileName);
@@ -31,9 +34,19 @@ exports.envConfig = {
     collection_product: process.env.COLLECTION_PRODUCT,
     collection_brand: process.env.COLLECTION_BRAND,
     collection_category: process.env.COLLECTION_CATEGORY,
+    collection_category_menu: process.env.COLLECTION_CATEGORY_MENU,
     collection_specification: process.env.COLLECTION_SPECIFICATION,
     collection_supplier: process.env.COLLECTION_SUPPLIER,
     collection_supply: process.env.COLLECTION_SUPPLY,
+    collection_receipt: process.env.COLLECTION_RECEIPT,
+    collection_favourite: process.env.COLLECTION_FAVOURITE,
+    collection_cart: process.env.COLLECTION_CART,
+    collection_order: process.env.COLLECTION_ORDER,
+    collection_email_log: process.env.COLLECTION_EMAIL,
+    collection_conversation: process.env.COLLECTION_CONVERSATION,
+    collection_role: process.env.COLLECTION_ROLES,
+    collection_permissions: process.env.COLLECTION_PERMISSIONS,
+    collection_vouchers: process.env.COLLECTION_VOUCHERS,
     aws_region: process.env.AWS_REGION,
     aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
     aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
@@ -42,5 +55,17 @@ exports.envConfig = {
     google_client_secret: process.env.GOOGLE_CLIENT_SECRET,
     google_redirect_uri: process.env.GOOGLE_REDIRECT_URI,
     client_url: process.env.CLIENT_URL,
-    ses_from_address: process.env.SES_FROM_ADDRESS
+    ses_from_address: process.env.SES_FROM_ADDRESS,
+    vnp_TmnCode: process.env.vnp_TmnCode,
+    vnp_HashSecret: process.env.vnp_HashSecret,
+    vnp_Url: process.env.vnp_Url,
+    vnp_ReturnUrl: process.env.vnp_ReturnUrl,
+    api_key_resend: process.env.API_KEY_RESEND,
+    resend_email_from: process.env.RESEND_EMAIL_FROM,
+    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+    R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+    R2_ENDPOINT: process.env.R2_ENDPOINT,
+    R2_LINK_PUBLIC: process.env.R2_LINK_PUBLIC
 };

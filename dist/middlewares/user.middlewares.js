@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkRole = exports.updateMeValidator = exports.changePasswordValidator = exports.verifyUserValidator = exports.resetPasswordValidator = exports.verifyForgotPasswordValidator = exports.forgotPasswordValidator = exports.emailVerifyValidator = exports.refreshTokenValidator = exports.accessTokenValidator = exports.loginValidator = exports.registerValidator = exports.numberPhoneSchema = exports.nameSchema = void 0;
+exports.checkUserLogin = exports.checkRole = exports.updateStaffValidator = exports.updateMeValidator = exports.changePasswordValidator = exports.verifyUserValidator = exports.resetPasswordValidator = exports.verifyForgotPasswordValidator = exports.forgotPasswordValidator = exports.emailVerifyValidator = exports.refreshTokenValidator = exports.accessTokenValidator = exports.loginValidator = exports.registerValidator = exports.numberPhoneSchema = exports.nameSchema = void 0;
 const express_validator_1 = require("express-validator");
 const enum_1 = require("../constant/enum");
 const message_1 = require("../constant/message");
@@ -21,6 +21,7 @@ const mongodb_1 = require("mongodb");
 const config_1 = require("../utils/config");
 (0, dotenv_1.config)();
 const Role = (0, common_1.convertEnumToArray)(enum_1.RoleType);
+const StatusStaff = (0, common_1.convertEnumToArray)(enum_1.EmployeeInfoStatus);
 const passwordSchema = {
     notEmpty: {
         errorMessage: message_1.UserMessage.PASSWORD_IS_REQUIRED
@@ -420,19 +421,20 @@ exports.updateMeValidator = (0, validations_1.validate)((0, express_validator_1.
         // ...numberPhoneSchema,
         custom: {
             options: async (value, { req }) => {
-                // console.log(req.body)
                 const { id } = req.params;
-                const user = await database_services_1.default.users.findOne({ _id: new mongodb_1.ObjectId(id) });
-                if (!user) {
-                    throw new errors_1.ErrorWithStatus({
-                        message: message_1.UserMessage.USER_NOT_FOUND,
-                        status: httpStatus_1.default.NOTFOUND
-                    });
-                }
-                // nếu số điện thoại trống thì bỏ qua
-                // nếu đã từng có số điện thoại thì bắt buộc có
-                if (user.numberPhone !== "" && value === "") {
-                    throw new Error(message_1.UserMessage.NUMBER_PHONE_IS_REQUIRED);
+                if (id) {
+                    const user = await database_services_1.default.users.findOne({ _id: new mongodb_1.ObjectId(id) });
+                    if (!user) {
+                        throw new errors_1.ErrorWithStatus({
+                            message: message_1.UserMessage.USER_NOT_FOUND,
+                            status: httpStatus_1.default.NOTFOUND
+                        });
+                    }
+                    // nếu số điện thoại trống thì bỏ qua
+                    // nếu đã từng có số điện thoại thì bắt buộc có
+                    if (user.numberPhone !== "" && value === "") {
+                        throw new Error(message_1.UserMessage.NUMBER_PHONE_IS_REQUIRED);
+                    }
                 }
                 if (value === "") {
                     return true;
@@ -450,19 +452,95 @@ exports.updateMeValidator = (0, validations_1.validate)((0, express_validator_1.
         optional: true
     }
 }, ["body"]));
-const checkRole = (roleCheck) => {
-    return (req, res, next) => {
-        const { role } = req.decode_authorization;
-        if (roleCheck.includes(role)) {
-            return next();
+exports.updateStaffValidator = (0, validations_1.validate)((0, express_validator_1.checkSchema)({
+    "employeeInfo.contract_type": {
+        in: ["body"],
+        optional: true
+    },
+    "employeeInfo.status": {
+        in: ["body"],
+        optional: true, // không bắt buộc
+        isIn: {
+            options: [StatusStaff],
+            errorMessage: message_1.UserMessage.STATUS_STAFF_IS_INVALID
         }
-        next(new errors_1.ErrorWithStatus({
-            message: message_1.UserMessage.PERMISSION_DENIED,
-            status: httpStatus_1.default.FORBIDDEN
-        }));
+    }
+}, ["body"]));
+const checkRole = () => {
+    return async (req, res, next) => {
+        const { role } = req.decode_authorization;
+        if (!role) {
+            return next(new errors_1.ErrorWithStatus({
+                message: message_1.UserMessage.PERMISSION_DENIED,
+                status: httpStatus_1.default.FORBIDDEN
+            }));
+        }
+        const roles = await database_services_1.default.role
+            .aggregate([
+            {
+                $match: { _id: new mongodb_1.ObjectId(role) }
+            },
+            {
+                $lookup: {
+                    from: "permissions", // collection Permission
+                    localField: "permissions", // role.permissions (ObjectId[])
+                    foreignField: "_id", // permission._id
+                    as: "permissions"
+                }
+            }
+        ])
+            .toArray();
+        // Kiểm tra api hiện tại có nằm trong permissions không
+        const rolePermission = roles[0];
+        const { method, route, baseUrl } = req;
+        const fullPath = baseUrl + route?.path;
+        const hasPermission = rolePermission.permissions.some((p) => p.api_endpoints.method === method && p.api_endpoints.path === fullPath);
+        if (!hasPermission) {
+            return next(new errors_1.ErrorWithStatus({
+                message: message_1.UserMessage.PERMISSION_DENIED,
+                status: httpStatus_1.default.FORBIDDEN
+            }));
+        }
+        next();
     };
 };
 exports.checkRole = checkRole;
+const checkUserLogin = (typeUser) => async (req, res, next) => {
+    const user = req.user;
+    const role = await database_services_1.default.role.findOne({ _id: user.role });
+    if (typeUser === "customer") {
+        if (role?.key === enum_1.RoleType.CUSTOMER) {
+            return next();
+        }
+        else {
+            return next(new errors_1.ErrorWithStatus({
+                message: message_1.UserMessage.PERMISSION_DENIED,
+                status: httpStatus_1.default.FORBIDDEN
+            }));
+        }
+    }
+    else if (typeUser === "other") {
+        if (role?.key === enum_1.RoleType.ADMIN) {
+            return next();
+        }
+        if (role?.key === enum_1.RoleType.SALES_STAFF || role?.key === enum_1.RoleType.INVENTORY_STAFF) {
+            if (user.employeeInfo?.status !== enum_1.EmployeeInfoStatus.Active) {
+                return next(new errors_1.ErrorWithStatus({
+                    message: message_1.UserMessage.STAFF_IS_NOT_ACTIVE,
+                    status: httpStatus_1.default.FORBIDDEN
+                }));
+            }
+            return next();
+        }
+        else {
+            return next(new errors_1.ErrorWithStatus({
+                message: message_1.UserMessage.PERMISSION_DENIED,
+                status: httpStatus_1.default.FORBIDDEN
+            }));
+        }
+    }
+};
+exports.checkUserLogin = checkUserLogin;
 // body phần truyền lên
 // params là tham số định danh như id
 // query là tham số truy vấn ví dụ page, limit, type ...

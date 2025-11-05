@@ -8,37 +8,92 @@ const database_services_1 = __importDefault(require("./database.services"));
 const mongodb_1 = require("mongodb");
 class ProductServices {
     async getProductDetail(id) {
-        const result = await database_services_1.default.product
-            .aggregate([
-            {
-                $match: {
-                    _id: new mongodb_1.ObjectId(id)
-                }
-            },
-            {
-                $lookup: {
-                    from: "specification",
-                    localField: "specifications",
-                    foreignField: "_id",
-                    as: "specifications"
-                }
-            },
-            {
-                $addFields: {
-                    specifications: {
-                        $map: {
-                            input: "$specifications",
-                            as: "specification",
-                            in: {
-                                name: "$$specification.name",
-                                value: "$$specification.value"
+        const date = new Date();
+        const [result] = await Promise.all([
+            database_services_1.default.product
+                .aggregate([
+                {
+                    $match: {
+                        _id: new mongodb_1.ObjectId(id)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "category",
+                        localField: "category",
+                        foreignField: "_id",
+                        as: "category",
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    name: 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $unwind: {
+                        path: "$category",
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "brand",
+                        localField: "brand",
+                        foreignField: "_id",
+                        as: "brand",
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    name: 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $unwind: {
+                        path: "$brand",
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "specification",
+                        localField: "specifications",
+                        foreignField: "_id",
+                        as: "specifications"
+                    }
+                },
+                {
+                    $addFields: {
+                        specifications: {
+                            $map: {
+                                input: "$specifications",
+                                as: "specification",
+                                in: {
+                                    name: "$$specification.name",
+                                    value: "$$specification.value"
+                                }
                             }
                         }
                     }
                 }
-            }
-        ])
-            .toArray();
+            ])
+                .toArray(),
+            database_services_1.default.product.updateOne({ _id: new mongodb_1.ObjectId(id) }, {
+                $inc: {
+                    viewCount: 1
+                },
+                $set: {
+                    updated_at: date
+                }
+            })
+        ]);
         return result;
     }
     async getProductRelated(brand, category, idProduct) {
@@ -131,6 +186,36 @@ class ProductServices {
             item.viewCount += 1;
         });
         return listProduct;
+    }
+    async getSearchProduct(search) {
+        const result = await database_services_1.default.product
+            .aggregate([
+            {
+                $match: {
+                    name: { $regex: search, $options: "i" }
+                }
+            },
+            {
+                $facet: {
+                    // chạy song song 1 lần nhiều pipe // $match là dùng chung giữa 2 pipe này
+                    data: [
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                price: 1,
+                                discount: 1,
+                                banner: 1
+                            }
+                        },
+                        { $limit: 10 } // chỉ lấy 10 gợi ý đầu tiên
+                    ],
+                    total: [{ $count: "total" }]
+                }
+            }
+        ])
+            .toArray();
+        return result[0];
     }
 }
 exports.productServices = new ProductServices();

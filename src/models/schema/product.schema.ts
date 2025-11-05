@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb"
 import { Media } from "~/constant/common"
-import { MediaType, ProductStatus } from "~/constant/enum"
+import { ProductStatus } from "~/constant/enum"
 
 interface ProductType {
   _id?: ObjectId
@@ -54,7 +54,7 @@ class Product {
     this.brand = product.brand
     this.price = product.price
     this.description = product.description
-    this.banner = product.banner || { type: 0, url: "" }
+    this.banner = product.banner || { type: 0, url: "", id: new ObjectId() }
     this.medias = product.medias || []
     this.discount = product.discount || 0
     this.stock = product.stock || 0

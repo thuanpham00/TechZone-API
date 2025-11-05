@@ -34,8 +34,10 @@ const loginController = async (req, res, next) => {
     const { user } = req;
     const user_id = user._id?.toString();
     const verify = user.verify;
-    const role = user.role;
-    const { accessToken, refreshToken, user: userInfo } = await user_services_1.userServices.login({ user_id, verify, role });
+    const role = user.role.toString();
+    const findRole = await database_services_1.default.role.findOne({ _id: new mongodb_1.ObjectId(role) });
+    const roleName = findRole?.key;
+    const { accessToken, refreshToken, user: userInfo } = await user_services_1.userServices.login({ user_id, verify, roleId: role });
     res.cookie("refresh_token", refreshToken, {
         httpOnly: true, // chặn client javascript không thể truy cập
         // secure: true, // chỉ cho phép cookie gửi qua kết nối HTTPS
@@ -44,11 +46,15 @@ const loginController = async (req, res, next) => {
         path: "/"
     });
     // client gọi api xuống server và server tạo cookie trả về và lưu vào trình duyệt tự động (client phải nằm trong ds cho phép của server)
+    const userContainsRole = {
+        ...userInfo,
+        role: roleName
+    };
     res.json({
         message: message_1.UserMessage.LOGIN_IS_SUCCESS,
         result: {
             accessToken,
-            userInfo
+            userInfo: userContainsRole
         }
     });
 };
@@ -91,7 +97,7 @@ const refreshTokenController = async (req, res, next) => {
         token: refresh_token,
         user_id: user_id,
         verify: verify,
-        role: role,
+        roleId: role,
         exp: exp
     });
     res.cookie("refresh_token", refresh_token_new, {
@@ -124,7 +130,7 @@ const verifyEmailController = async (req, res, next) => {
             status: httpStatus_1.default.UNAUTHORIZED
         });
     }
-    const { accessToken, refreshToken } = await user_services_1.userServices.verifyEmail({ user_id: user_id, role: role });
+    const { accessToken, refreshToken } = await user_services_1.userServices.verifyEmail({ user_id: user_id, roleId: role });
     res.cookie("refresh_token", refreshToken, {
         httpOnly: true,
         // secure: true , // chỉ cho phép cookie gửi qua kết nối HTTPS
@@ -155,7 +161,7 @@ const resendEmailVerifyController = async (req, res, next) => {
             status: httpStatus_1.default.UNAUTHORIZED
         });
     }
-    const result = await user_services_1.userServices.resendEmailVerify({ user_id: user_id, role: role });
+    const result = await user_services_1.userServices.resendEmailVerify({ user_id: user_id, roleId: role });
     res.json({
         message: result.message
     });
@@ -164,12 +170,12 @@ exports.resendEmailVerifyController = resendEmailVerifyController;
 const forgotPasswordController = async (req, res, next) => {
     const user_id = req.user._id?.toString();
     const verify = req.user.verify;
-    const role = req.user.role;
+    const role = req.user.role.toString();
     const { email } = req.body;
     const result = await user_services_1.userServices.forgotPassword({
         user_id: user_id,
         verify: verify,
-        role: role,
+        roleId: role,
         email: email
     });
     res.json({
@@ -202,8 +208,6 @@ const changePasswordController = async (req, res, next) => {
 };
 exports.changePasswordController = changePasswordController;
 const getMeController = async (req, res, next) => {
-    const a = null;
-    a.b = 1;
     const { user_id } = req.decode_authorization;
     const result = await user_services_1.userServices.getMe(user_id);
     res.json({

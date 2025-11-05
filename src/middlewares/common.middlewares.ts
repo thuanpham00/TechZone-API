@@ -25,16 +25,7 @@ export const parseFormData = async (req: Request, res: Response, next: NextFunct
     }
 
     // ép kiểu lại nếu cần
-    req.body = fields
-    const checkUniqueName = await databaseServices.product.findOne({ name: req.body.name[0] })
-    if (checkUniqueName) {
-      return next(
-        new ErrorWithStatus({
-          message: ProductMessage.NAME_IS_INVALID,
-          status: httpStatus.BAD_REQUESTED
-        })
-      )
-    }
+    req.body = fields as any
     req.files = files as any // nếu bạn dùng multer thì không có req.files, nhưng formidable thì có
     next()
   })

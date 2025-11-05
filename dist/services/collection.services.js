@@ -4,23 +4,39 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const database_services_1 = __importDefault(require("./database.services"));
+const mongodb_1 = require("mongodb");
+const favourite_cart_order_schema_1 = require("../models/schema/favourite_cart.order.schema");
+const message_1 = require("../constant/message");
 class CollectionServices {
-    async getCollection(condition, page, limit) {
-        const $match = {};
-        if (condition.category) {
-            const categoryId = await database_services_1.default.category.findOne({ name: condition.category }).then((res) => res?._id);
-            $match["category"] = categoryId;
+    // query lọc sản phẩm theo collection
+    async filterCollectionProducts(condition, slug, match) {
+        if (slug.includes("5090")) {
+            match["name"] = { $regex: "rtx 5090", $options: "i" }; // Tìm kiếm sản phẩm có tên chứa "rtx 5090"
         }
-        if (condition.brand) {
-            const brandId = await database_services_1.default.brand.findOne({ name: condition.brand }).then((res) => res?._id);
-            $match["brand"] = brandId;
+        else if (slug.includes("5080")) {
+            match["name"] = { $regex: "rtx 5080", $options: "i" };
+        }
+        else if (slug.includes("5070Ti")) {
+            match["name"] = { $regex: "rtx 5070Ti", $options: "i" };
+        }
+        else if (slug.includes("5060Ti")) {
+            match["name"] = { $regex: "rtx 5060Ti", $options: "i" };
+        }
+        else if (slug.includes("5060")) {
+            match["name"] = { $regex: "rtx 5060(?!Ti)\\b", $options: "i" };
+        }
+        else if (slug.includes("4060")) {
+            match["name"] = { $regex: "rtx 4060", $options: "i" };
+        }
+        else if (slug.includes("3060")) {
+            match["name"] = { $regex: "rtx 3060", $options: "i" };
         }
         if (condition.price) {
-            $match["$expr"] = {
+            match["$expr"] = {
                 $and: [] // Dùng $and vì cần đồng thời kiểm tra cả $gte và $lt nếu có.
             };
             if (condition.price.$gte) {
-                $match["$expr"]["$and"].push({
+                match["$expr"]["$and"].push({
                     $gte: [
                         {
                             $subtract: [
@@ -39,7 +55,7 @@ class CollectionServices {
                 });
             }
             if (condition.price.$lt) {
-                $match["$expr"]["$and"].push({
+                match["$expr"]["$and"].push({
                     $lt: [
                         {
                             $subtract: [
@@ -57,114 +73,274 @@ class CollectionServices {
                     ]
                 });
             }
-            if ($match["$expr"]["$and"].length === 0) {
-                delete $match["$expr"];
+            if (match["$expr"]["$and"].length === 0) {
+                delete match["$expr"];
             }
         }
-        const [result, total] = await Promise.all([
-            database_services_1.default.product
-                .aggregate([
-                {
-                    $match // match với các sản phẩm có chung danh mục, chung thương hiệu
-                },
-                {
-                    $lookup: {
-                        from: "category",
-                        localField: "category",
-                        foreignField: "_id",
-                        as: "category"
-                    }
-                },
-                {
-                    $addFields: {
-                        category: {
-                            $map: {
-                                input: "$category",
-                                as: "cate",
-                                in: "$$cate.name"
+    }
+    async addSpecificationFilters(query, specConditions) {
+        if (query.screen_size) {
+            // trả về các thông số kĩ thuật includes cái query.screen_size
+            const res = await database_services_1.default.specification
+                .find({ value: { $regex: `${query.screen_size}inch`, $options: "i" }, name: "Màn hình" })
+                .toArray()
+                .then((res) => res.map((item) => item._id));
+            if (res.length) {
+                specConditions.push({
+                    specifications: { $in: res }
+                });
+            }
+        }
+        if (query.cpu) {
+            const res = await database_services_1.default.specification
+                .find({ value: { $regex: `${query.cpu}`, $options: "i" }, name: "Cpu" })
+                .toArray()
+                .then((res) => res.map((item) => item._id));
+            if (res.length) {
+                specConditions.push({
+                    specifications: { $in: res }
+                });
+            }
+        }
+        if (query.ram) {
+            const res = await database_services_1.default.specification
+                .find({ value: { $regex: `${query.ram}`, $options: "i" }, name: "Ram" })
+                .toArray()
+                .then((res) => res.map((item) => item._id));
+            if (res.length) {
+                specConditions.push({
+                    specifications: { $in: res }
+                });
+            }
+        }
+        if (query.ssd) {
+            const res = await database_services_1.default.specification
+                .find({ value: { $regex: `${query.ssd}`, $options: "i" }, name: "Ổ cứng" })
+                .toArray()
+                .then((res) => res.map((item) => item._id));
+            if (res.length) {
+                specConditions.push({
+                    specifications: { $in: res }
+                });
+            }
+        }
+    }
+    addSortFieldsToPipeline(query, resultPipeline) {
+        if (query.sort &&
+            (query.sort === "name_asc" ||
+                query.sort === "name_desc" ||
+                query.sort === "price_asc" ||
+                query.sort === "price_desc")) {
+            resultPipeline.push({
+                $addFields: {
+                    sortableName: {
+                        $trim: {
+                            input: {
+                                // Sử dụng $cond để check category và xóa prefix tương ứng
+                                $switch: {
+                                    branches: [
+                                        {
+                                            case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Laptop gaming"] },
+                                            then: {
+                                                $replaceAll: {
+                                                    input: "$name",
+                                                    find: "Laptop Gaming",
+                                                    replacement: ""
+                                                }
+                                            }
+                                        },
+                                        {
+                                            case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Laptop"] },
+                                            then: {
+                                                $replaceAll: {
+                                                    input: "$name",
+                                                    find: "Laptop",
+                                                    replacement: ""
+                                                }
+                                            }
+                                        },
+                                        {
+                                            case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Màn hình"] },
+                                            then: {
+                                                $replaceAll: {
+                                                    input: "$name",
+                                                    find: "Màn hình",
+                                                    replacement: ""
+                                                }
+                                            }
+                                        },
+                                        {
+                                            case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "PC GVN"] },
+                                            then: {
+                                                $replaceAll: {
+                                                    input: "$name",
+                                                    find: "PC GVN",
+                                                    replacement: ""
+                                                }
+                                            }
+                                        },
+                                        {
+                                            case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Bàn phím"] },
+                                            then: {
+                                                $replaceAll: {
+                                                    input: "$name",
+                                                    find: "Bàn phím",
+                                                    replacement: ""
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    default: "$name" // Nếu không match category nào thì giữ nguyên tên
+                                }
                             }
                         }
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "brand",
-                        localField: "brand",
-                        foreignField: "_id",
-                        as: "brand"
-                    }
-                },
-                {
-                    $addFields: {
-                        brand: {
-                            $map: {
-                                input: "$brand",
-                                as: "bra",
-                                in: "$$bra.name"
+                    },
+                    finalPrice: {
+                        $subtract: [
+                            "$price",
+                            {
+                                $cond: {
+                                    if: { $lt: ["$discount", 1] },
+                                    then: { $multiply: ["$price", "$discount"] },
+                                    else: { $multiply: ["$price", { $divide: ["$discount", 100] }] }
+                                }
                             }
-                        }
+                        ]
                     }
-                },
-                {
-                    $project: {
-                        updated_at: 0,
-                        created_at: 0,
-                        stock: 0,
-                        description: 0,
-                        gifts: 0
-                    }
-                },
-                {
-                    $skip: limit && page ? limit * (page - 1) : 0
-                },
-                {
-                    $limit: limit ? limit : 10
                 }
+            });
+        }
+    }
+    async getCollection(condition, slug, query) {
+        const $match = {};
+        const checkBanChay = slug.includes("ban-chay"); // Check trước
+        if (condition.category) {
+            const categoryId = await database_services_1.default.category.findOne({ name: condition.category }).then((res) => res?._id);
+            $match["category"] = categoryId;
+        }
+        if (condition.brand) {
+            const brandId = await database_services_1.default.brand.findOne({ name: condition.brand }).then((res) => res?._id);
+            $match["brand"] = brandId;
+        }
+        if (checkBanChay) {
+            // Lấy top 10 bán chạy TRƯỚC (không filter gì cả)
+            const top10BestSellers = await database_services_1.default.product
+                .aggregate([
+                { $match },
+                { $sort: { sold: -1 } },
+                { $limit: 10 },
+                { $project: { _id: 1 } } // Chỉ lấy _id
             ])
-                .toArray(),
+                .toArray();
+            const top10Ids = top10BestSellers.map((item) => item._id);
+            Object.keys($match).forEach((key) => delete $match[key]);
+            $match["_id"] = { $in: top10Ids };
+        }
+        else {
+            // Trường hợp bình thường: áp dụng tất cả filters
+            await this.filterCollectionProducts(condition, slug, $match);
+        }
+        if (query.status) {
+            if (query.status === "all") {
+                // không lọc
+                $match["status"] = {
+                    $in: ["available", "out_of_stock", "discontinued"] // lấy hết
+                };
+            }
+            else {
+                $match["status"] = query.status;
+            }
+        }
+        const specConditions = [];
+        await this.addSpecificationFilters(query, specConditions);
+        if (specConditions.length > 0) {
+            $match["$and"] = ($match["$and"] || []).concat(specConditions);
+        }
+        const basePipeline = [
+            { $match },
+            {
+                $lookup: {
+                    from: "category",
+                    localField: "category",
+                    foreignField: "_id",
+                    as: "category"
+                }
+            },
+            {
+                $addFields: {
+                    category: {
+                        $map: {
+                            input: "$category",
+                            as: "cate",
+                            in: "$$cate.name"
+                        }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: "brand",
+                    localField: "brand",
+                    foreignField: "_id",
+                    as: "brand"
+                }
+            },
+            {
+                $addFields: {
+                    brand: {
+                        $map: {
+                            input: "$brand",
+                            as: "bra",
+                            in: "$$bra.name"
+                        }
+                    }
+                }
+            }
+        ];
+        const resultPipeline = [...basePipeline];
+        if (query.sort) {
+            this.addSortFieldsToPipeline(query, resultPipeline);
+            const sortStage = {};
+            switch (query.sort) {
+                case "name_asc":
+                    sortStage.sortableName = 1;
+                    break;
+                case "name_desc":
+                    sortStage.sortableName = -1;
+                    break;
+                case "price_asc":
+                    sortStage.finalPrice = 1;
+                    break;
+                case "price_desc":
+                    sortStage.finalPrice = -1;
+                    break;
+            }
+            resultPipeline.push({ $sort: sortStage });
+        }
+        else if (checkBanChay) {
+            // ✅ CHỈ khi không có query.sort VÀ là bán chạy → Sort theo sold
+            resultPipeline.push({ $sort: { sold: -1 } });
+        }
+        // Xóa các field không cần thiết
+        const projectFields = {
+            updated_at: 0,
+            created_at: 0,
+            stock: 0,
+            description: 0,
+            gifts: 0
+        };
+        if (query.sort) {
+            projectFields.sortableName = 0;
+            projectFields.finalPrice = 0;
+        }
+        resultPipeline.push({
+            $project: projectFields
+        });
+        const [result, total] = await Promise.all([
+            database_services_1.default.product.aggregate(resultPipeline).toArray(),
             database_services_1.default.product
                 .aggregate([
-                {
-                    $match // match với các sản phẩm có chung danh mục, chung thương hiệu
-                },
-                {
-                    $lookup: {
-                        from: "category",
-                        localField: "category",
-                        foreignField: "_id",
-                        as: "category"
-                    }
-                },
-                {
-                    $addFields: {
-                        category: {
-                            $map: {
-                                input: "$category",
-                                as: "cate",
-                                in: "$$cate.name"
-                            }
-                        }
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "brand",
-                        localField: "brand",
-                        foreignField: "_id",
-                        as: "brand"
-                    }
-                },
-                {
-                    $addFields: {
-                        brand: {
-                            $map: {
-                                input: "$brand",
-                                as: "bra",
-                                in: "$$bra.name"
-                            }
-                        }
-                    }
-                },
+                ...basePipeline,
                 {
                     $project: {
                         updated_at: 0,
@@ -202,6 +378,229 @@ class CollectionServices {
         return {
             result: result,
             total: total[0]?.total || 0
+        };
+    }
+    async addProductToFavourite(userId, product) {
+        const date = new Date();
+        const existingFavourite = await database_services_1.default.favourite.findOne({ user_id: new mongodb_1.ObjectId(userId) });
+        let message = "";
+        if (existingFavourite) {
+            // Cập nhật danh sách sản phẩm trong mục yêu thích
+            const existsProduct = await database_services_1.default.favourite.findOne({
+                user_id: new mongodb_1.ObjectId(userId),
+                "products.product_id": new mongodb_1.ObjectId(product.product_id)
+            });
+            if (existsProduct) {
+                await database_services_1.default.favourite.updateOne({ user_id: new mongodb_1.ObjectId(userId) }, { $pull: { products: { product_id: new mongodb_1.ObjectId(product.product_id) } } } // nếu đã tồn tại trong danh sách thì xóa đi (click lần 1 thêm vào và click lần 2 sẽ xóa đi)
+                );
+                message = message_1.CollectionMessage.DELETE_PRODUCT_FAVOURITE_IS_SUCCESS;
+            }
+            else {
+                await database_services_1.default.favourite.updateOne({ user_id: new mongodb_1.ObjectId(userId) }, {
+                    $addToSet: {
+                        products: {
+                            product_id: new mongodb_1.ObjectId(product.product_id),
+                            added_at: date
+                        }
+                    },
+                    $set: { updated_at: date }
+                });
+                message = message_1.CollectionMessage.ADD_PRODUCT_FAVOURITE_IS_SUCCESS;
+            }
+        }
+        else {
+            // Tạo mới mục yêu thích
+            const newFavourite = {
+                user_id: new mongodb_1.ObjectId(userId),
+                products: [
+                    {
+                        product_id: new mongodb_1.ObjectId(product.product_id),
+                        added_at: date
+                    }
+                ],
+                created_at: date,
+                updated_at: date
+            };
+            await database_services_1.default.favourite.insertOne(new favourite_cart_order_schema_1.Favourite(newFavourite));
+            message = message_1.CollectionMessage.ADD_PRODUCT_FAVOURITE_IS_SUCCESS;
+        }
+        return {
+            message: message
+        };
+    }
+    async getProductsInFavourite(userId) {
+        const favouriteUserId = await database_services_1.default.favourite.findOne({ user_id: new mongodb_1.ObjectId(userId) });
+        if (favouriteUserId === null) {
+            return {
+                products: [],
+                total: 0
+            };
+        }
+        const favourite = await database_services_1.default.favourite
+            .aggregate([
+            {
+                $match: { user_id: new mongodb_1.ObjectId(userId) }
+            },
+            {
+                $lookup: {
+                    from: "product",
+                    localField: "products.product_id",
+                    foreignField: "_id",
+                    as: "products"
+                }
+            },
+            {
+                $project: {
+                    updated_at: 0,
+                    created_at: 0,
+                    user_id: 0,
+                    _id: 0
+                }
+            }
+        ])
+            .toArray();
+        const total = favourite[0].products.length;
+        return {
+            products: favourite,
+            total: total
+        };
+    }
+    async addProductToCart(userId, product) {
+        const date = new Date();
+        const existingCartOfUserID = await database_services_1.default.cart.findOne({ user_id: new mongodb_1.ObjectId(userId) });
+        let message = "";
+        // nếu tồn tại giỏ hàng của userId
+        if (existingCartOfUserID) {
+            const existsProduct = await database_services_1.default.cart.findOne({
+                user_id: new mongodb_1.ObjectId(userId),
+                "products.product_id": new mongodb_1.ObjectId(product.product_id)
+            });
+            // nếu tồn tại sản phẩm trong giỏ hàng thì cập nhật số lượng
+            if (existsProduct) {
+                await database_services_1.default.cart.updateOne({ user_id: new mongodb_1.ObjectId(userId), "products.product_id": new mongodb_1.ObjectId(product.product_id) }, {
+                    $inc: { "products.$.quantity": product.quantity },
+                    $set: { updated_at: date }
+                });
+                message = message_1.CollectionMessage.UPDATE_PRODUCT_CART_IS_SUCCESS;
+            }
+            else {
+                // nếu sản phẩm chưa tồn tại trong giỏ hàng thì thêm sản phẩm vào giỏ hàng
+                await database_services_1.default.cart.updateOne({ user_id: new mongodb_1.ObjectId(userId) }, {
+                    $addToSet: {
+                        products: {
+                            product_id: new mongodb_1.ObjectId(product.product_id),
+                            quantity: product.quantity,
+                            added_at: date
+                        }
+                    },
+                    $set: { updated_at: date }
+                });
+                message = message_1.CollectionMessage.ADD_PRODUCT_CART_IS_SUCCESS;
+            }
+        }
+        else {
+            const newCart = {
+                user_id: new mongodb_1.ObjectId(userId),
+                products: [
+                    {
+                        product_id: new mongodb_1.ObjectId(product.product_id),
+                        quantity: product.quantity,
+                        added_at: date
+                    }
+                ],
+                created_at: date,
+                updated_at: date
+            };
+            await database_services_1.default.cart.insertOne(new favourite_cart_order_schema_1.Cart(newCart));
+            message = message_1.CollectionMessage.ADD_PRODUCT_CART_IS_SUCCESS;
+        }
+        return {
+            message: message
+        };
+    }
+    async updateQuantityProductToCart(userId, product) {
+        const date = new Date();
+        await database_services_1.default.cart.updateOne({ user_id: new mongodb_1.ObjectId(userId), "products.product_id": new mongodb_1.ObjectId(product.product_id) }, {
+            $set: { updated_at: date, "products.$.quantity": product.quantity }
+        });
+        return {
+            message: message_1.CollectionMessage.UPDATE_PRODUCT_CART_IS_SUCCESS
+        };
+    }
+    async getProductsInCart(user_id) {
+        const cartUserId = await database_services_1.default.cart.findOne({ user_id: new mongodb_1.ObjectId(user_id) });
+        if (cartUserId === null) {
+            return {
+                products: [],
+                total: 0
+            };
+        }
+        const cart = await database_services_1.default.cart
+            .aggregate([
+            { $match: { user_id: new mongodb_1.ObjectId(user_id) } },
+            { $unwind: "$products" },
+            {
+                $lookup: {
+                    from: "product",
+                    localField: "products.product_id",
+                    foreignField: "_id",
+                    as: "productInfo"
+                }
+            },
+            { $unwind: "$productInfo" },
+            {
+                $addFields: {
+                    "productInfo.added_at": "$products.added_at",
+                    "productInfo.quantity": "$products.quantity"
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id",
+                    products: { $push: "$productInfo" }
+                }
+            },
+            {
+                $project: {
+                    products: 1,
+                    _id: 0
+                }
+            }
+        ])
+            .toArray();
+        const total = cart[0].products.length;
+        return {
+            products: cart,
+            total: total
+        };
+    }
+    async removeProductToCart(userId, productId) {
+        await database_services_1.default.cart.updateOne({
+            user_id: new mongodb_1.ObjectId(userId)
+        }, {
+            $pull: {
+                products: {
+                    product_id: new mongodb_1.ObjectId(productId)
+                }
+            }
+        });
+        const cart = await database_services_1.default.cart.findOne({ user_id: new mongodb_1.ObjectId(userId) });
+        if (!cart?.products || cart?.products.length === 0) {
+            await database_services_1.default.cart.deleteOne({ user_id: new mongodb_1.ObjectId(userId) });
+            return {
+                message: message_1.CollectionMessage.CLEAR_PRODUCT_CART_IS_SUCCESS
+            };
+        }
+        return {
+            message: message_1.CollectionMessage.DELETE_PRODUCT_CART_IS_SUCCESS
+        };
+    }
+    async clearProductToCart(userId) {
+        await database_services_1.default.cart.deleteOne({
+            user_id: new mongodb_1.ObjectId(userId)
+        });
+        return {
+            message: message_1.CollectionMessage.CLEAR_PRODUCT_CART_IS_SUCCESS
         };
     }
 }

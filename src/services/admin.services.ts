@@ -1500,6 +1500,7 @@ class AdminServices {
           isFeatured: payload.isFeatured,
           description: payload.description,
           banner: {
+            id: new ObjectId(),
             type: typeBanner,
             url: urlBanner
           },
@@ -1514,6 +1515,53 @@ class AdminServices {
     )
 
     return result
+  }
+
+  async updateProduct(id: string, body: CreateProductBodyReq) {
+    const { categoryId, brandId } = await this.checkCategoryBrandExist(body.category, body.brand)
+    const specificationList = await this.checkSpecificationExist(categoryId, body.specifications)
+
+    const updateData: any = {
+      name: body.name,
+      brand: brandId,
+      category: categoryId,
+      price: body.price,
+      discount: body.discount,
+      stock: body.stock,
+      isFeatured: body.isFeatured,
+      description: body.description,
+      // medias: upload,
+      specifications: specificationList as ObjectId[]
+    }
+
+    if (body.banner) {
+      const findBanner = await databaseServices.product.findOne({ _id: new ObjectId(id) })
+
+      // xóa ảnh cũ
+      if (findBanner && findBanner.banner.url) {
+        await deleteFromR2ByUrl(findBanner.banner.url)
+      }
+
+      // upload ảnh mới
+      const { url: urlBanner, type: typeBanner } = await mediaServices.uploadBanner(
+        body.banner,
+        body.category,
+        id.toString()
+      )
+      updateData.banner = {
+        id: findBanner?.banner.id || new ObjectId(),
+        url: urlBanner,
+        type: typeBanner
+      }
+    }
+
+    await databaseServices.product.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: updateData,
+        $currentDate: { updated_at: true }
+      }
+    )
   }
 
   async createSupplier(payload: CreateSupplierBodyReq) {

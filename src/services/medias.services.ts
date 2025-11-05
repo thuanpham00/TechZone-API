@@ -9,6 +9,7 @@ import { getNameImage } from "~/utils/common"
 import { config } from "dotenv"
 import { File } from "formidable"
 import { uploadToR2 } from "~/utils/r2_cloudflare"
+import { ObjectId } from "mongodb"
 config()
 
 class MediaServices {
@@ -30,6 +31,7 @@ class MediaServices {
         fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
 
         return {
+          id: new ObjectId(),
           url: (r2Result as CompleteMultipartUploadCommandOutput).Location as string,
           type: MediaType.Image
         }

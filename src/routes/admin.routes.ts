@@ -55,6 +55,7 @@ import {
   updateGroupNameMenuController,
   updateLinkCategoryMenuController,
   updatePermissionsBasedOnIdRoleController,
+  updateProductController,
   updateRoleController,
   updateStatusOrderController,
   updateSupplierDetailController,
@@ -484,7 +485,7 @@ adminRouter.get(
 
 /**
  * Description: Create product
- * Path: /
+ * Path: /products
  * Method: POST
  * Header: { Authorization: Bearer <accessToken> }
  * Body: { body: CreateProductBodyReq }
@@ -497,6 +498,23 @@ adminRouter.post(
   parseFormData,
   // createProductValidator,
   wrapRequestHandler(createProductController)
+)
+
+/**
+ * Description: update product by id
+ * Path: /products/:id
+ * Method: PUT
+ * Header: { Authorization: Bearer <accessToken> }
+ * Body: { body: CreateProductBodyReq }
+ */
+adminRouter.put(
+  "/products/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  parseFormData,
+  // createProductValidator,
+  wrapRequestHandler(updateProductController)
 )
 
 /**
