@@ -194,7 +194,6 @@ export const createOrderCODController = async (req: Request, res: Response, next
     voucher_code,
     discount_amount
   } = req.body as CreateOrderBodyReq
-  console.log(req.body)
   const { user_id } = req.decode_authorization as TokenPayload
   const orderID = await orderServices.createOrder(user_id, {
     customer_info,

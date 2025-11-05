@@ -15,6 +15,50 @@ class ProductServices {
           },
           {
             $lookup: {
+              from: "category",
+              localField: "category",
+              foreignField: "_id",
+              as: "category",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    name: 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            $unwind: {
+              path: "$category",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup: {
+              from: "brand",
+              localField: "brand",
+              foreignField: "_id",
+              as: "brand",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    name: 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            $unwind: {
+              path: "$brand",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup: {
               from: "specification",
               localField: "specifications",
               foreignField: "_id",

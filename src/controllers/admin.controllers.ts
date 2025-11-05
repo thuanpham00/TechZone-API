@@ -1102,6 +1102,29 @@ export const getVouchersController = async (
   })
 }
 
+export const getVouchersOrdersController = async (
+  req: Request<ParamsDictionary, any, any, { limit: string; page: string }>,
+  res: Response
+) => {
+  const { id } = req.params // id voucher
+  const { limit, page } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getVouchersForOrders(
+    id,
+    Number(limit),
+    Number(page)
+  )
+  res.json({
+    message: AdminMessage.GET_VOUCHERS_FOR_ORDERS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
+
 export const createVoucherController = async (req: Request, res: Response) => {
   const result = await adminServices.createVoucher(req.body)
 
@@ -1119,6 +1142,16 @@ export const updateVoucherController = async (req: Request, res: Response) => {
   res.json({
     message: AdminMessage.UPDATE_VOUCHER_SUCCESS,
     data: result
+  })
+}
+
+export const deleteVoucherController = async (req: Request, res: Response) => {
+  const { id } = req.params
+
+  const { message } = await adminServices.deleteVoucher(id)
+
+  res.json({
+    message
   })
 }
 
@@ -1186,7 +1219,6 @@ export const updatePermissionsBasedOnIdRoleController = async (
   req: Request<ParamsDictionary, any, UpdatePermissionsRole[]>,
   res: Response
 ) => {
-  console.log(req.body)
   const { result } = await adminServices.updatePermissionsBasedOnIdRole(req.body)
 
   res.json({
@@ -1203,14 +1235,13 @@ export const getStaffsController = async (
     {
       limit: string
       page: string
-      // email: string
-      // name: string
-      // phone: string
-      // verify: string
-      // created_at_start: string
-      // created_at_end: string
-      // updated_at_start: string
-      // updated_at_end: string
+      email: string
+      name: string
+      phone: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
 
       sortBy: string
     }
@@ -1220,14 +1251,27 @@ export const getStaffsController = async (
   const {
     limit,
     page,
+    email,
+    name,
+    phone,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
 
     sortBy
   } = req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getStaffs(
     Number(limit),
     Number(page),
-
-    sortBy
+    email,
+    name,
+    phone,
+    sortBy,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
   )
   res.json({
     message: AdminMessage.GET_CUSTOMERS,

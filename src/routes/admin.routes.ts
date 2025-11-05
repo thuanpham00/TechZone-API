@@ -20,6 +20,7 @@ import {
   deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
+  deleteVoucherController,
   getBrandsController,
   getCategoriesController,
   getCustomersController,
@@ -47,6 +48,7 @@ import {
   getSuppliersController,
   getSuppliesController,
   getVouchersController,
+  getVouchersOrdersController,
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
@@ -66,7 +68,6 @@ import {
   checkEmailExistValidator,
   checkIdValidator,
   checkRoleExitsValidator,
-  createProductValidator,
   createReceiptValidator,
   createSupplierValidator,
   createSupplyValidator,
@@ -97,7 +98,6 @@ import {
 import { UpdateCategoryBodyReq, UpdateSupplierBodyReq, UpdateSupplyBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
-import multer from "multer"
 
 const adminRouter = Router()
 /**
@@ -838,6 +838,22 @@ adminRouter.get(
 /**
  * Description: get vouchers list
  * Path: /vouchers
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/vouchers/:id/orders",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  queryValidator,
+  wrapRequestHandler(getVouchersOrdersController)
+)
+
+/**
+ * Description: get vouchers list
+ * Path: /vouchers
  * Method: POST
  * Headers: {Authorization: AT}
  * Body: CreateSupplyBodyReq
@@ -867,6 +883,20 @@ adminRouter.put(
   wrapRequestHandler(updateVoucherController)
 )
 
+/**
+ * Description: delete voucher
+ * Path: /vouchers/:id
+ * Method: DELETE
+ * Headers: {Authorization: AT}
+ */
+adminRouter.delete(
+  "/vouchers/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkIdValidator,
+  wrapRequestHandler(deleteVoucherController)
+)
 
 /**
  * Description: get roles

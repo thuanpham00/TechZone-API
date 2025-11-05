@@ -110,6 +110,7 @@ export type UpdatePermissionsRole = {
 }
 
 export type GetCollectionQuery = {
+  sort?: "name_asc" | "name_desc" | "price_asc" | "price_desc"
   status?: string
   screen_size?: string
   cpu?: string

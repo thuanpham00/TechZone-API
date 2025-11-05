@@ -143,6 +143,7 @@ export const AdminMessage = {
   DELETE_GROUP_CATEGORY_MENU: "Xóa nhóm menu danh mục thành công!",
 
   GET_VOUCHERS: "Lấy danh sách voucher thành công!",
+  GET_VOUCHERS_FOR_ORDERS: "Lấy danh sách đơn hàng áp dụng voucher thành công!",
   CREATE_VOUCHER_SUCCESS: "Tạo voucher thành công!",
   UPDATE_VOUCHER_SUCCESS: "Cập nhật voucher thành công!",
   DELETE_VOUCHER_SUCCESS: "Xóa voucher thành công!",

@@ -6,42 +6,30 @@ import { Cart, CartProduct, Favourite, ProductInFavourite } from "~/models/schem
 import { CollectionMessage } from "~/constant/message"
 
 class CollectionServices {
-  async getCollection(condition: ConditionQuery, slug: string, query: GetCollectionQuery) {
-    const $match: any = {}
-    let checkBanChay = false
-    if (slug.includes("ban-chay")) {
-      checkBanChay = true
-    }
+  // query lọc sản phẩm theo collection
+  private async filterCollectionProducts(condition: ConditionQuery, slug: string, match: any) {
     if (slug.includes("5090")) {
-      $match["name"] = { $regex: "rtx 5090", $options: "i" } // Tìm kiếm sản phẩm có tên chứa "rtx 5090"
+      match["name"] = { $regex: "rtx 5090", $options: "i" } // Tìm kiếm sản phẩm có tên chứa "rtx 5090"
     } else if (slug.includes("5080")) {
-      $match["name"] = { $regex: "rtx 5080", $options: "i" }
+      match["name"] = { $regex: "rtx 5080", $options: "i" }
     } else if (slug.includes("5070Ti")) {
-      $match["name"] = { $regex: "rtx 5070Ti", $options: "i" }
+      match["name"] = { $regex: "rtx 5070Ti", $options: "i" }
     } else if (slug.includes("5060Ti")) {
-      $match["name"] = { $regex: "rtx 5060Ti", $options: "i" }
+      match["name"] = { $regex: "rtx 5060Ti", $options: "i" }
     } else if (slug.includes("5060")) {
-      $match["name"] = { $regex: "rtx 5060(?!Ti)\\b", $options: "i" }
+      match["name"] = { $regex: "rtx 5060(?!Ti)\\b", $options: "i" }
     } else if (slug.includes("4060")) {
-      $match["name"] = { $regex: "rtx 4060", $options: "i" }
+      match["name"] = { $regex: "rtx 4060", $options: "i" }
     } else if (slug.includes("3060")) {
-      $match["name"] = { $regex: "rtx 3060", $options: "i" }
+      match["name"] = { $regex: "rtx 3060", $options: "i" }
     }
 
-    if (condition.category) {
-      const categoryId = await databaseServices.category.findOne({ name: condition.category }).then((res) => res?._id)
-      $match["category"] = categoryId
-    }
-    if (condition.brand) {
-      const brandId = await databaseServices.brand.findOne({ name: condition.brand }).then((res) => res?._id)
-      $match["brand"] = brandId
-    }
     if (condition.price) {
-      $match["$expr"] = {
+      match["$expr"] = {
         $and: [] // Dùng $and vì cần đồng thời kiểm tra cả $gte và $lt nếu có.
       }
       if (condition.price.$gte) {
-        $match["$expr"]["$and"].push({
+        match["$expr"]["$and"].push({
           $gte: [
             {
               $subtract: [
@@ -60,7 +48,7 @@ class CollectionServices {
         })
       }
       if (condition.price.$lt) {
-        $match["$expr"]["$and"].push({
+        match["$expr"]["$and"].push({
           $lt: [
             {
               $subtract: [
@@ -78,22 +66,13 @@ class CollectionServices {
           ]
         })
       }
-      if ($match["$expr"]["$and"].length === 0) {
-        delete $match["$expr"]
+      if (match["$expr"]["$and"].length === 0) {
+        delete match["$expr"]
       }
     }
+  }
 
-    if (query.status) {
-      if (query.status === "all") {
-        // không lọc
-        $match["status"] = {
-          $in: ["available", "out_of_stock", "discontinued"] // lấy hết
-        }
-      } else {
-        $match["status"] = query.status
-      }
-    }
-    const specConditions: any[] = []
+  private async addSpecificationFilters(query: GetCollectionQuery, specConditions: any[]) {
     if (query.screen_size) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
@@ -134,7 +113,7 @@ class CollectionServices {
       }
     }
 
-     if (query.ssd) {
+    if (query.ssd) {
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.ssd}`, $options: "i" }, name: "Ổ cứng" })
         .toArray()
@@ -146,7 +125,142 @@ class CollectionServices {
         })
       }
     }
+  }
 
+  private addSortFieldsToPipeline(query: GetCollectionQuery, resultPipeline: any[]) {
+    if (
+      query.sort &&
+      (query.sort === "name_asc" ||
+        query.sort === "name_desc" ||
+        query.sort === "price_asc" ||
+        query.sort === "price_desc")
+    ) {
+      resultPipeline.push({
+        $addFields: {
+          sortableName: {
+            $trim: {
+              input: {
+                // Sử dụng $cond để check category và xóa prefix tương ứng
+                $switch: {
+                  branches: [
+                    {
+                      case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Laptop gaming"] },
+                      then: {
+                        $replaceAll: {
+                          input: "$name",
+                          find: "Laptop Gaming",
+                          replacement: ""
+                        }
+                      }
+                    },
+                    {
+                      case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Laptop"] },
+                      then: {
+                        $replaceAll: {
+                          input: "$name",
+                          find: "Laptop",
+                          replacement: ""
+                        }
+                      }
+                    },
+                    {
+                      case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Màn hình"] },
+                      then: {
+                        $replaceAll: {
+                          input: "$name",
+                          find: "Màn hình",
+                          replacement: ""
+                        }
+                      }
+                    },
+                    {
+                      case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "PC GVN"] },
+                      then: {
+                        $replaceAll: {
+                          input: "$name",
+                          find: "PC GVN",
+                          replacement: ""
+                        }
+                      }
+                    },
+                    {
+                      case: { $eq: [{ $arrayElemAt: ["$category", 0] }, "Bàn phím"] },
+                      then: {
+                        $replaceAll: {
+                          input: "$name",
+                          find: "Bàn phím",
+                          replacement: ""
+                        }
+                      }
+                    }
+                  ],
+                  default: "$name" // Nếu không match category nào thì giữ nguyên tên
+                }
+              }
+            }
+          },
+          finalPrice: {
+            $subtract: [
+              "$price",
+              {
+                $cond: {
+                  if: { $lt: ["$discount", 1] },
+                  then: { $multiply: ["$price", "$discount"] },
+                  else: { $multiply: ["$price", { $divide: ["$discount", 100] }] }
+                }
+              }
+            ]
+          }
+        }
+      })
+    }
+  }
+
+  async getCollection(condition: ConditionQuery, slug: string, query: GetCollectionQuery) {
+    const $match: any = {}
+    const checkBanChay = slug.includes("ban-chay") // Check trước
+
+    if (condition.category) {
+      const categoryId = await databaseServices.category.findOne({ name: condition.category }).then((res) => res?._id)
+      $match["category"] = categoryId
+    }
+    if (condition.brand) {
+      const brandId = await databaseServices.brand.findOne({ name: condition.brand }).then((res) => res?._id)
+      $match["brand"] = brandId
+    }
+
+    if (checkBanChay) {
+      // Lấy top 10 bán chạy TRƯỚC (không filter gì cả)
+      const top10BestSellers = await databaseServices.product
+        .aggregate([
+          { $match },
+          { $sort: { sold: -1 } },
+          { $limit: 10 },
+          { $project: { _id: 1 } } // Chỉ lấy _id
+        ])
+        .toArray()
+
+      const top10Ids = top10BestSellers.map((item) => item._id)
+      Object.keys($match).forEach((key) => delete $match[key])
+      $match["_id"] = { $in: top10Ids }
+    } else {
+      // Trường hợp bình thường: áp dụng tất cả filters
+      await this.filterCollectionProducts(condition, slug, $match)
+    }
+
+    if (query.status) {
+      if (query.status === "all") {
+        // không lọc
+        $match["status"] = {
+          $in: ["available", "out_of_stock", "discontinued"] // lấy hết
+        }
+      } else {
+        $match["status"] = query.status
+      }
+    }
+
+    const specConditions: any[] = []
+    await this.addSpecificationFilters(query, specConditions)
     if (specConditions.length > 0) {
       $match["$and"] = ($match["$and"] || []).concat(specConditions)
     }
@@ -194,19 +308,48 @@ class CollectionServices {
     ]
 
     const resultPipeline = [...basePipeline]
-    if (checkBanChay) {
+
+    if (query.sort) {
+      this.addSortFieldsToPipeline(query, resultPipeline)
+      const sortStage: any = {}
+
+      switch (query.sort) {
+        case "name_asc":
+          sortStage.sortableName = 1
+          break
+        case "name_desc":
+          sortStage.sortableName = -1
+          break
+        case "price_asc":
+          sortStage.finalPrice = 1
+          break
+        case "price_desc":
+          sortStage.finalPrice = -1
+          break
+      }
+
+      resultPipeline.push({ $sort: sortStage })
+    } else if (checkBanChay) {
+      // ✅ CHỈ khi không có query.sort VÀ là bán chạy → Sort theo sold
       resultPipeline.push({ $sort: { sold: -1 } })
-      resultPipeline.push({ $limit: 10 })
+    }
+
+    // Xóa các field không cần thiết
+    const projectFields: any = {
+      updated_at: 0,
+      created_at: 0,
+      stock: 0,
+      description: 0,
+      gifts: 0
+    }
+
+    if (query.sort) {
+      projectFields.sortableName = 0
+      projectFields.finalPrice = 0
     }
 
     resultPipeline.push({
-      $project: {
-        updated_at: 0,
-        created_at: 0,
-        stock: 0,
-        description: 0,
-        gifts: 0
-      }
+      $project: projectFields
     })
 
     const [result, total] = await Promise.all([
