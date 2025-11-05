@@ -55,7 +55,11 @@ export const UserMessage = {
   UPDATE_PROFILE_IS_SUCCESS: "Cập nhật profile thành công!",
   EMAIL_NOT_VERIFY: "Email chưa xác thực!",
   REFRESH_TOKEN_IS_SUCCESS: "RefreshToken thành công!",
-  PERMISSION_DENIED: "Không có quyền truy cập!"
+  PERMISSION_DENIED: "Không có quyền truy cập!",
+
+  // ✅ ADD: Redis Session Management Messages
+  TOKEN_HAS_BEEN_REVOKED: "Token đã bị thu hồi. Vui lòng đăng nhập lại!",
+  TOO_MANY_LOGIN_ATTEMPTS: "Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút!"
 } as const
 
 export const ProductMessage = {

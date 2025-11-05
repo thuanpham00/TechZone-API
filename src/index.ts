@@ -22,6 +22,7 @@ import { createServer } from "http"
 import { initialSocket } from "./socket"
 import categoryClientRoute from "./routes/category.routes"
 import voucherRoute from "./routes/voucher.routes"
+import { RedisClient } from "./redis/redisClient" // ✅ ADD: Import Redis client
 config()
 
 const PORT = envConfig.port
@@ -69,12 +70,24 @@ app.use("/vouchers", voucherRoute)
 // admin
 app.use("/admin", adminRouter)
 
+// ✅ Khởi tạo kết nối MongoDB và Redis
 databaseServices.connect().then(() => {
   databaseServices.indexRefreshToken(),
     databaseServices.indexUser(),
     databaseServices.indexBrand(),
     databaseServices.indexCategory()
 })
+
+// ✅ Khởi tạo Redis connection (singleton pattern - chỉ tạo 1 lần)
+RedisClient.getInstance()
+  .ping()
+  .then(() => {
+    console.log("✅ Redis connected and ready")
+  })
+  .catch((error) => {
+    console.error("❌ Redis connection failed:", error.message)
+    console.warn("⚠️  Server will run without Redis features")
+  })
 
 initFolder()
 

@@ -15,6 +15,7 @@ import { JsonWebTokenError } from "jsonwebtoken"
 import { ObjectId } from "mongodb"
 import { TokenPayload } from "~/models/requests/user.requests"
 import { envConfig } from "~/utils/config"
+import { authRedisService } from "~/redis/authRedis" // ✅ ADD: Import Redis service
 
 config()
 
@@ -222,13 +223,30 @@ export const loginValidator = validate(
         },
         custom: {
           options: async (value, { req }) => {
+            // ✅ STEP 1: Check rate limiting FIRST (before any DB query)
+            const ip = req.ip || req.socket.remoteAddress || "unknown"
+            const { allowed } = await authRedisService.checkLoginAttempts(ip, value)
+
+            // nếu login trên 5 lần sai vào lỗi này
+            if (!allowed) {
+              throw new ErrorWithStatus({
+                message: UserMessage.TOO_MANY_LOGIN_ATTEMPTS,
+                status: httpStatus.TOO_MANY_REQUESTS
+              })
+            }
+
+            // nếu login dưới 5 lần sai thì vào lỗi này
             const user = await databaseServices.users.findOne({
               email: value,
               password: hashPassword(req.body.password)
             })
+
             if (!user) {
+              // ❌ Login failed → Lỗi này sẽ tăng counter trong Redis (checkLoginAttempts đã INCR)
               throw new Error(UserMessage.EMAIL_OR_PASSWORD_IS_INCORRECT)
             }
+
+            // ✅ Login success → Controller sẽ reset counter
             ;(req as Request).user = user
             return true
           }
@@ -256,6 +274,15 @@ export const accessTokenValidator = validate(
                 status: httpStatus.UNAUTHORIZED
               })
             }
+
+            const isBlacklisted = await authRedisService.isTokenBlacklisted(access_token)
+            if (isBlacklisted) {
+              throw new ErrorWithStatus({
+                message: UserMessage.TOKEN_HAS_BEEN_REVOKED,
+                status: httpStatus.UNAUTHORIZED
+              })
+            }
+
             try {
               const decode_authorization = await verifyToken({
                 token: access_token,
@@ -292,17 +319,38 @@ export const refreshTokenValidator = validate(
               })
             }
             try {
-              const [decode_refreshToken, findToken] = await Promise.all([
-                verifyToken({ token: value, privateKey: envConfig.secret_key_refresh_token }),
-                databaseServices.refreshToken.findOne({ token: value })
-              ])
+              // ✅ STEP 1: Verify JWT signature (always required for security)
+              const decode_refreshToken = await verifyToken({
+                token: value,
+                privateKey: envConfig.secret_key_refresh_token
+              })
               req.decode_refreshToken = decode_refreshToken
+
+              const user_id = decode_refreshToken.user_id
+
+              // ✅ STEP 2: Check Redis cache FIRST (performance optimization)
+              const cachedToken = await authRedisService.getRefreshToken(user_id)
+
+              if (cachedToken && cachedToken === value) {
+                // ✅ CACHE HIT: Token valid, SKIP MongoDB query! (60x faster)
+                console.log(`✅ RefreshToken cache HIT for user ${user_id} - Skip MongoDB`)
+                return true // ← SKIP MongoDB!
+              }
+
+              // ❌ CACHE MISS: Fallback to MongoDB (source of truth)
+              console.log(`⚠️ RefreshToken cache MISS for user ${user_id} - Checking MongoDB...`)
+              const findToken = await databaseServices.refreshToken.findOne({ token: value })
+
               if (findToken === null) {
                 throw new ErrorWithStatus({
                   message: UserMessage.REFRESH_TOKEN_USED_OR_NOT_EXISTS,
                   status: httpStatus.UNAUTHORIZED
                 })
               }
+
+              // ✅ Store in Redis for next time
+              await authRedisService.storeRefreshToken(user_id, value, 100 * 24 * 60 * 60)
+
               /**
                * Khi lỗi xảy ra trong đoạn try:
               Nếu lỗi là JsonWebTokenError, khối catch sẽ tạo một lỗi mới với thông báo tương ứng (error.message) và status httpStatus.UNAUTHORIZED.

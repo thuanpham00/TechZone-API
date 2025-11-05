@@ -79,5 +79,11 @@ export const envConfig = {
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID as string,
   R2_BUCKET_NAME: process.env.R2_BUCKET_NAME as string,
   R2_ENDPOINT: process.env.R2_ENDPOINT as string,
-  R2_LINK_PUBLIC: process.env.R2_LINK_PUBLIC as string
+  R2_LINK_PUBLIC: process.env.R2_LINK_PUBLIC as string,
+
+  // Redis Configuration
+  redis_host: process.env.REDIS_HOST || "localhost",
+  redis_port: parseInt(process.env.REDIS_PORT || "6379"),
+  redis_password: process.env.REDIS_PASSWORD || "",
+  redis_db: parseInt(process.env.REDIS_DB || "0")
 }

@@ -19,6 +19,7 @@ import { User } from "~/models/schema/users.schema"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
 import { envConfig } from "~/utils/config"
+import { authRedisService } from "~/redis/authRedis" // ✅ ADD: Import Redis service
 
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
@@ -54,9 +55,19 @@ export const loginController = async (
   const verify = user.verify
   const role = user.role.toString()
 
+  // ✅ GET IP ADDRESS và EMAIL to reset rate limit after successful login
+  const ip = req.ip || req.socket.remoteAddress || "unknown"
+  const email = user.email
+
   const findRole = await databaseServices.role.findOne({ _id: new ObjectId(role) })
   const roleName = findRole?.key as string
   const { accessToken, refreshToken, user: userInfo } = await userServices.login({ user_id, verify, roleId: role })
+
+  // ✅ LOGIN THÀNH CÔNG → Reset login attempts (cả IP và Email)
+  await authRedisService.resetLoginAttempts(ip, email)
+
+  // ✅ STORE REFRESH TOKEN vào Redis (cache for fast verification)
+  await authRedisService.storeRefreshToken(user_id, refreshToken, 100 * 24 * 60 * 60) // 100 days
 
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true, // chặn client javascript không thể truy cập
@@ -107,7 +118,16 @@ export const logoutController = async (
 ) => {
   const { user_id } = req.decode_authorization as TokenPayload
   const refresh_token = req.cookies.refresh_token // lấy cookie từ server
-  const result = await userServices.logout({ user_id, refresh_token })
+
+  // ✅ LẤY ACCESS TOKEN từ header
+  const access_token = (req.headers.authorization || "").split(" ")[1]
+
+  // ✅ LOGOUT: Blacklist accessToken + Delete refreshToken
+  await Promise.all([
+    userServices.logout({ user_id, refresh_token }), // Delete refreshToken from MongoDB
+    access_token ? authRedisService.blacklistAccessToken(access_token) : Promise.resolve(), // Blacklist accessToken
+    authRedisService.deleteRefreshToken(user_id) // Delete refreshToken from Redis cache
+  ])
 
   res.clearCookie("refresh_token", {
     httpOnly: true,
@@ -115,7 +135,7 @@ export const logoutController = async (
     path: "/"
   })
   res.json({
-    message: result.message
+    message: UserMessage.LOGOUT_IS_SUCCESS
   })
 }
 
@@ -127,6 +147,10 @@ export const refreshTokenController = async (
   // lấy exp (thời gian hết hạn của Token cũ) -> tạo token mới (giữ exp của token cũ)
   const { user_id, verify, exp, role } = req.decode_refreshToken as TokenPayload
   const { refresh_token } = req.cookies
+
+  // Note: Middleware đã check Redis cache và MongoDB
+  // Nếu đến đây = token hợp lệ (cache HIT hoặc MongoDB verified)
+
   const { accessToken, refreshToken: refresh_token_new } = await userServices.refreshToken({
     token: refresh_token,
     user_id: user_id,
@@ -134,6 +158,10 @@ export const refreshTokenController = async (
     roleId: role,
     exp: exp
   })
+
+  // ✅ UPDATE Redis cache với refreshToken mới
+  // Note: SET command tự động overwrite token cũ, không cần DEL riêng
+  await authRedisService.storeRefreshToken(user_id, refresh_token_new, 100 * 24 * 60 * 60)
 
   res.cookie("refresh_token", refresh_token_new, {
     httpOnly: true,
