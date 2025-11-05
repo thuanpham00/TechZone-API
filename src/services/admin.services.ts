@@ -1268,6 +1268,14 @@ class AdminServices {
               localField: "brand",
               foreignField: "_id",
               as: "brand"
+              //  pipeline: [
+              //   {
+              //     $project: {
+              //       _id: 1,
+              //       name: 1
+              //     }
+              //   }
+              // ] // dùng cái này hoặc $addFields bên dưới cũng được
             }
           }, // tham chiếu đến brand
           {
@@ -1277,7 +1285,7 @@ class AdminServices {
                   input: "$brand",
                   as: "brandItem",
                   in: {
-                    name: "$$brandItem.name" // chỗ này dùng Pipeline đơn giản hơn
+                    name: "$$brandItem.name"
                   }
                 }
               }
@@ -1294,6 +1302,14 @@ class AdminServices {
               localField: "category",
               foreignField: "_id",
               as: "category"
+              //  pipeline: [
+              //   {
+              //     $project: {
+              //       _id: 1,
+              //       name: 1
+              //     }
+              //   }
+              // ] // dùng cái này hoặc $addFields bên dưới cũng được
             }
           }, // tham chiếu đến category
           {
@@ -1303,7 +1319,7 @@ class AdminServices {
                   input: "$category",
                   as: "categoryItem",
                   in: {
-                    name: "$$categoryItem.name" // chỗ này dùng Pipeline đơn giản hơn
+                    name: "$$categoryItem.name"
                   }
                 }
               }
