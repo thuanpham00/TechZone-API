@@ -26,6 +26,10 @@ export function formatCurrency(current: number) {
   return new Intl.NumberFormat("de-DE").format(current)
 }
 
+export const escapeRegex = (str: string): string => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export const verifyAccessToken = async (access_token: string, req?: Request) => {
   if (!access_token) {
     throw new ErrorWithStatus({

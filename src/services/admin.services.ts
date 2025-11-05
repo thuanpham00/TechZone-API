@@ -33,6 +33,7 @@ import { Role } from "~/models/schema/role_permission.schema"
 import { File } from "formidable"
 import { deleteFromR2ByUrl } from "~/utils/r2_cloudflare"
 import { Voucher } from "~/models/schema/voucher.schema"
+import { escapeRegex } from "~/utils/common"
 
 class AdminServices {
   async getStatisticalSell(month: number, year: number) {
@@ -509,7 +510,7 @@ class AdminServices {
 
     const $match: any = { role: idRoleCustomer }
     if (email) {
-      $match["email"] = { $regex: email, $options: "i" }
+      $match["email"] = { $regex: escapeRegex(email), $options: "i" }
     }
     if (name) {
       $match["name"] = { $regex: name, $options: "i" }
@@ -1276,12 +1277,17 @@ class AdminServices {
                   input: "$brand",
                   as: "brandItem",
                   in: {
-                    name: "$$brandItem.name"
+                    name: "$$brandItem.name" // chỗ này dùng Pipeline đơn giản hơn
                   }
                 }
               }
             }
           }, // ghi đè lại giá trị brand sẵn có
+          {
+            $unwind: {
+              path: "$brand"
+            }
+          },
           {
             $lookup: {
               from: "category",
@@ -1297,23 +1303,32 @@ class AdminServices {
                   input: "$category",
                   as: "categoryItem",
                   in: {
-                    name: "$$categoryItem.name"
+                    name: "$$categoryItem.name" // chỗ này dùng Pipeline đơn giản hơn
                   }
                 }
               }
             }
           },
           {
+            $unwind: {
+              path: "$category"
+            }
+          },
+          {
+            $lookup: {
+              from: "specification",
+              localField: "specifications",
+              foreignField: "_id",
+              as: "specifications"
+            }
+          },
+          {
             $project: {
               reviews: 0,
-              specifications: 0,
               viewCount: 0,
               gifts: 0,
-              description: 0,
               sold: 0,
-              isFeatured: 0,
-              averageRating: 0,
-              discount: 0
+              averageRating: 0
             }
           }
         ])
@@ -1520,7 +1535,7 @@ class AdminServices {
       $match["name"] = { $regex: name, $options: "i" }
     }
     if (email) {
-      $match["email"] = { $regex: email, $options: "i" }
+      $match["email"] = { $regex: escapeRegex(email), $options: "i" }
     }
     if (phone) {
       $match["phone"] = { $regex: phone, $options: "i" }
@@ -2404,6 +2419,50 @@ class AdminServices {
     }
   }
 
+  async getVouchersForOrders(id: string, limit?: number, page?: number) {
+    const $match: any = {
+      voucher_id: new ObjectId(id),
+      status: { $ne: OrderStatus.cancelled } // loại trừ đơn hàng đã hủy
+    }
+
+    const pipeline: any[] = [
+      {
+        $match
+      },
+      {
+        $skip: limit && page ? limit * (page - 1) : 0
+      },
+      {
+        $limit: limit ? limit : 5
+      }
+    ]
+
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.order.aggregate(pipeline).toArray(),
+      databaseServices.order.aggregate([{ $match }, { $count: "total" }]).toArray(),
+      databaseServices.order
+        .aggregate([
+          { $match },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          { $count: "total" }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
+    }
+  }
+
   async createVoucher(body: {
     code: string
     description?: string
@@ -2584,13 +2643,68 @@ class AdminServices {
     }
   }
 
-  async getStaffs(limit?: number, page?: number, sortBy?: string) {
+  async getStaffs(
+    limit?: number,
+    page?: number,
+    email?: string,
+    name?: string,
+    phone?: string,
+    sortBy?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string
+  ) {
     const allRole = await databaseServices.role.find({}).toArray()
 
     const groupRoleExcludeAdminAndCustomer = allRole
       .filter((role) => role.key !== "ADMIN" && role.key !== "CUSTOMER")
       .map((item) => item._id)
     const $match: any = { role: { $in: groupRoleExcludeAdminAndCustomer } }
+
+    if (email) {
+      $match["email"] = { $regex: escapeRegex(email), $options: "i" }
+    }
+    if (name) {
+      $match["name"] = { $regex: name, $options: "i" }
+    }
+    if (phone) {
+      $match["numberPhone"] = { $regex: phone, $options: "i" }
+    }
+
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate // >= created_at_start
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      // Nếu đã có $match["created_at"], thêm $lte vào
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate // <= created_at_end
+      } else {
+        $match["created_at"] = {
+          $lte: endDate // Nếu chưa có, chỉ tạo điều kiện này
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
+    }
 
     const [result, total, totalOfPage] = await Promise.all([
       databaseServices.users

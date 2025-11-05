@@ -48,6 +48,7 @@ import {
   getSuppliersController,
   getSuppliesController,
   getVouchersController,
+  getVouchersOrdersController,
   updateBrandDetailController,
   updateCategoryDetailController,
   updateCustomerDetailController,
@@ -67,7 +68,6 @@ import {
   checkEmailExistValidator,
   checkIdValidator,
   checkRoleExitsValidator,
-  createProductValidator,
   createReceiptValidator,
   createSupplierValidator,
   createSupplyValidator,
@@ -98,7 +98,6 @@ import {
 import { UpdateCategoryBodyReq, UpdateSupplierBodyReq, UpdateSupplyBodyReq } from "~/models/requests/admin.requests"
 import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
-import multer from "multer"
 
 const adminRouter = Router()
 /**
@@ -834,6 +833,22 @@ adminRouter.get(
   checkRole(),
   queryValidator,
   wrapRequestHandler(getVouchersController)
+)
+
+/**
+ * Description: get vouchers list
+ * Path: /vouchers
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/vouchers/:id/orders",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  queryValidator,
+  wrapRequestHandler(getVouchersOrdersController)
 )
 
 /**
