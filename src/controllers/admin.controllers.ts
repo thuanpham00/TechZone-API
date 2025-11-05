@@ -1219,7 +1219,6 @@ export const updatePermissionsBasedOnIdRoleController = async (
   req: Request<ParamsDictionary, any, UpdatePermissionsRole[]>,
   res: Response
 ) => {
-  console.log(req.body)
   const { result } = await adminServices.updatePermissionsBasedOnIdRole(req.body)
 
   res.json({
