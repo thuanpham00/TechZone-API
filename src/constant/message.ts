@@ -64,6 +64,7 @@ export const UserMessage = {
 
 export const ProductMessage = {
   PRODUCT_ID_IS_INVALID: "Id sản phẩm không hợp lệ!",
+  NAME_IS_EXISTS: "Tên sản phẩm đã tồn tại!",
 
   NAME_IS_REQUIRED: "Tên sản phẩm bắt buộc!",
   NAME_MUST_BE_STRING: "Tên sản phẩm phải là chuỗi!",
@@ -71,13 +72,17 @@ export const ProductMessage = {
 
   CATEGORY_IS_REQUIRED: "Thể loại bắt buộc!",
   CATEGORY_MUST_BE_STRING: "Thể loại phải là chuỗi!",
+  CATEGORY_NOT_FOUND: "Thể loại không tồn tại!",
 
   BRAND_IS_REQUIRED: "Thương hiệu bắt buộc!",
   BRAND_MUST_BE_STRING: "Thương hiệu phải là chuỗi!",
+  BRAND_NOT_FOUND: "Thương hiệu không tồn tại!",
 
   PRICE_IS_REQUIRED: "Giá sản phẩm bắt buộc!",
+  PRICE_MUST_BE_POSITIVE_NUMBER: "Giá sản phẩm phải là số dương!",
 
   DISCOUNT_IS_REQUIRED: "Giảm giá bắt buộc!",
+  DISCOUNT_MUST_BE_POSITIVE_NUMBER: "Giảm giá phải là số dương!",
 
   STOCK_MUST_BE_NUMBER: "Số lượng tồn kho phải là số!",
   STOCK_IS_INVALID: "Số lượng tồn kho không hợp lệ!",
@@ -97,9 +102,12 @@ export const ProductMessage = {
   GIFTS_MUST_BE_AN_ARRAY_OF_USER_ID: "Quà tặng phải là mảng các id!",
 
   CREATE_PRODUCT_SUCCESS: "Tạo sản phẩm thành công!",
+  UPDATE_PRODUCT_SUCCESS: "Cập nhật sản phẩm thành công!",
+  DELETE_PRODUCT_SUCCESS: "Xóa sản phẩm thành công!",
   GET_PRODUCT_SUCCESS: "Lấy chi tiết sản phẩm thành công!",
   GET_PRODUCT_RELATED_SUCCESS: "Lấy danh sách sản phẩm liên quan thành công!",
-  GET_SEARCH_PRODUCT: "Tìm kiếm sản phẩm liên quan thành công!"
+  GET_SEARCH_PRODUCT: "Tìm kiếm sản phẩm liên quan thành công!",
+  PRODUCT_OUT_OF_STOCK: "Sản phẩm này vẫn còn hàng trong kho, không thể xóa!"
 } as const
 
 export const MediaMessage = {

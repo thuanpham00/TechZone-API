@@ -16,7 +16,10 @@
     "test:auth-redis": "cross-env NODE_ENV=development npx ts-node src/test-auth-redis.ts",
     "test:performance": "run-performance-test.bat",
     "test:performance:before": "cross-env NODE_ENV=development npx ts-node src/test-performance-before-redis.ts",
-    "test:performance:after": "cross-env NODE_ENV=development npx ts-node src/test-performance-after-redis.ts"
+    "test:performance:after": "cross-env NODE_ENV=development npx ts-node src/test-performance-after-redis.ts",
+    "add-banner-id": "cross-env NODE_ENV=development ts-node -r dotenv/config src/scripts/add-banner-id.ts",
+    "add-gallery-id": "cross-env NODE_ENV=development ts-node -r dotenv/config src/scripts/add-gallery-id.ts",
+    "add-price-after-discount": "cross-env NODE_ENV=development ts-node -r dotenv/config src/scripts/add-price-after-discount.ts"
   },
   "keywords": [],
   "author": "",

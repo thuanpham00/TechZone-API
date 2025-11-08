@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SupplyMessage = exports.SupplierMessage = exports.AdminMessage = exports.Path = exports.CollectionMessage = exports.MediaMessage = exports.ProductMessage = exports.UserMessage = void 0;
+exports.CategoryMessage = exports.ConversationMessage = exports.EmailMessage = exports.ReceiptMessage = exports.SupplyMessage = exports.SupplierMessage = exports.AdminMessage = exports.Path = exports.OrderMessage = exports.CollectionMessage = exports.MediaMessage = exports.ProductMessage = exports.UserMessage = void 0;
 exports.UserMessage = {
+    STAFF_IS_NOT_ACTIVE: "Tài khoản đã bị khóa! Vui lòng liên hệ quản trị viên",
+    REQUIRED_LOGIN: "Vui lòng đăng nhập để tiếp tục!",
     VALIDATION_ERROR: "Lỗi xác thực!",
     EMAIL_IS_VALID: "Email không hợp lệ!",
     REGISTER_IS_SUCCESS: "Đăng ký thành công!",
@@ -22,6 +24,7 @@ exports.UserMessage = {
     DATE_OF_BIRTH_IS_ISO8601: "Ngày sinh phải theo định dạng ISO 8601!",
     AVATAR_IS_REQUIRED: "Avatar bắt buộc!",
     ROLE_IS_INVALID: "Vai trò không hợp lệ!",
+    STATUS_STAFF_IS_INVALID: "Trạng thái tài khoản không hợp lệ!",
     EMAIL_OR_PASSWORD_IS_INCORRECT: "Email hoặc mật khẩu không chính xác!",
     ACCESS_TOKEN_IS_REQUIRED: "AccessToken bắt buộc!",
     REFRESH_TOKEN_IS_REQUIRED: "RefreshToken bắt buộc!",
@@ -49,8 +52,10 @@ exports.UserMessage = {
     PERMISSION_DENIED: "Không có quyền truy cập!"
 };
 exports.ProductMessage = {
+    PRODUCT_ID_IS_INVALID: "Id sản phẩm không hợp lệ!",
     NAME_IS_REQUIRED: "Tên sản phẩm bắt buộc!",
     NAME_MUST_BE_STRING: "Tên sản phẩm phải là chuỗi!",
+    NAME_IS_INVALID: "Tên sản phẩm đã tồn tại!",
     CATEGORY_IS_REQUIRED: "Thể loại bắt buộc!",
     CATEGORY_MUST_BE_STRING: "Thể loại phải là chuỗi!",
     BRAND_IS_REQUIRED: "Thương hiệu bắt buộc!",
@@ -70,14 +75,29 @@ exports.ProductMessage = {
     GIFTS_MUST_BE_AN_ARRAY_OF_USER_ID: "Quà tặng phải là mảng các id!",
     CREATE_PRODUCT_SUCCESS: "Tạo sản phẩm thành công!",
     GET_PRODUCT_SUCCESS: "Lấy chi tiết sản phẩm thành công!",
-    GET_PRODUCT_RELATED_SUCCESS: "Lấy danh sách sản phẩm liên quan thành công!"
+    GET_PRODUCT_RELATED_SUCCESS: "Lấy danh sách sản phẩm liên quan thành công!",
+    GET_SEARCH_PRODUCT: "Tìm kiếm sản phẩm liên quan thành công!"
 };
 exports.MediaMessage = {
     UPLOAD_IMAGE_IS_SUCCESS: "Tải ảnh lên thành công!",
     UPLOAD_IMAGE_IS_FAILED: "Tải ảnh lên thất bại!"
 };
 exports.CollectionMessage = {
-    GET_COLLECTION_IS_SUCCESS: "Lấy danh sách sản phẩm thành công!"
+    GET_COLLECTION_IS_SUCCESS: "Lấy danh sách sản phẩm thành công!",
+    GET_COLLECTION_FAVOURITE_IS_SUCCESS: "Lấy danh sách sản phẩm yêu thích thành công!",
+    GET_COLLECTION_CART_IS_SUCCESS: "Lấy danh sách sản phẩm trong giỏ hàng thành công!",
+    ADD_PRODUCT_FAVOURITE_IS_SUCCESS: "Thêm sản phẩm vào danh sách yêu thích thành công!",
+    DELETE_PRODUCT_FAVOURITE_IS_SUCCESS: "Xóa sản phẩm khỏi danh sách yêu thích thành công!",
+    ADD_PRODUCT_CART_IS_SUCCESS: "Thêm sản phẩm vào giỏ hàng thành công!",
+    UPDATE_PRODUCT_CART_IS_SUCCESS: "Cập nhật số lượng sản phẩm trong giỏ hàng thành công!",
+    DELETE_PRODUCT_CART_IS_SUCCESS: "Xóa sản phẩm trong giỏ hàng thành công!",
+    CLEAR_PRODUCT_CART_IS_SUCCESS: "Xóa tất cả sản phẩm trong giỏ hàng thành công!"
+};
+exports.OrderMessage = {
+    CREATE_ORDER_IS_SUCCESS: "Tạo đơn hàng thành công!",
+    GET_ORDER_IS_SUCCESS: "Lấy danh sách đơn hàng thành công!",
+    CANCEL_ORDER_IS_SUCCESS: "Hủy đơn hàng thành công",
+    RECEIVE_ORDER_IS_SUCCESS: "Xác nhận giao hàng thành công"
 };
 exports.Path = {
     PathNotFound: "Không tìm thấy trang!"
@@ -85,9 +105,25 @@ exports.Path = {
 exports.AdminMessage = {
     GET_STATISTICAL: "Lấy số liệu thống kê thành công!",
     GET_CUSTOMERS: "Lấy danh sách khách hàng thành công!",
+    CREATE_CUSTOMER_DETAIL: "Thêm người dùng thành công!",
     GET_CUSTOMER: "Lấy thông tin khách hàng thành công!",
     GET_CATEGORIES: "Lấy danh sách danh mục thành công!",
+    GET_MENUS: "Lấy danh sách menu thành công!",
+    UPDATE_NAME_CATEGORY_DETAIL: "Cập nhật tên menu thành công!",
+    CREATE_CATEGORY_LINK: "Tạo liên kết danh mục thành công!",
+    UPDATE_CATEGORY_LINK: "Cập nhật liên kết danh mục thành công!",
+    DELETE_CATEGORY_LINK: "Xóa liên kết danh mục thành công!",
+    CREATE_GROUP_CATEGORY_MENU: "Thêm nhóm menu danh mục thành công!",
+    DELETE_GROUP_CATEGORY_MENU: "Xóa nhóm menu danh mục thành công!",
+    GET_VOUCHERS: "Lấy danh sách voucher thành công!",
+    GET_VOUCHERS_FOR_ORDERS: "Lấy danh sách đơn hàng áp dụng voucher thành công!",
+    CREATE_VOUCHER_SUCCESS: "Tạo voucher thành công!",
+    UPDATE_VOUCHER_SUCCESS: "Cập nhật voucher thành công!",
+    DELETE_VOUCHER_SUCCESS: "Xóa voucher thành công!",
     GET_CATEGORY_DETAIL: "Lấy thông tin chi tiết danh mục thành công!",
+    GET_SUPPLY_DETAIL: "Lấy thông tin chi tiết cung ứng thành công!",
+    GET_SUPPLIER_DETAIL: "Lấy thông tin chi tiết nhà cung cấp thành công!",
+    GET_ORDER_DETAIL: "Lấy thông tin chi tiết đơn hàng thành công!",
     UPDATE_CATEGORY_DETAIL: "Cập nhật thông tin chi tiết danh mục thành công!",
     CREATE_CATEGORY_DETAIL: "Thêm danh mục thành công!",
     DELETE_CUSTOMER: "Xóa profile khách hàng thành công!",
@@ -105,12 +141,29 @@ exports.AdminMessage = {
     CREATE_SUPPLIER_DETAIL: "Thêm nhà cung cấp thành công!",
     CREATE_SUPPLY_DETAIL: "Thêm cung ứng thành công!",
     UPDATE_SUPPLIER_DETAIL: "Cập nhật thông tin chi tiết nhà cung cấp thành công!",
+    UPDATE_SUPPLY_DETAIL: "Cập nhật thông tin chi tiết cung ứng thành công!",
     GET_SUPPLIERS: "Lấy danh sách nhà cung cấp thành công!",
+    GET_SUPPLIERS_BASED_ON_NAME_PRODUCT: "Lấy danh sách nhà cung cấp chưa liên kết sản phẩm thành công!",
+    GET_SUPPLIERS_BASED_ON_NAME_PRODUCT_2: "Lấy danh sách nhà cung cấp đã liên kết sản phẩm thành công!",
     SUPPLIER_CANNOT_BE_DELETED: "Nhà cung cấp đang sử dụng không thể xóa!",
-    DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!"
+    DELETE_SUPPLIER: "Xóa nhà cung cấp thành công!",
+    GET_RECEIPTS: "Lấy danh sách đơn nhập hàng thành công!",
+    GET_ORDERS_IN_PROCESS: "Lấy danh sách đơn hàng đang xử lý thành công!",
+    GET_ORDERS_COMPLETED: "Lấy danh sách đơn hàng đã hoàn thành thành công!",
+    UPDATE_STATUS_ORDER: "Cập nhật trạng thái đơn hàng thành công!",
+    GET_PRICE_SELLING: "Lấy giá sản phẩm thành công!",
+    GET_ROLES: "Lấy danh sách vai trò thành công!",
+    GET_PERMISSIONS: "Lấy danh sách quyền thành công!",
+    GET_PERMISSIONS_BASED_ON_ROLE: "Lấy danh sách quyền của vai trò thành công!",
+    UPDATE_PERMISSIONS_BASED_ON_ID_ROLE: "Cập nhật quyền của vai trò thành công!",
+    ROLE_IS_INVALID: "Vai trò đã tồn tại!",
+    CREATE_ROLE_DETAIL: "Thêm vai trò thành công!",
+    UPDATE_ROLE_DETAIL: "Cập nhật vai trò thành công!",
+    CANNOT_DELETE_ROLE: "Vai trò đang được sử dụng không thể xóa!"
 };
 exports.SupplierMessage = {
     NAME_IS_REQUIRED: "Tên nhà cung cấp bắt buộc!",
+    NAME_IS_EXISTS: "Tên nhà cung cấp đã tồn tại!",
     CONTACT_NAME_IS_REQUIRED: "Tên đại diện nhà cung cấp bắt buộc",
     EMAIL_IS_REQUIRED: "Email nhà cung cấp bắt buộc",
     ADDRESS_IS_REQUIRED: "Địa chỉ nhà cung cấp bắt buộc",
@@ -125,5 +178,29 @@ exports.SupplyMessage = {
     WARRANTY_MONTHS_IS_REQUIRED: "Thời gian bảo hành bắt buộc!",
     LEAD_TIME_DAYS_IS_REQUIRED: "Thời gian cung ứng bắt buộc!",
     PRODUCT_ID_IS_NOT_EXISTS: "ID sản phẩm không tồn tại!",
-    SUPPLIER_ID_IS_NOT_EXISTS: "ID nhà cung cấp không tồn tại!"
+    SUPPLIER_ID_IS_NOT_EXISTS: "ID nhà cung cấp không tồn tại!",
+    IMPORT_PRICE_IS_INVALID: "Giá nhập phải nhỏ hơn giá bán sản phẩm!",
+    DELETE_SUPPLY: "Xóa cung ứng thành công!"
+};
+exports.ReceiptMessage = {
+    ITEM_IS_INVALID: "Các thông tin sản phẩm phải là mảng các object!",
+    ITEM_IS_REQUIRED: "Thông tin sản phẩm là bắt buộc!",
+    TOTAL_AMOUNT_IS_REQUIRED: "Tổng giá trị toàn bộ đơn hàng là bắt buộc!",
+    TOTAL_ITEM_IS_REQUIRED: "Số lượng sản phẩm trong đơn hàng là bắt buộc!",
+    IMPORT_DATE_IS_REQUIRED: "Ngày nhập hàng bắt buộc!",
+    CREATE_RECEIPT_IS_SUCCESS: "Tạo đơn nhập hàng thành công!",
+    PRODUCT_ID_OR_SUPPLIER_ID_IS_INVALID: "Id sản phẩm hoặc Id nhà cung cấp không hợp lệ!",
+    PRICE_PER_UNIT_IS_SUCCESS: "Lấy giá nhập thành công!"
+};
+exports.EmailMessage = {
+    GET_LIST_EMAIL_LOG_IS_SUCCESS: "Lấy danh sách email log thành công"
+};
+exports.ConversationMessage = {
+    GET_LIST_USER_TYPE_IS_SUCCESS: "Lấy danh sách người dùng thành công",
+    GET_CONVERSATION_IS_SUCCESS: "Lấy danh sách hội thoại thành công"
+};
+exports.CategoryMessage = {
+    GET_CATEGORY_LIST_IS_SUCCESS: "Lấy danh sách danh mục thành công",
+    GET_CATEGORY_MENU_LIST_IS_SUCCESS: "Lấy danh sách menu danh mục thành công",
+    GET_BANNER_BASE_ON_SLUG_IS_SUCCESS: "Lấy banner dựa trên slug thành công"
 };

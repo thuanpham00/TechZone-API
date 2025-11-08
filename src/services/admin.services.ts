@@ -9,7 +9,7 @@ import {
   UpdateSupplyBodyReq
 } from "~/models/requests/admin.requests"
 import { Brand, Category } from "~/models/schema/brand_category.schema"
-import { AdminMessage, ReceiptMessage, SupplyMessage } from "~/constant/message"
+import { AdminMessage, ProductMessage, ReceiptMessage, SupplyMessage } from "~/constant/message"
 import {
   CreateProductBodyReq,
   CreateReceiptBodyReq,
@@ -1341,9 +1341,7 @@ class AdminServices {
           {
             $project: {
               reviews: 0,
-              viewCount: 0,
               gifts: 0,
-              sold: 0,
               averageRating: 0
             }
           }
@@ -1483,7 +1481,6 @@ class AdminServices {
       payload.category,
       productId.toString()
     )
-
     const { upload } = await mediaServices.uploadImageList(payload.medias, payload.category, productId.toString())
     const result = await databaseServices.product.findOneAndUpdate(
       { name: payload.name, brand: brandId, category: categoryId },
@@ -1496,10 +1493,11 @@ class AdminServices {
           category: categoryId,
           price: payload.price,
           discount: payload.discount,
-          stock: payload.stock,
+          priceAfterDiscount: payload.priceAfterDiscount,
           isFeatured: payload.isFeatured,
           description: payload.description,
           banner: {
+            id: new ObjectId(),
             type: typeBanner,
             url: urlBanner
           },
@@ -1514,6 +1512,106 @@ class AdminServices {
     )
 
     return result
+  }
+
+  async updateProduct(id: string, payload: CreateProductBodyReq) {
+    const { categoryId, brandId } = await this.checkCategoryBrandExist(payload.category, payload.brand)
+    const specificationList = await this.checkSpecificationExist(categoryId, payload.specifications)
+
+    const updateData: any = {
+      name: payload.name,
+      brand: brandId,
+      category: categoryId,
+      price: payload.price,
+      discount: payload.discount,
+      priceAfterDiscount: payload.priceAfterDiscount,
+      isFeatured: payload.isFeatured,
+      description: payload.description,
+      specifications: specificationList as ObjectId[]
+    }
+    const currentProduct = await databaseServices.product.findOne({ _id: new ObjectId(id) })
+
+    if (!currentProduct) {
+      throw new Error("Product not found")
+    }
+
+    const updateOptions: any = {
+      $set: updateData,
+      $currentDate: { updated_at: true }
+    }
+
+    if (
+      (payload.id_url_gallery_update && payload.id_url_gallery_update.length > 0) ||
+      (payload.medias && payload.medias.length > 0)
+    ) {
+      if (payload.id_url_gallery_update && payload.id_url_gallery_update.length > 0) {
+        // những ảnh đã thay đổi cần xóa và thêm lại ảnh mới
+
+        const mediasToDelete = currentProduct.medias.filter((media) =>
+          payload.id_url_gallery_update!.includes(media.id.toString())
+        )
+
+        await Promise.all(mediasToDelete.map((item) => deleteFromR2ByUrl(item.url)))
+
+        // nối object - 1 lần query update
+        updateOptions.$pull = {
+          medias: {
+            id: {
+              $in: payload.id_url_gallery_update.map((id) => new ObjectId(id))
+            }
+          }
+        }
+      }
+
+      if (payload.medias && payload.medias.length > 0) {
+        const { upload } = await mediaServices.uploadImageList(payload.medias, payload.category, id.toString())
+        updateOptions.$push = {
+          medias: {
+            $each: upload
+          }
+        }
+      }
+    }
+
+    if (payload.banner) {
+      // xóa ảnh cũ
+      if (currentProduct && currentProduct.banner.url) {
+        await deleteFromR2ByUrl(currentProduct.banner.url)
+      }
+
+      // upload ảnh mới
+      const { url: urlBanner, type: typeBanner } = await mediaServices.uploadBanner(
+        payload.banner,
+        payload.category,
+        id.toString()
+      )
+      updateData.banner = {
+        id: currentProduct?.banner.id || new ObjectId(),
+        url: urlBanner,
+        type: typeBanner
+      }
+    }
+
+    await databaseServices.product.updateOne({ _id: new ObjectId(id) }, updateOptions)
+  }
+
+  async deleteProduct(id: string) {
+    const product = await databaseServices.product.findOne({ _id: new ObjectId(id) })
+    if (product) {
+      // xóa banner
+      if (product.banner && product.banner.url) {
+        await deleteFromR2ByUrl(product.banner.url)
+      }
+      // xóa gallery
+      if (product.medias && product.medias.length > 0) {
+        await Promise.all(product.medias.map((item) => deleteFromR2ByUrl(item.url)))
+      }
+    }
+    await databaseServices.product.deleteOne({ _id: new ObjectId(id) })
+
+    return {
+      message: ProductMessage.DELETE_PRODUCT_SUCCESS
+    }
   }
 
   async createSupplier(payload: CreateSupplierBodyReq) {

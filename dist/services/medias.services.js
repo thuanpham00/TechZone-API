@@ -8,10 +8,10 @@ const path_1 = __importDefault(require("path"));
 const sharp_1 = __importDefault(require("sharp"));
 const dir_1 = require("../constant/dir");
 const fs_1 = __importDefault(require("fs"));
-const s3_1 = require("../utils/s3");
 const enum_1 = require("../constant/enum");
 const common_1 = require("../utils/common");
 const dotenv_1 = require("dotenv");
+const r2_cloudflare_1 = require("../utils/r2_cloudflare");
 (0, dotenv_1.config)();
 class MediaServices {
     async uploadImageList(files, nameCategory, idProduct) {
@@ -22,7 +22,7 @@ class MediaServices {
             sharp_1.default.cache(false);
             await (0, sharp_1.default)(file.filepath).jpeg().toFile(newPath); // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
             const mime = (await import("mime")).default;
-            const s3Result = await (0, s3_1.uploadFileToS3)({
+            const r2Result = await (0, r2_cloudflare_1.uploadToR2)({
                 fileName: "image/" + nameCategory + "/" + idProduct + "/medias/" + newFullName,
                 filePath: newPath,
                 ContentType: mime.getType(newPath) // chặn người khác download hình ảnh
@@ -30,7 +30,7 @@ class MediaServices {
             fs_1.default.unlinkSync(file.filepath); // xóa ảnh tạm
             fs_1.default.unlinkSync(newPath); // xóa ảnh gốc sau khi chuyển đổi
             return {
-                url: s3Result.Location,
+                url: r2Result.Location,
                 type: enum_1.MediaType.Image
             };
         }));
@@ -58,7 +58,7 @@ class MediaServices {
         sharp_1.default.cache(false);
         await (0, sharp_1.default)(file.filepath).jpeg().toFile(newPath); // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
         const mime = (await import("mime")).default;
-        const s3Result = await (0, s3_1.uploadFileToS3)({
+        const r2Result = await (0, r2_cloudflare_1.uploadToR2)({
             fileName: "image/" + nameCategory + "/" + idProduct + "/banner/" + newFullName,
             filePath: newPath,
             ContentType: mime.getType(newPath) // chặn người khác download hình ảnh
@@ -66,7 +66,7 @@ class MediaServices {
         fs_1.default.unlinkSync(file.filepath); // xóa ảnh tạm
         fs_1.default.unlinkSync(newPath); // xóa ảnh gốc sau khi chuyển đổi
         return {
-            url: s3Result.Location,
+            url: r2Result.Location,
             type: enum_1.MediaType.Image
         };
     }
@@ -77,7 +77,7 @@ class MediaServices {
         sharp_1.default.cache(false);
         await (0, sharp_1.default)(file.filepath).jpeg().toFile(newPath); // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
         const mime = (await import("mime")).default;
-        const s3Result = await (0, s3_1.uploadFileToS3)({
+        const s3Result = await (0, r2_cloudflare_1.uploadToR2)({
             fileName: "avatar/" + userId + "/" + newFullName,
             filePath: newPath,
             ContentType: mime.getType(newPath) // chặn người khác download hình ảnh
@@ -86,6 +86,25 @@ class MediaServices {
         fs_1.default.unlinkSync(newPath); // xóa ảnh gốc sau khi chuyển đổi
         return {
             url: s3Result.Location,
+            type: enum_1.MediaType.Image
+        };
+    }
+    async uploadBannerCategoryLink(file, idCategory) {
+        const newName = (0, common_1.getNameImage)(file.newFilename);
+        const newFullName = `${newName}.jpg`;
+        const newPath = path_1.default.resolve(dir_1.UPLOAD_IMAGE_DIR, newFullName);
+        sharp_1.default.cache(false);
+        await (0, sharp_1.default)(file.filepath).jpeg().toFile(newPath); // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
+        const mime = (await import("mime")).default;
+        const r2Result = await (0, r2_cloudflare_1.uploadToR2)({
+            fileName: "Category-Menu/" + idCategory + "/" + newFullName,
+            filePath: newPath,
+            ContentType: mime.getType(newPath) // chặn người khác download hình ảnh
+        });
+        fs_1.default.unlinkSync(file.filepath); // xóa ảnh tạm
+        fs_1.default.unlinkSync(newPath); // xóa ảnh gốc sau khi chuyển đổi
+        return {
+            url: r2Result.Location,
             type: enum_1.MediaType.Image
         };
     }

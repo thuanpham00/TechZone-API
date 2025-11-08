@@ -14,6 +14,7 @@ class User {
     email_verify_token;
     forgot_password_token;
     verify;
+    employeeInfo;
     created_at;
     updated_at;
     constructor(user) {
@@ -22,13 +23,14 @@ class User {
         this.name = user.name || "";
         this.email = user.email;
         this.password = user.password;
-        this.role = user.role || enum_1.RoleType.USER; // mặc định là user
+        this.role = user.role;
         this.numberPhone = user.numberPhone || "";
         this.date_of_birth = user.date_of_birth || new Date(1990, 0, 1);
         this.avatar = user.avatar || "";
         this.email_verify_token = user.email_verify_token || "";
         this.forgot_password_token = user.forgot_password_token || "";
         this.verify = user.verify || enum_1.UserVerifyStatus.Unverified;
+        this.employeeInfo = user.employeeInfo;
         this.created_at = user.created_at || date;
         this.updated_at = user.updated_at || date;
     }

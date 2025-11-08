@@ -69,6 +69,9 @@ class DatabaseServices {
     get category() {
         return this.db.collection(config_1.envConfig.collection_category);
     }
+    get category_menu() {
+        return this.db.collection(config_1.envConfig.collection_category_menu);
+    }
     get specification() {
         return this.db.collection(config_1.envConfig.collection_specification);
     }
@@ -77,6 +80,33 @@ class DatabaseServices {
     }
     get supply() {
         return this.db.collection(config_1.envConfig.collection_supply);
+    }
+    get receipt() {
+        return this.db.collection(config_1.envConfig.collection_receipt);
+    }
+    get favourite() {
+        return this.db.collection(config_1.envConfig.collection_favourite);
+    }
+    get cart() {
+        return this.db.collection(config_1.envConfig.collection_cart);
+    }
+    get order() {
+        return this.db.collection(config_1.envConfig.collection_order);
+    }
+    get emailLog() {
+        return this.db.collection(config_1.envConfig.collection_email_log);
+    }
+    get conversation() {
+        return this.db.collection(config_1.envConfig.collection_conversation);
+    }
+    get role() {
+        return this.db.collection(config_1.envConfig.collection_role);
+    }
+    get permissions() {
+        return this.db.collection(config_1.envConfig.collection_permissions);
+    }
+    get vouchers() {
+        return this.db.collection(config_1.envConfig.collection_vouchers);
     }
 }
 const databaseServices = new DatabaseServices();

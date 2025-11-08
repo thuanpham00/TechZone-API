@@ -19,7 +19,7 @@ userRoute.post("/register", user_middlewares_1.registerValidator, (0, handlers_1
  * Method: POST
  * Body: { email: string, password: string}
  */
-userRoute.post("/login", user_middlewares_1.loginValidator, (0, handlers_1.wrapRequestHandler)(user_controllers_1.loginController));
+userRoute.post("/login", user_middlewares_1.loginValidator, (0, user_middlewares_1.checkUserLogin)("customer"), (0, handlers_1.wrapRequestHandler)(user_controllers_1.loginController));
 /**
  * Description: Login google user
  * Path: /oauth/google
@@ -97,7 +97,7 @@ userRoute.get("/me", user_middlewares_1.accessTokenValidator, (0, handlers_1.wra
  * Header: {Authorization: Bearer <access_token>}
  * Body: updateMeReqBody
  */
-userRoute.patch("/me", user_middlewares_1.accessTokenValidator, user_middlewares_1.verifyUserValidator, user_middlewares_1.updateMeValidator, (0, common_middlewares_1.filterMiddleware)(["date_of_birth", "name", "numberPhone", "avatar"]), (0, handlers_1.wrapRequestHandler)(user_controllers_1.updateMeController));
+userRoute.put("/me", user_middlewares_1.accessTokenValidator, user_middlewares_1.verifyUserValidator, user_middlewares_1.updateMeValidator, (0, common_middlewares_1.filterMiddleware)(["date_of_birth", "name", "numberPhone", "avatar"]), (0, handlers_1.wrapRequestHandler)(user_controllers_1.updateMeController));
 exports.default = userRoute;
 /**
  *  accessTokenValidator,

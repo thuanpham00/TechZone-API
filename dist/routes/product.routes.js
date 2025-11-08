@@ -10,6 +10,12 @@ const productRoute = (0, express_1.Router)();
  * Trong Express, các route được xử lý theo thứ tự khai báo. Route cụ thể nên đặt trước, các route động như /:id nên đặt sau để tránh conflict.
  */
 /**
+ * Description: Get search product
+ * Path: /search
+ * Method: GET
+ */
+productRoute.get("/", (0, handlers_1.wrapRequestHandler)(product_controllers_1.getSearchProductController));
+/**
  * Description: Get product related
  * Path: /related
  * Method: GET

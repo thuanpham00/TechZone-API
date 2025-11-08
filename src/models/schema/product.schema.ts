@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb"
 import { Media } from "~/constant/common"
-import { MediaType, ProductStatus } from "~/constant/enum"
+import { ProductStatus } from "~/constant/enum"
 
 interface ProductType {
   _id?: ObjectId
@@ -8,6 +8,7 @@ interface ProductType {
   category: ObjectId // thể loại
   brand: ObjectId // thương hiệu
   price: number // giá sản phẩm
+  priceAfterDiscount?: number // giá sau khi đã giảm
   description: string // Mô tả sản phẩm chi tiết
   banner?: Media
   medias?: Media[] // hình ảnh
@@ -32,6 +33,7 @@ class Product {
   brand: ObjectId // thương hiệu
   price: number // giá sản phẩm
   discount: number // % giảm giá (nếu có)
+  priceAfterDiscount: number 
   stock: number // số lượng tồn kho
   sold: number // số lượng đã bán
   viewCount: number // Số lượt xem
@@ -53,8 +55,9 @@ class Product {
     this.category = product.category
     this.brand = product.brand
     this.price = product.price
+    this.priceAfterDiscount = product.priceAfterDiscount || product.price
     this.description = product.description
-    this.banner = product.banner || { type: 0, url: "" }
+    this.banner = product.banner || { type: 0, url: "", id: new ObjectId() }
     this.medias = product.medias || []
     this.discount = product.discount || 0
     this.stock = product.stock || 0

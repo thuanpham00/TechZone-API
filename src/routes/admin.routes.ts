@@ -17,6 +17,7 @@ import {
   deleteCustomerController,
   deleteLinkCategoryMenuController,
   deleteMenuCategoryController,
+  deleteProductController,
   deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
@@ -55,6 +56,7 @@ import {
   updateGroupNameMenuController,
   updateLinkCategoryMenuController,
   updatePermissionsBasedOnIdRoleController,
+  updateProductController,
   updateRoleController,
   updateStatusOrderController,
   updateSupplierDetailController,
@@ -68,12 +70,14 @@ import {
   checkEmailExistValidator,
   checkIdValidator,
   checkRoleExitsValidator,
+  createProductValidator,
   createReceiptValidator,
   createSupplierValidator,
   createSupplyValidator,
   createVoucherValidator,
   deleteBrandValidator,
   deleteCategoryValidator,
+  deleteCheckStockProductValidator,
   deleteRoleValidator,
   deleteSupplierValidator,
   getBrandsValidator,
@@ -81,6 +85,7 @@ import {
   getProductIdFromProductNameValidator,
   queryValidator,
   updateCategoryValidator,
+  updateProductValidator,
   updateSupplierValidator,
   updateSupplyValidator,
   updateVoucherValidator
@@ -484,7 +489,7 @@ adminRouter.get(
 
 /**
  * Description: Create product
- * Path: /
+ * Path: /products
  * Method: POST
  * Header: { Authorization: Bearer <accessToken> }
  * Body: { body: CreateProductBodyReq }
@@ -495,8 +500,41 @@ adminRouter.post(
   verifyUserValidator,
   checkRole(),
   parseFormData,
-  // createProductValidator,
+  createProductValidator,
   wrapRequestHandler(createProductController)
+)
+
+/**
+ * Description: update product by id
+ * Path: /products/:id
+ * Method: PUT
+ * Header: { Authorization: Bearer <accessToken> }
+ * Body: { body: CreateProductBodyReq }
+ */
+adminRouter.put(
+  "/products/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  parseFormData,
+  updateProductValidator,
+  wrapRequestHandler(updateProductController)
+)
+
+/**
+ * Description: delete product by id
+ * Path: /products/:id
+ * Method: DELETE
+ * Header: { Authorization: Bearer <accessToken> }
+ */
+adminRouter.delete(
+  "/products/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkIdValidator,
+  deleteCheckStockProductValidator,
+  wrapRequestHandler(deleteProductController)
 )
 
 /**

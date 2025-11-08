@@ -48,6 +48,7 @@ export const slugConditionMap = {
   "man-hinh-dell": { category: "Màn hình", brand: "DELL" },
   "man-hinh-viewsonic": { category: "Màn hình", brand: "VIEWSONIC" },
   "man-hinh-acer": { category: "Màn hình", brand: "ACER" },
+  "man-hinh-lg": { category: "Màn hình", brand: "LG" },
   "man-hinh-duoi-5-trieu": { price: { $lt: 5000000 }, category: "Màn hình" },
   "man-hinh-tu-5-den-10-trieu": { price: { $gte: 5000000, $lt: 10000000 }, category: "Màn hình" },
   "man-hinh-tu-10-den-20-trieu": { price: { $gte: 10000000, $lt: 20000000 }, category: "Màn hình" },

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Supply = exports.Supplier = void 0;
+exports.Receipt = exports.Supply = exports.Supplier = void 0;
 const mongodb_1 = require("mongodb");
 class Supplier {
     _id;
@@ -52,3 +52,32 @@ class Supply {
     }
 }
 exports.Supply = Supply;
+class Receipt {
+    _id;
+    items; // danh sách sản phẩm trong 1 đơn hàng
+    totalAmount; // Tổng giá trị toàn bộ đơn hàng
+    totalItem; // số lượng sản phẩm trong đơn hàng
+    importDate; // Ngày nhập hàng
+    note;
+    created_at;
+    updated_at;
+    constructor(receipt) {
+        const date = new Date();
+        this._id = receipt._id || new mongodb_1.ObjectId();
+        this.items = receipt.items;
+        this.totalAmount = receipt.totalAmount;
+        this.totalItem = receipt.totalItem;
+        this.importDate = receipt.importDate;
+        this.note = receipt.note || "";
+        this.created_at = receipt.created_at || date;
+        this.updated_at = receipt.updated_at || date;
+    }
+}
+exports.Receipt = Receipt;
+// Cái api này là dùng để sử dụng khi nhập hàng (hàng mới đã giao) -> mình tự cập nhật số lượng sản phẩm khi có hàng mới về - để quản lý đầu vào
+// flow tạo 1 đơn hàng (gồm danh sách sản phẩm)
+// tạo 1 đơn hàng -> chọn sản phẩm -> chọn nhà cung cấp -> sau đó render ra giá nhập -> tự fill (productId, supplierId, pricePerUnit) -> người dùng nhập quantity và render tự động ra totalPrice
+// lần lượt add các sản phẩm
+// sau đó tự cập nhật totalAmount và totalItem
+// tự render ra ngày nhập hàng
+// note, created_at, updated_at ko bắt buộc
