@@ -539,7 +539,7 @@ export const createProductController = async (req: Request, res: Response, next:
     brand: fields.brand[0] as string,
     price: Number(fields.price[0]),
     discount: Number(fields.discount[0]),
-    stock: Number(fields.stock[0]),
+    priceAfterDiscount: Number(fields.priceAfterDiscount[0]),
     isFeatured: fields.isFeatured[0] as string,
     description: fields.description[0] as string,
     banner: files.banner?.[0] as File,
@@ -563,17 +563,28 @@ export const updateProductController = async (req: Request<{ id: string }>, res:
     brand: fields.brand[0] as string,
     price: Number(fields.price[0]),
     discount: Number(fields.discount[0]),
-    stock: Number(fields.stock[0]),
+    priceAfterDiscount: Number(fields.priceAfterDiscount[0]),
     isFeatured: fields.isFeatured[0] as string,
     description: fields.description[0] as string,
     banner: files.banner?.[0] as File,
     medias: files.medias ? (Array.isArray(files.medias) ? files.medias : [files.medias]) : [],
-    specifications: JSON.parse(fields.specifications[0]) // bạn cần gửi từ FE là JSON.stringify
+    specifications: JSON.parse(fields.specifications[0]), // bạn cần gửi từ FE là JSON.stringify
+    id_url_gallery_update: fields.id_url_gallery_update ? JSON.parse(fields.id_url_gallery_update[0]) : []
   }
+
   const result = await adminServices.updateProduct(id, payload)
   res.json({
     message: ProductMessage.UPDATE_PRODUCT_SUCCESS,
     result
+  })
+}
+
+export const deleteProductController = async (req: Request<{ id: string }>, res: Response) => {
+  const { id } = req.params
+  const { message } = await adminServices.deleteProduct(id)
+
+  res.json({
+    message: message
   })
 }
 
@@ -1295,7 +1306,7 @@ export const getStaffsController = async (
     created_at_start,
     created_at_end,
     updated_at_start,
-    updated_at_end,
+    updated_at_end
   )
   res.json({
     message: AdminMessage.GET_CUSTOMERS,

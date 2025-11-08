@@ -10,6 +10,7 @@ export const defaultErrorHandler = (err: any, req: Request, res: Response, next:
   }
   try {
     const finalError: any = {}
+
     Object.getOwnPropertyNames(err).forEach((key) => {
       if (
         !Object.getOwnPropertyDescriptor(err, key)?.enumerable ||

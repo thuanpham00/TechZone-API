@@ -13,7 +13,8 @@
     "prettier": "prettier --check .",
     "prettier:fix": "prettier --write .",
     "add-banner-id": "cross-env NODE_ENV=development ts-node -r dotenv/config src/scripts/add-banner-id.ts",
-    "add-gallery-id": "cross-env NODE_ENV=development ts-node -r dotenv/config src/scripts/add-gallery-id.ts"
+    "add-gallery-id": "cross-env NODE_ENV=development ts-node -r dotenv/config src/scripts/add-gallery-id.ts",
+    "add-price-after-discount": "cross-env NODE_ENV=development ts-node -r dotenv/config src/scripts/add-price-after-discount.ts"
   },
   "keywords": [],
   "author": "",

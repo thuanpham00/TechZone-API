@@ -10,7 +10,7 @@ import {
   SupplyMessage,
   UserMessage
 } from "~/constant/message"
-import { ErrorWithStatus } from "~/models/errors"
+import { EntityError, ErrorWithStatus } from "~/models/errors"
 import { validate } from "~/utils/validations"
 import { nameSchema, numberPhoneSchema } from "./user.middlewares"
 import databaseServices from "~/services/database.services"
@@ -228,82 +228,107 @@ export const getBrandsValidator = validate(
   )
 )
 
-export const createProductValidator = validate(
-  checkSchema(
-    {
-      name: {
-        notEmpty: {
-          errorMessage: ProductMessage.NAME_IS_REQUIRED
-        },
-        isString: {
-          errorMessage: ProductMessage.NAME_MUST_BE_STRING
-        }
-      },
-      category: {
-        notEmpty: {
-          errorMessage: ProductMessage.CATEGORY_IS_REQUIRED
-        },
-        isString: {
-          errorMessage: ProductMessage.CATEGORY_MUST_BE_STRING
-        }
-      },
-      brand: {
-        notEmpty: {
-          errorMessage: ProductMessage.BRAND_IS_REQUIRED
-        },
-        isString: {
-          errorMessage: ProductMessage.BRAND_MUST_BE_STRING
-        }
-      },
-      price: {
-        notEmpty: {
-          errorMessage: ProductMessage.PRICE_IS_REQUIRED
-        }
-      },
-      description: {
-        notEmpty: {
-          errorMessage: ProductMessage.DESCRIPTION_IS_REQUIRED
-        },
-        isString: {
-          errorMessage: ProductMessage.DESCRIPTION_MUST_BE_STRING
-        }
-      },
-      discount: {
-        notEmpty: {
-          errorMessage: ProductMessage.PRICE_IS_REQUIRED
-        }
-      },
-      isFeatured: {
-        isIn: {
-          options: [[true, false]],
-          errorMessage: ProductMessage.IS_FEATURED_MUST_BE_BOOLEAN
-        }
-      },
-      specifications: {
-        isArray: true,
-        custom: {
-          options: (value) => {
-            if (
-              value.some(
-                (item: any) =>
-                  typeof item !== "object" ||
-                  item === null ||
-                  !("name" in item) ||
-                  !("value" in item) ||
-                  typeof item.name !== "string" ||
-                  (typeof item.value !== "string" && typeof item.value !== "number")
-              )
-            ) {
-              throw new Error(ProductMessage.SPECIFICATIONS_IS_INVALID)
-            }
-            return true
-          }
-        }
-      }
-    },
-    ["body"]
-  )
-)
+const validateFieldsProduct = async (field: any, entityError: EntityError) => {
+  // ✅ 1. VALIDATE NAME
+  const name = Array.isArray(field.name) ? field.name[0] : field.name
+  if (!name || name === "") {
+    entityError.errors["name"] = { msg: ProductMessage.NAME_IS_REQUIRED }
+  }
+
+  // ✅ 2. VALIDATE CATEGORY
+  const category = Array.isArray(field.category) ? field.category[0] : field.category
+  if (!category) {
+    entityError.errors["category"] = { msg: ProductMessage.CATEGORY_IS_REQUIRED }
+  } else {
+    const categoryExists = await databaseServices.category.findOne({ name: category })
+    if (!categoryExists) {
+      entityError.errors["category"] = { msg: ProductMessage.CATEGORY_NOT_FOUND }
+    }
+  }
+
+  // ✅ 3. VALIDATE BRAND
+  const brand = Array.isArray(field.brand) ? field.brand[0] : field.brand
+  if (!brand) {
+    entityError.errors["brand"] = { msg: ProductMessage.BRAND_IS_REQUIRED }
+  } else {
+    const brandExists = await databaseServices.brand.findOne({ name: brand })
+    if (!brandExists) {
+      entityError.errors["brand"] = { msg: ProductMessage.BRAND_NOT_FOUND }
+    }
+  }
+
+  // ✅ 4. VALIDATE PRICE
+  const price = Array.isArray(field.price) ? Number(field.price[0]) : Number(field.price)
+  if (!field.price || isNaN(price)) {
+    entityError.errors["price"] = { msg: ProductMessage.PRICE_IS_REQUIRED }
+  } else if (price <= 0) {
+    entityError.errors["price"] = { msg: ProductMessage.PRICE_MUST_BE_POSITIVE_NUMBER }
+  }
+
+  // ✅ 5. VALIDATE DISCOUNT
+  const discount = Array.isArray(field.discount) ? Number(field.discount[0]) : Number(field.discount)
+  if (!field.discount || isNaN(discount)) {
+    entityError.errors["discount"] = { msg: ProductMessage.DISCOUNT_IS_REQUIRED }
+  } else if (discount < 0) {
+    entityError.errors["discount"] = { msg: ProductMessage.DISCOUNT_MUST_BE_POSITIVE_NUMBER }
+  }
+}
+
+export const createProductValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const field = req.body
+  const entityError = new EntityError({ errors: {} })
+
+  // check tồn tại tên
+  const checkNameExists = await databaseServices.product.findOne({ name: field.name[0] })
+  if (checkNameExists) {
+    entityError.errors["name"] = { msg: ProductMessage.NAME_IS_EXISTS }
+  }
+
+  await validateFieldsProduct(field, entityError)
+
+  if (Object.keys(entityError.errors).length > 0) {
+    return next(entityError)
+  }
+
+  next()
+}
+
+export const updateProductValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const field = req.body
+  const { id } = req.params
+  const entityError = new EntityError({ errors: {} })
+
+  // check tồn tại tên
+  const checkNameExists = await databaseServices.product.findOne({
+    name: field.name[0],
+    _id: { $ne: new ObjectId(id) } // loại chính nó
+  })
+  if (checkNameExists) {
+    entityError.errors["name"] = { msg: ProductMessage.NAME_IS_EXISTS }
+  }
+
+  await validateFieldsProduct(field, entityError)
+
+  if (Object.keys(entityError.errors).length > 0) {
+    return next(entityError)
+  }
+
+  next()
+}
+
+export const deleteCheckStockProductValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+  const productInStock = await databaseServices.product.findOne({ _id: new ObjectId(id) })
+  if (productInStock && productInStock.stock > 0) {
+    return next(
+      new ErrorWithStatus({
+        message: ProductMessage.PRODUCT_OUT_OF_STOCK,
+        status: httpStatus.BAD_REQUESTED
+      })
+    )
+  }
+  next()
+}
 
 export const createSupplierValidator = validate(
   checkSchema(

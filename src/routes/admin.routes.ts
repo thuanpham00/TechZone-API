@@ -17,6 +17,7 @@ import {
   deleteCustomerController,
   deleteLinkCategoryMenuController,
   deleteMenuCategoryController,
+  deleteProductController,
   deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
@@ -69,12 +70,14 @@ import {
   checkEmailExistValidator,
   checkIdValidator,
   checkRoleExitsValidator,
+  createProductValidator,
   createReceiptValidator,
   createSupplierValidator,
   createSupplyValidator,
   createVoucherValidator,
   deleteBrandValidator,
   deleteCategoryValidator,
+  deleteCheckStockProductValidator,
   deleteRoleValidator,
   deleteSupplierValidator,
   getBrandsValidator,
@@ -82,6 +85,7 @@ import {
   getProductIdFromProductNameValidator,
   queryValidator,
   updateCategoryValidator,
+  updateProductValidator,
   updateSupplierValidator,
   updateSupplyValidator,
   updateVoucherValidator
@@ -496,7 +500,7 @@ adminRouter.post(
   verifyUserValidator,
   checkRole(),
   parseFormData,
-  // createProductValidator,
+  createProductValidator,
   wrapRequestHandler(createProductController)
 )
 
@@ -513,8 +517,24 @@ adminRouter.put(
   verifyUserValidator,
   checkRole(),
   parseFormData,
-  // createProductValidator,
+  updateProductValidator,
   wrapRequestHandler(updateProductController)
+)
+
+/**
+ * Description: delete product by id
+ * Path: /products/:id
+ * Method: DELETE
+ * Header: { Authorization: Bearer <accessToken> }
+ */
+adminRouter.delete(
+  "/products/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkIdValidator,
+  deleteCheckStockProductValidator,
+  wrapRequestHandler(deleteProductController)
 )
 
 /**

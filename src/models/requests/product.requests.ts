@@ -8,12 +8,13 @@ export type CreateProductBodyReq = {
   brand: string
   price: number
   discount: number
-  stock: number
+  priceAfterDiscount: number
   isFeatured: string
   description: string
   banner: File
   medias: File[]
   specifications: specificationType[]
+  id_url_gallery_update?: string[]
 }
 
 export type CreateSupplierBodyReq = {
