@@ -20,6 +20,9 @@ import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
 import { envConfig } from "~/utils/config"
 import { authRedisService } from "~/redis/authRedis" // ✅ ADD: Import Redis service
+import { cartRedisService } from "~/redis/cartRedis" // ✅ ADD: Import Cart Redis service
+import { cartSyncService } from "~/redis/cartSync" // ✅ ADD: Import Cart Sync service
+import { guestCartHelper } from "~/utils/guestCart" // ✅ ADD: Import Guest Cart helper
 
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
@@ -69,6 +72,23 @@ export const loginController = async (
   // ✅ STORE REFRESH TOKEN vào Redis (cache for fast verification)
   await authRedisService.storeRefreshToken(user_id, refreshToken, 100 * 24 * 60 * 60) // 100 days
 
+  // ✅ MERGE GUEST CART (nếu có)
+  let clearGuestId = false
+  const guestId = req.headers["x-guest-id"] as string
+  if (guestId && guestCartHelper.isGuestId(guestId)) {
+    try {
+      // Merge guest cart vào user cart
+      await cartRedisService.mergeCart(guestId, user_id)
+      // Schedule sync to MongoDB
+      cartSyncService.scheduleSync(user_id)
+      clearGuestId = true
+      console.log(`✅ Cart merged: guest=${guestId} → user=${user_id}`)
+    } catch (error) {
+      console.error("❌ Cart merge error:", error)
+      // Không throw error - cart merge fail không nên block login
+    }
+  }
+
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true, // chặn client javascript không thể truy cập
     // secure: true, // chỉ cho phép cookie gửi qua kết nối HTTPS
@@ -88,7 +108,8 @@ export const loginController = async (
     message: UserMessage.LOGIN_IS_SUCCESS,
     result: {
       accessToken,
-      userInfo: userContainsRole
+      userInfo: userContainsRole,
+      clearGuestId // ✅ Signal frontend to clear localStorage guest ID
     }
   })
 }

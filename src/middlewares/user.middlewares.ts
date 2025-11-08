@@ -306,6 +306,44 @@ export const accessTokenValidator = validate(
   )
 )
 
+// ✅ Optional token validator - For cart (allows both guest and authenticated)
+export const optionalAccessTokenValidator = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization
+    if (!authHeader) {
+      // No token → guest user, continue
+      return next()
+    }
+
+    const access_token = authHeader.split(" ")[1]
+    if (!access_token) {
+      return next()
+    }
+
+    // Check blacklist
+    const isBlacklisted = await authRedisService.isTokenBlacklisted(access_token)
+    if (isBlacklisted) {
+      return next() // Token revoked, treat as guest
+    }
+
+    // Verify token
+    try {
+      const decode_authorization = await verifyToken({
+        token: access_token,
+        privateKey: envConfig.secret_key_access_token
+      })
+      req.decode_authorization = decode_authorization
+    } catch (error) {
+      // Token invalid/expired, treat as guest
+      console.log("⚠️ Invalid token, treating as guest")
+    }
+
+    next()
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const refreshTokenValidator = validate(
   checkSchema(
     {

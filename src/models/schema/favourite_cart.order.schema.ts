@@ -34,19 +34,25 @@ export interface CartProduct {
   product_id: ObjectId // Tham chiếu bảng Product
   quantity: number // Số lượng sản phẩm
   added_at: Date // Thời điểm thêm vào giỏ
+  // Snapshot fields (cho backup từ Redis)
+  price_snapshot?: number // Giá gốc tại thời điểm add (backup)
+  discount_snapshot?: number // % discount tại thời điểm add (backup)
+  price_after_discount_snapshot?: number // Giá sau discount (backup)
+  name_snapshot?: string // Tên sản phẩm (backup)
+  image_snapshot?: string // Hình ảnh (backup)
 }
 
 interface CartType {
   _id?: ObjectId
-  user_id: ObjectId
+  user_id: ObjectId | null // Cho phép null cho guest users (future)
   products: CartProduct[]
-  created_at: Date
-  updated_at: Date
+  created_at?: Date
+  updated_at?: Date
 }
 
 export class Cart {
   _id?: ObjectId
-  user_id: ObjectId
+  user_id: ObjectId | null
   products: CartProduct[]
   created_at: Date
   updated_at: Date

@@ -11,6 +11,7 @@ import { sendNotificationOrderBuyCustomer } from "~/utils/ses"
 import { formatCurrency } from "~/utils/common"
 import dayjs from "dayjs"
 import { TokenPayload } from "~/models/requests/user.requests"
+import { cartRedisService } from "~/redis/cartRedis" // ✅ ADD: Import Redis service
 
 export const createPaymentController = async (req: Request, res: Response, next: NextFunction) => {
   const ipAddr =
@@ -104,12 +105,15 @@ export const callBackVnpayController = async (req: Request, res: Response, next:
       product_id: new ObjectId(item.product_id)
     }))
 
-    // cập nhật giỏ hàng
+    // ✅ Remove purchased products from Redis cart
+    const userId = findOrder.user_id.toString()
+    await Promise.all(productOrder.map((item) => cartRedisService.removeProduct(userId, item.product_id.toString())))
+    console.log(`✅ Removed ${productOrder.length} products from Redis cart for user: ${userId}`)
+
+    // cập nhật giỏ hàng trong MongoDB (backup)
     await Promise.all([
       databaseServices.cart.updateOne(
-        {
-          user_id: findOrder.user_id
-        },
+        { user_id: findOrder.user_id },
         {
           $pull: {
             products: {
@@ -117,7 +121,8 @@ export const callBackVnpayController = async (req: Request, res: Response, next:
             }
           }
         }
-      ), // cập nhật số lượng tồn của sản phẩm và lượt mua
+      ),
+      // cập nhật số lượng tồn của sản phẩm và lượt mua
       ...productOrder.map((item) => {
         databaseServices.product.updateOne(
           {
@@ -130,6 +135,7 @@ export const callBackVnpayController = async (req: Request, res: Response, next:
       })
     ])
 
+    // ✅ Check if cart is empty, then delete from MongoDB
     const cartUser = await databaseServices.cart.findOne({ user_id: new ObjectId(findOrder.user_id) })
     if (cartUser?.products.length === 0) {
       await databaseServices.cart.deleteOne({ user_id: new ObjectId(findOrder.user_id) })
@@ -208,12 +214,14 @@ export const createOrderCODController = async (req: Request, res: Response, next
     discount_amount
   })
 
-  // cập nhật giỏ hàng
+  // ✅ Remove purchased products from Redis cart
+  await Promise.all(products.map((item) => cartRedisService.removeProduct(user_id, item.product_id)))
+  console.log(`✅ Removed ${products.length} products from Redis cart for user: ${user_id}`)
+
+  // cập nhật giỏ hàng trong MongoDB (backup)
   await Promise.all([
     databaseServices.cart.updateOne(
-      {
-        user_id: new ObjectId(user_id)
-      },
+      { user_id: new ObjectId(user_id) },
       {
         $pull: {
           products: {
@@ -221,7 +229,8 @@ export const createOrderCODController = async (req: Request, res: Response, next
           }
         }
       }
-    ), // cập nhật số lượng tồn của sản phẩm và lượt mua
+    ),
+    // cập nhật số lượng tồn của sản phẩm và lượt mua
     ...products.map((item) => {
       databaseServices.product.updateOne(
         {
@@ -234,6 +243,7 @@ export const createOrderCODController = async (req: Request, res: Response, next
     })
   ])
 
+  // ✅ Check if cart is empty, then delete from MongoDB
   const cartUser = await databaseServices.cart.findOne({ user_id: new ObjectId(user_id) })
   if (cartUser?.products.length === 0) {
     await databaseServices.cart.deleteOne({ user_id: new ObjectId(user_id) })

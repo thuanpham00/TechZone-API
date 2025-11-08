@@ -1,5 +1,4 @@
 import { Router } from "express"
-import { ObjectId } from "mongodb"
 import {
   addProductToCartController,
   addProductToFavouriteController,
@@ -12,8 +11,7 @@ import {
   updateQuantityProductInCartController
 } from "~/controllers/collections.controllers"
 import { getCollectionValidator } from "~/middlewares/collection.middlewares"
-import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
-import databaseServices from "~/services/database.services"
+import { accessTokenValidator, optionalAccessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const collectionsRoute = Router()
@@ -50,64 +48,39 @@ collectionsRoute.get(
 )
 
 /**
- * Description: Tạo danh sách sản phẩm  trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
- * Path: /
- * Method: GET
+ * Description: Thêm sản phẩm vào giỏ hàng (Guest OK, không bắt login)
+ * Path: /cart
+ * Method: POST
  */
-collectionsRoute.post(
-  "/cart",
-  accessTokenValidator,
-  verifyUserValidator,
-  wrapRequestHandler(addProductToCartController)
-)
+collectionsRoute.post("/cart", optionalAccessTokenValidator, wrapRequestHandler(addProductToCartController))
 
 /**
- * Description: Cập nhật số lượng sản phẩm trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
- * Path: /
- * Method: GET
+ * Description: Cập nhật số lượng sản phẩm trong giỏ hàng (Guest OK)
+ * Path: /cart
+ * Method: PUT
  */
-collectionsRoute.put(
-  "/cart",
-  accessTokenValidator,
-  verifyUserValidator,
-  wrapRequestHandler(updateQuantityProductInCartController)
-)
+collectionsRoute.put("/cart", optionalAccessTokenValidator, wrapRequestHandler(updateQuantityProductInCartController))
 
 /**
- * Description: Tạo danh sách sản phẩm yêu thích của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
- * Path: /
- * Method: GET
+ * Description: Xóa toàn bộ giỏ hàng (Guest OK)
+ * Path: /cart
+ * Method: DELETE
  */
-collectionsRoute.delete(
-  "/cart",
-  accessTokenValidator,
-  verifyUserValidator,
-  wrapRequestHandler(clearProductInCartController)
-)
+collectionsRoute.delete("/cart", optionalAccessTokenValidator, wrapRequestHandler(clearProductInCartController))
 
 /**
- * Description: Lấy danh sách sản phẩm trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
- * Path: /
+ * Description: Lấy danh sách sản phẩm trong giỏ hàng (Guest OK + Authenticated)
+ * Path: /cart
  * Method: GET
  */
-collectionsRoute.get(
-  "/cart",
-  accessTokenValidator,
-  verifyUserValidator,
-  wrapRequestHandler(getCollectionsCartController)
-)
+collectionsRoute.get("/cart", optionalAccessTokenValidator, wrapRequestHandler(getCollectionsCartController))
 
 /**
- * Description:xóa 1 sản phẩm trong giỏ hàng của 1 user_id (mỗi user_id chỉ có 1 danh sách yêu thích)
- * Path: /
- * Method: GET
+ * Description: Xóa 1 sản phẩm trong giỏ hàng (Guest OK)
+ * Path: /cart/:id
+ * Method: DELETE
  */
-collectionsRoute.delete(
-  "/cart/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  wrapRequestHandler(removeProductToCartController)
-)
+collectionsRoute.delete("/cart/:id", optionalAccessTokenValidator, wrapRequestHandler(removeProductToCartController))
 
 /**
  * Description: Lấy danh sách sản phẩm dựa vào /:slug

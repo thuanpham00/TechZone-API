@@ -4,6 +4,431 @@ Tài liệu này mô tả chi tiết cách triển khai giỏ hàng (shopping ca
 
 ---
 
+## 📋 **Table of Contents**
+
+1. [User Flow: Guest vs Authenticated](#user-flow)
+2. [Vấn đề của MongoDB Cart](#1-vấn-đề-của-mongodb-cart)
+3. [Giải pháp Redis](#2-giải-pháp-redis)
+4. [Performance Comparison](#3-performance-comparison)
+5. [Redis Commands Demo](#4-redis-commands-demo-redisinsight)
+6. [Edge Cases & Error Handling](#5-edge-cases--error-handling)
+7. [Monitoring & Analytics](#6-monitoring--analytics)
+
+---
+
+## 🔄 **User Flow: Guest vs Authenticated** {#user-flow}
+
+Hệ thống hỗ trợ 2 loại user với flow khác nhau:
+
+---
+
+### **🎯 Flow 1: Guest User (Chưa đăng nhập)**
+
+#### **Phase 1: Browsing & Add to Cart (KHÔNG cần login)**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Guest browse website                                        │
+│    ↓                                                         │
+│  Click "Add to Cart" (MacBook Pro)                          │
+│    ↓                                                         │
+│  Backend check: req.decode_authorization                    │
+│    ❌ NULL → User chưa login                                │
+│    ↓                                                         │
+│  Generate/Get Guest ID:                                      │
+│    - Frontend check: localStorage.getItem("guest_cart_id")  │
+│    - Nếu chưa có → Generate: guest_uuid_123                 │
+│    - Frontend: localStorage.setItem("guest_cart_id", id)    │
+│    - Gửi trong request header: X-Guest-ID                   │
+│    ↓                                                         │
+│  ✅ Redis: HSET cart:guest_uuid_123                         │
+│     Field: productId                                         │
+│     Value: {"name":"MacBook","price":45990000,...}          │
+│    ↓                                                         │
+│  ❌ MongoDB: SKIP (không lưu)                               │
+│    ↓                                                         │
+│  Response: 2ms ⚡                                            │
+│  {"message": "Added to cart", "result": {...}}              │
+└─────────────────────────────────────────────────────────────┘
+
+Guest tiếp tục browse, add thêm sản phẩm
+    ↓
+    ✅ Tất cả lưu vào Redis: cart:guest_uuid_123
+    ❌ Không lưu MongoDB (temporary data)
+    ↓
+Guest click "View Cart"
+    ↓
+    ✅ Redis: HGETALL cart:guest_uuid_123 (1-2ms)
+    ❌ KHÔNG query MongoDB
+    ↓
+    Show cart với 3 sản phẩm
+```
+
+#### **Phase 2: Checkout (YÊU CẦU login)**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Guest click "Checkout" button                              │
+│    ↓                                                         │
+│  Backend: checkoutController                                 │
+│    if (!req.decode_authorization) {                         │
+│      throw Error("Please login to checkout")               │
+│    }                                                         │
+│    ↓                                                         │
+│  ❌ STOP! Response 401 Unauthorized                         │
+│    ↓                                                         │
+│  Frontend show modal:                                        │
+│  ┌─────────────────────────────────────┐                   │
+│  │  🔒 Login Required                  │                   │
+│  │                                      │                   │
+│  │  Please login to continue checkout  │                   │
+│  │                                      │                   │
+│  │  [Login]  [Register]                │                   │
+│  └─────────────────────────────────────┘                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### **Phase 3: Login & Merge Cart**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Guest click [Login]                                         │
+│    ↓                                                         │
+│  Enter credentials → Login success                           │
+│    ↓                                                         │
+│  Backend: loginController                                    │
+│    1. Verify credentials                                     │
+│    2. Generate JWT tokens                                    │
+│    3. Get userId = "507f191e810c19729de860ea"              │
+│    4. ⚠️ Check guest cart:                                  │
+│       const guestId = req.headers["x-guest-id"]             │
+│       if (guestId && isGuestId(guestId)) {                  │
+│         → Trigger cart merge                                 │
+│       }                                                       │
+│    ↓                                                         │
+│  🔀 MERGE CART:                                             │
+│    Step 1: Get guest cart                                    │
+│      HGETALL cart:guest_uuid_123                            │
+│      → Returns: 3 products                                   │
+│    ↓                                                         │
+│    Step 2: Get user cart (nếu có)                           │
+│      HGETALL cart:507f191e810c19729de860ea                 │
+│      → Returns: 1 product (user đã có cart cũ)             │
+│    ↓                                                         │
+│    Step 3: Merge logic                                       │
+│      For each product in guest cart:                         │
+│        - If product exists in user cart:                     │
+│            → Add quantity (2 + 1 = 3)                        │
+│        - If product NOT exists:                              │
+│            → Add new product                                 │
+│    ↓                                                         │
+│    Step 4: Update Redis                                      │
+│      HSET cart:507f191e810c19729de860ea ...                │
+│      (Merged cart có 4 products)                            │
+│    ↓                                                         │
+│    Step 5: ✅ Sync to MongoDB (background)                  │
+│      Bây giờ MỚI lưu MongoDB vì đã có userId               │
+│      databaseServices.cart.updateOne(...)                   │
+│    ↓                                                         │
+│    Step 6: Cleanup                                           │
+│      DEL cart:guest_uuid_123 (Redis)                        │
+│      Response: { clearGuestId: true }                       │
+│      Frontend: localStorage.removeItem("guest_cart_id")     │
+│    ↓                                                         │
+│  ✅ Merge complete!                                          │
+│    User cart bây giờ có: 4 products                         │
+│    Redis: cart:507f191e810c19729de860ea                    │
+│    MongoDB: Có backup                                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### **Phase 4: Checkout & Payment**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User đã login → Redirect to Checkout page                  │
+│    ↓                                                         │
+│  Backend: checkoutController                                 │
+│    ✅ req.decode_authorization → OK                         │
+│    ↓                                                         │
+│  Get cart from Redis:                                        │
+│    HGETALL cart:507f191e810c19729de860ea                   │
+│    → 4 products                                              │
+│    ↓                                                         │
+│  ⚠️ VALIDATE cart (Important!)                              │
+│    For each product:                                         │
+│      1. Query DB for REAL-TIME price:                       │
+│         const product = await db.product.findOne(...)       │
+│      2. Compare with cart snapshot:                          │
+│         if (product.price !== item.price) {                 │
+│           warnings.push("Price changed!")                   │
+│         }                                                    │
+│      3. Check stock:                                         │
+│         if (product.stock < item.quantity) {                │
+│           errors.push("Out of stock!")                      │
+│         }                                                    │
+│    ↓                                                         │
+│  If errors → Return 400 with error messages                 │
+│  If warnings → Show to user (continue or cancel)            │
+│    ↓                                                         │
+│  User điền shipping info:                                    │
+│    - Address, phone, note                                    │
+│    ↓                                                         │
+│  User chọn payment method:                                   │
+│    - COD, Bank Transfer, MoMo, VNPay                        │
+│    ↓                                                         │
+│  Backend: createOrderController                              │
+│    1. Get cart from Redis again (double check)              │
+│    2. Validate again (stock có thể đã thay đổi)            │
+│    3. Calculate total với REAL-TIME price từ DB:           │
+│       const total = products.reduce((sum, p) => {           │
+│         const dbProduct = await db.product.findOne(...)     │
+│         return sum + (dbProduct.price * p.quantity)         │
+│       }, 0)                                                  │
+│    4. ✅ Create Order (MongoDB):                            │
+│       {                                                      │
+│         user: ObjectId(userId),                             │
+│         products: [                                          │
+│           {                                                  │
+│             product: ObjectId(...),                         │
+│             quantity: 2,                                     │
+│             price_snapshot: 45990000,  ← Cố định!          │
+│             name_snapshot: "MacBook Pro M3"                 │
+│           }                                                  │
+│         ],                                                   │
+│         total: 95980000,                                     │
+│         status: "pending"                                    │
+│       }                                                      │
+│    5. Update stock:                                          │
+│       db.product.updateOne(                                 │
+│         { _id: productId },                                 │
+│         { $inc: { stock: -quantity } }                      │
+│       )                                                      │
+│    6. ✅ Clear cart:                                        │
+│       DEL cart:507f191e810c19729de860ea (Redis)            │
+│       db.cart.deleteOne({ user: userId }) (MongoDB)         │
+│    ↓                                                         │
+│  Response: Order created!                                    │
+│    {"orderId": "...", "total": 95980000}                    │
+│    ↓                                                         │
+│  Redirect to Payment page                                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### **🔐 Flow 2: Authenticated User (Đã đăng nhập)**
+
+#### **Phase 1: Login First**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User login vào website                                      │
+│    ↓                                                         │
+│  Backend verify credentials → Success                        │
+│    ↓                                                         │
+│  userId = "507f191e810c19729de860ea"                       │
+│    ↓                                                         │
+│  ⚠️ Check if Redis cart exists:                             │
+│    EXISTS cart:507f191e810c19729de860ea                    │
+│    ↓                                                         │
+│  Case 1: Redis cart NOT exists                              │
+│    → Load from MongoDB backup (if any):                     │
+│      const cart = await db.cart.findOne({user: userId})    │
+│      if (cart) {                                             │
+│        → Restore to Redis:                                   │
+│          For each product in cart.products:                  │
+│            HSET cart:507f...                                 │
+│      }                                                        │
+│    ↓                                                         │
+│  Case 2: Redis cart EXISTS                                  │
+│    → Use existing Redis cart                                 │
+│    ↓                                                         │
+│  Set JWT tokens → User logged in                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### **Phase 2: Browse & Add to Cart**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User browse → Click "Add to Cart"                          │
+│    ↓                                                         │
+│  Backend: addProductToCartController                         │
+│    ✅ req.decode_authorization exists                       │
+│    userId = "507f191e810c19729de860ea"                     │
+│    ↓                                                         │
+│  Query product from MongoDB:                                 │
+│    const product = await db.product.findOne(...)            │
+│    → Get: name, price, image                                 │
+│    ↓                                                         │
+│  ✅ Redis: HSET cart:507f191e810c19729de860ea              │
+│     Field: productId                                         │
+│     Value: {"name":"...","price":...,"quantity":2}          │
+│    ↓                                                         │
+│  ✅ MongoDB: Background sync (5s delay)                     │
+│     db.cart.updateOne(                                      │
+│       { user: ObjectId(userId) },                           │
+│       { $set: { products: [...] } },                        │
+│       { upsert: true }                                       │
+│     )                                                        │
+│    ↓                                                         │
+│  Response: 2ms ⚡                                            │
+│  {"message": "Added to cart"}                               │
+└─────────────────────────────────────────────────────────────┘
+
+🔁 User add thêm nhiều sản phẩm:
+    ↓
+    ✅ Mỗi lần: Redis (2ms) + MongoDB background sync
+    ↓
+    Cart có trong CẢ HAI:
+      - Redis: cart:507f... (primary, fast)
+      - MongoDB: backup (survive Redis restart)
+```
+
+#### **Phase 3: View Cart**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User click "View Cart"                                      │
+│    ↓                                                         │
+│  Backend: getCartController                                  │
+│    userId = "507f191e810c19729de860ea"                     │
+│    ↓                                                         │
+│  ✅ Redis: HGETALL cart:507f... (1-2ms)                    │
+│    → Returns: 5 products với snapshot                       │
+│    ↓                                                         │
+│  ❌ KHÔNG query MongoDB (fast!)                             │
+│    ↓                                                         │
+│  Calculate totals:                                           │
+│    const total = items.reduce(...)                          │
+│    ↓                                                         │
+│  Response: 2ms ⚡                                            │
+│  {                                                           │
+│    "items": [...],                                           │
+│    "count": 5,                                               │
+│    "total": 150000000                                        │
+│  }                                                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### **Phase 4: Checkout (Giống Guest sau khi login)**
+
+```
+User click "Checkout"
+    ↓
+    ✅ Already authenticated → No login required
+    ↓
+    Validate cart (price, stock)
+    ↓
+    Fill shipping info
+    ↓
+    Create Order (MongoDB)
+    ↓
+    Clear cart (Redis + MongoDB)
+    ↓
+    Payment
+```
+
+---
+
+### **📊 So sánh 2 Flows**
+
+| Giai đoạn            | Guest User                     | Authenticated User            |
+| -------------------- | ------------------------------ | ----------------------------- |
+| **Login**            | ❌ Không cần (browse tự do)    | ✅ Login ngay từ đầu          |
+| **Add to Cart**      | ✅ Redis only (2ms)            | ✅ Redis + MongoDB sync (2ms) |
+| **Storage**          | Redis: cart:guest_uuid         | Redis: cart:user_id           |
+|                      | ❌ MongoDB: SKIP               | ✅ MongoDB: Backup            |
+| **View Cart**        | ✅ Redis (1-2ms)               | ✅ Redis (1-2ms)              |
+| **Checkout**         | ❌ STOP! Require login → Merge | ✅ Continue directly          |
+| **Merge Cart**       | ✅ Yes (guest → user)          | ❌ No merge needed            |
+| **Data Persistence** | ⚠️ 30 days (Redis TTL)         | ✅ Long-term (MongoDB)        |
+| **Cart Recovery**    | ❌ Lost if Redis crash         | ✅ Restore from MongoDB       |
+
+---
+
+### **🎯 Key Takeaways**
+
+#### **1. Guest Cart (Temporary)**
+
+```
+✅ Pros:
+  - Better UX (no forced login)
+  - Higher conversion rate (20-30%)
+  - Fast browsing experience
+
+⚠️ Cons:
+  - Redis only (no MongoDB backup)
+  - Lost if localStorage cleared
+  - TTL 30 days auto cleanup
+```
+
+#### **2. User Cart (Persistent)**
+
+```
+✅ Pros:
+  - Backup in MongoDB
+  - Survive Redis restart
+  - Long-term storage
+  - Cross-device sync (same userId)
+
+⚠️ Cons:
+  - Require login first
+  - More data in MongoDB
+```
+
+#### **3. MongoDB Sync Strategy**
+
+```typescript
+// Guest: KHÔNG sync MongoDB
+if (guestCartHelper.isGuestId(userId)) {
+  // Redis only
+  await cartRedisService.addProduct(userId, ...)
+  // ❌ SKIP MongoDB sync
+  return
+}
+
+// User: CÓ sync MongoDB
+await cartRedisService.addProduct(userId, ...)
+// ✅ Background sync (5s delay)
+cartSyncService.scheduleSync(userId, 5000)
+```
+
+#### **4. Checkout Validation (Critical!)**
+
+```typescript
+// LUÔN validate với REAL-TIME data từ DB
+const product = await db.product.findOne({ _id: productId })
+
+// Compare with cart snapshot
+if (product.price !== cartItem.price) {
+  warnings.push({
+    product: cartItem.name,
+    oldPrice: cartItem.price,
+    newPrice: product.price,
+    message: "Price changed since you added to cart"
+  })
+}
+
+// Check stock
+if (product.stock < cartItem.quantity) {
+  errors.push({
+    product: cartItem.name,
+    available: product.stock,
+    requested: cartItem.quantity,
+    message: "Not enough stock"
+  })
+}
+
+// Use DB price for Order, NOT cart snapshot
+const orderTotal = products.reduce((sum, p) => {
+  return sum + p.currentDBPrice * p.quantity
+}, 0)
+```
+
+---
+
 ## 1. Vấn đề của MongoDB Cart
 
 ### 1.1. Query quá nhiều & chậm
@@ -135,7 +560,7 @@ if (!userId) {
 2. **Product snapshot**: Cache thông tin sản phẩm (tránh $lookup mỗi lần)
 3. **TTL**: Auto cleanup carts cũ (30 ngày)
 4. **Background sync**: MongoDB làm backup, không block operations
-5. **Guest cart**: Support tempId với cookie
+5. **Guest cart**: Support guestId từ localStorage (frontend) → header X-Guest-ID
 
 **Lưu ý về giá sản phẩm:**
 
@@ -593,34 +1018,29 @@ export class CartSyncService {
 export const cartSyncService = new CartSyncService()
 ```
 
-### 2.5. Guest Cart với Cookie
+### 2.5. Guest Cart với localStorage (Frontend) + Header (Backend)
+
+**Frontend Implementation:**
 
 ```typescript
-// src/utils/guestCart.ts
+// src/utils/guestCart.ts (Frontend)
 import { v4 as uuidv4 } from "uuid"
-import { Request, Response } from "express"
 
 export class GuestCartHelper {
-  private readonly COOKIE_NAME = "guest_cart_id"
-  private readonly COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000 // 30 days
+  private readonly STORAGE_KEY = "guest_cart_id"
 
   /**
    * Get or create guest ID
    */
-  getGuestId(req: Request, res: Response): string {
-    let guestId = req.cookies[this.COOKIE_NAME]
+  getGuestId(): string {
+    let guestId = localStorage.getItem(this.STORAGE_KEY)
 
     if (!guestId) {
       // Generate new ID
       guestId = `guest_${uuidv4()}`
 
-      // Set cookie
-      res.cookie(this.COOKIE_NAME, guestId, {
-        httpOnly: true,
-        maxAge: this.COOKIE_MAX_AGE,
-        sameSite: "strict",
-        path: "/"
-      })
+      // Save to localStorage
+      localStorage.setItem(this.STORAGE_KEY, guestId)
 
       console.log(`✅ Guest ID created: ${guestId}`)
     }
@@ -629,21 +1049,95 @@ export class GuestCartHelper {
   }
 
   /**
-   * Clear guest cookie (after merge)
+   * Clear guest ID (after merge)
    */
-  clearGuestId(res: Response): void {
-    res.clearCookie(this.COOKIE_NAME, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/"
-    })
+  clearGuestId(): void {
+    localStorage.removeItem(this.STORAGE_KEY)
+    console.log(`✅ Guest ID cleared`)
   }
 
   /**
    * Check if ID is guest
    */
   isGuestId(id: string): boolean {
-    return id.startsWith("guest_")
+    return id && id.startsWith("guest_")
+  }
+}
+
+export const guestCartHelper = new GuestCartHelper()
+```
+
+**Frontend: Axios Interceptor (Tự động gửi X-Guest-ID)**
+
+```typescript
+// src/api/axiosClient.ts
+import axios from "axios"
+import { guestCartHelper } from "~/utils/guestCart"
+
+const axiosClient = axios.create({
+  baseURL: "http://localhost:5000/api",
+  headers: {
+    "Content-Type": "application/json"
+  }
+})
+
+// Request interceptor: Add X-Guest-ID nếu chưa login
+axiosClient.interceptors.request.use(
+  (config) => {
+    // Add access token nếu có
+    const accessToken = localStorage.getItem("access_token")
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`
+    } else {
+      // Nếu chưa login → Gửi guest ID
+      const guestId = guestCartHelper.getGuestId()
+      config.headers["X-Guest-ID"] = guestId
+    }
+
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+export default axiosClient
+```
+
+**Backend Implementation:**
+
+```typescript
+// src/utils/guestCart.ts (Backend)
+import { Request } from "express"
+
+export class GuestCartHelper {
+  /**
+   * Get guest ID from header (frontend gửi qua X-Guest-ID)
+   */
+  getGuestId(req: Request): string | null {
+    const guestId = req.headers["x-guest-id"] as string
+
+    if (!guestId || !this.isGuestId(guestId)) {
+      return null
+    }
+
+    return guestId
+  }
+
+  /**
+   * Check if ID is guest
+   */
+  isGuestId(id: string): boolean {
+    return id && id.startsWith("guest_")
+  }
+
+  /**
+   * Validate guest ID format
+   */
+  isValidGuestId(id: string): boolean {
+    // Format: guest_uuid (guest_ + 36 chars uuid)
+    const pattern = /^guest_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    return pattern.test(id)
   }
 }
 
@@ -666,12 +1160,19 @@ export const addProductToCartController = async (req: Request, res: Response, ne
   try {
     const { productId, quantity } = req.body
 
-    // Get userId (authenticated) or guestId (cookie)
+    // Get userId (authenticated) or guestId (from header X-Guest-ID)
     let userId: string
     if (req.decode_authorization) {
       userId = (req.decode_authorization as TokenPayload).user_id
     } else {
-      userId = guestCartHelper.getGuestId(req, res)
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        throw new ErrorWithStatus({
+          message: "Guest ID is required. Please check X-Guest-ID header",
+          status: httpStatus.BAD_REQUEST
+        })
+      }
+      userId = guestId
     }
 
     // Get product data from MongoDB
@@ -716,12 +1217,20 @@ export const addProductToCartController = async (req: Request, res: Response, ne
  */
 export const getCartController = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Get userId or guestId
+    // Get userId or guestId (from header X-Guest-ID)
     let userId: string
     if (req.decode_authorization) {
       userId = (req.decode_authorization as TokenPayload).user_id
     } else {
-      userId = guestCartHelper.getGuestId(req, res)
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        // Guest chưa có cart → Return empty
+        return res.json({
+          message: "Cart is empty",
+          result: { items: [], count: 0, total: 0 }
+        })
+      }
+      userId = guestId
     }
 
     // ✅ Get from Redis (fast, 1-2ms)
@@ -762,7 +1271,14 @@ export const updateCartItemController = async (req: Request, res: Response, next
     if (req.decode_authorization) {
       userId = (req.decode_authorization as TokenPayload).user_id
     } else {
-      userId = guestCartHelper.getGuestId(req, res)
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        throw new ErrorWithStatus({
+          message: "Guest ID is required",
+          status: httpStatus.BAD_REQUEST
+        })
+      }
+      userId = guestId
     }
 
     if (quantity <= 0) {
@@ -795,7 +1311,14 @@ export const removeFromCartController = async (req: Request, res: Response, next
     if (req.decode_authorization) {
       userId = (req.decode_authorization as TokenPayload).user_id
     } else {
-      userId = guestCartHelper.getGuestId(req, res)
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        throw new ErrorWithStatus({
+          message: "Guest ID is required",
+          status: httpStatus.BAD_REQUEST
+        })
+      }
+      userId = guestId
     }
 
     await cartRedisService.removeProduct(userId, productId)
@@ -820,7 +1343,11 @@ export const clearCartController = async (req: Request, res: Response, next: Nex
     if (req.decode_authorization) {
       userId = (req.decode_authorization as TokenPayload).user_id
     } else {
-      userId = guestCartHelper.getGuestId(req, res)
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        return res.json({ message: "No cart to clear" })
+      }
+      userId = guestId
     }
 
     await cartRedisService.clearCart(userId)
@@ -839,6 +1366,8 @@ export const clearCartController = async (req: Request, res: Response, next: Nex
 
 ### 2.7. Merge Cart after Login
 
+**Backend:**
+
 ```typescript
 // src/controllers/user.controllers.ts
 
@@ -848,8 +1377,8 @@ export const loginController = async (req, res, next) => {
 
     const userId = (user._id as ObjectId).toString()
 
-    // ✅ Check if có guest cart
-    const guestId = req.cookies["guest_cart_id"]
+    // ✅ Check if có guest cart (from header X-Guest-ID)
+    const guestId = req.headers["x-guest-id"] as string
 
     if (guestId && guestCartHelper.isGuestId(guestId)) {
       console.log(`🔀 Merging cart: ${guestId} → ${userId}`)
@@ -857,16 +1386,54 @@ export const loginController = async (req, res, next) => {
       // Merge guest cart vào user cart
       await cartRedisService.mergeCart(guestId, userId)
 
-      // Clear guest cookie
-      guestCartHelper.clearGuestId(res)
-
       // Background sync merged cart to MongoDB
       cartSyncService.scheduleSync(userId)
+
+      // ✅ Tell frontend to clear guest ID
+      // Frontend sẽ nhận response và xóa localStorage
     }
 
     // ... rest of login logic ...
+
+    res.json({
+      message: "Login success",
+      result: {
+        accessToken,
+        refreshToken,
+        clearGuestId: !!guestId // Frontend sẽ check flag này
+      }
+    })
   } catch (error) {
     next(error)
+  }
+}
+```
+
+**Frontend:**
+
+```typescript
+// src/pages/Login.tsx
+
+const handleLogin = async (credentials) => {
+  try {
+    const response = await axiosClient.post("/users/login", credentials)
+
+    const { accessToken, refreshToken, clearGuestId } = response.data.result
+
+    // Save tokens
+    localStorage.setItem("access_token", accessToken)
+    localStorage.setItem("refresh_token", refreshToken)
+
+    // ✅ Clear guest ID nếu backend yêu cầu
+    if (clearGuestId) {
+      localStorage.removeItem("guest_cart_id")
+      console.log("✅ Guest cart merged, cleared guest ID")
+    }
+
+    // Redirect to home or checkout
+    navigate("/")
+  } catch (error) {
+    console.error("Login failed:", error)
   }
 }
 ```
@@ -1203,12 +1770,14 @@ export class CartAnalyticsService {
 
 ### Implementation
 
-- [ ] Create `src/services/redis/cartRedis.ts`
-- [ ] Create `src/services/redis/cartSync.ts`
-- [ ] Create `src/utils/guestCart.ts`
-- [ ] Update `src/controllers/collections.controllers.ts`
-- [ ] Update `src/controllers/user.controllers.ts` (merge cart)
-- [ ] Add cookie-parser middleware
+- [ ] Create `src/services/redis/cartRedis.ts` (Backend)
+- [ ] Create `src/services/redis/cartSync.ts` (Backend)
+- [ ] Create `src/utils/guestCart.ts` (Backend - read from header)
+- [ ] Create `src/utils/guestCart.ts` (Frontend - localStorage helper)
+- [ ] Update `src/api/axiosClient.ts` (Frontend - Add X-Guest-ID interceptor)
+- [ ] Update `src/controllers/collections.controllers.ts` (Backend)
+- [ ] Update `src/controllers/user.controllers.ts` (Backend - merge cart, return clearGuestId flag)
+- [ ] Update `src/pages/Login.tsx` (Frontend - Clear guest ID on login)
 - [ ] Update MongoDB cart schema (add snapshots)
 
 ### Testing
@@ -1227,6 +1796,191 @@ export class CartAnalyticsService {
 - [ ] Deploy to staging
 - [ ] Monitor performance
 - [ ] Deploy to production
+
+---
+
+## 8. Important Notes về localStorage Approach
+
+### 8.1. Tại sao dùng localStorage thay vì Cookie?
+
+**Advantages:**
+
+✅ **Frontend control:**
+
+- Frontend generate và quản lý guest ID
+- Không cần backend set cookie
+- Đơn giản hơn cho SPA (Single Page App)
+
+✅ **Cross-domain support:**
+
+- localStorage không bị giới hạn SameSite
+- Dễ dàng cho frontend/backend riêng domain
+
+✅ **Client-side flexibility:**
+
+- Frontend có thể check/clear guest ID bất cứ lúc nào
+- Không cần round-trip to server
+
+**Trade-offs:**
+
+⚠️ **Security:**
+
+- localStorage có thể bị XSS attack đọc được
+- NHƯNG: guest ID không phải sensitive data (chỉ là temp ID)
+- Không lưu token hoặc personal info trong guest ID
+
+⚠️ **Backend validation:**
+
+- Backend PHẢI validate guest ID format
+- Check pattern: `guest_[uuid]`
+- Prevent injection attacks
+
+### 8.2. Flow chi tiết với Header X-Guest-ID
+
+```
+Frontend (localStorage)           Backend (Header)
+─────────────────────────────────────────────────────
+1. User mở website
+   ↓
+   Check localStorage.getItem("guest_cart_id")
+   ↓
+   Nếu null → Generate guest_uuid_123
+   ↓
+   localStorage.setItem("guest_cart_id", "guest_uuid_123")
+
+2. User click "Add to Cart"
+   ↓
+   axiosClient.post("/cart/add", {
+     productId: "...",
+     quantity: 1
+   })
+   ↓
+   Interceptor tự động add header:
+   {
+     "X-Guest-ID": "guest_uuid_123"
+   }
+   ↓
+                                   Backend nhận request
+                                   ↓
+                                   req.headers["x-guest-id"]
+                                   ↓
+                                   Validate format (guest_uuid)
+                                   ↓
+                                   Redis HSET cart:guest_uuid_123 ...
+                                   ↓
+                                   Response 200 OK
+
+3. User login
+   ↓
+   axiosClient.post("/users/login", {...})
+   với header X-Guest-ID: "guest_uuid_123"
+   ↓
+                                   Backend merge cart
+                                   ↓
+                                   Response: { clearGuestId: true }
+   ↓
+   Frontend check response.clearGuestId
+   ↓
+   localStorage.removeItem("guest_cart_id")
+```
+
+### 8.3. Security Best Practices
+
+```typescript
+// Backend validation (REQUIRED!)
+export class GuestCartHelper {
+  isValidGuestId(id: string): boolean {
+    // Must match pattern: guest_[uuid]
+    const pattern = /^guest_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    return pattern.test(id)
+  }
+
+  getGuestId(req: Request): string | null {
+    const guestId = req.headers["x-guest-id"] as string
+
+    // Validate format
+    if (!guestId || !this.isValidGuestId(guestId)) {
+      console.warn(`⚠️ Invalid guest ID format: ${guestId}`)
+      return null
+    }
+
+    return guestId
+  }
+}
+```
+
+### 8.4. Testing với Postman/Thunder Client
+
+```bash
+# Test 1: Add to cart as guest
+POST http://localhost:5000/api/cart/add
+Headers:
+  Content-Type: application/json
+  X-Guest-ID: guest_a1b2c3d4-e5f6-7890-1234-567890abcdef
+Body:
+{
+  "productId": "64a1b2c3d4e5f6789",
+  "quantity": 1
+}
+
+# Test 2: Get cart as guest
+GET http://localhost:5000/api/cart
+Headers:
+  X-Guest-ID: guest_a1b2c3d4-e5f6-7890-1234-567890abcdef
+
+# Test 3: Login with guest cart
+POST http://localhost:5000/api/users/login
+Headers:
+  Content-Type: application/json
+  X-Guest-ID: guest_a1b2c3d4-e5f6-7890-1234-567890abcdef
+Body:
+{
+  "email": "user@example.com",
+  "password": "123456"
+}
+
+# Response sẽ có:
+{
+  "message": "Login success",
+  "result": {
+    "accessToken": "...",
+    "refreshToken": "...",
+    "clearGuestId": true  ← Frontend xóa localStorage
+  }
+}
+```
+
+### 8.5. Frontend Debug Helper
+
+```typescript
+// src/utils/cartDebug.ts
+export const cartDebug = {
+  // Show current guest ID
+  showGuestId() {
+    const guestId = localStorage.getItem("guest_cart_id")
+    console.log("Guest ID:", guestId)
+  },
+
+  // Generate new guest ID
+  resetGuestId() {
+    localStorage.removeItem("guest_cart_id")
+    console.log("Guest ID cleared, refresh page to generate new one")
+  },
+
+  // Show all localStorage keys
+  showAllStorage() {
+    console.log("LocalStorage:", {
+      guestId: localStorage.getItem("guest_cart_id"),
+      accessToken: localStorage.getItem("access_token") ? "exists" : "null",
+      refreshToken: localStorage.getItem("refresh_token") ? "exists" : "null"
+    })
+  }
+}
+
+// Usage in browser console:
+// cartDebug.showGuestId()
+// cartDebug.resetGuestId()
+```
 
 ---
 

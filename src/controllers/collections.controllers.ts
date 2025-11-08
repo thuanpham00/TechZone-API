@@ -9,6 +9,9 @@ import databaseServices from "~/services/database.services"
 import { ObjectId } from "mongodb"
 import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
+import { cartRedisService } from "~/redis/cartRedis"
+import { cartSyncService } from "~/redis/cartSync"
+import { guestCartHelper } from "~/utils/guestCart"
 
 export const slugConditionMap = {
   laptop: { category: "Laptop" },
@@ -214,41 +217,145 @@ export const addProductToFavouriteController = async (
 }
 
 export const addProductToCartController = async (
-  req: Request<ParamsDictionary, any, CartProduct>,
+  req: Request<ParamsDictionary, any, any>,
   res: Response,
   next: NextFunction
 ) => {
-  const { user_id } = req.decode_authorization as TokenPayload
-  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
-  if (!findUser) {
-    throw new ErrorWithStatus({
-      message: UserMessage.USER_NOT_FOUND,
-      status: httpStatus.NOTFOUND
+  try {
+    const { product_id, quantity } = req.body
+    // Get userId (authenticated) or guestId (from header X-Guest-ID)
+    let userId: string
+    if (req.decode_authorization) {
+      userId = (req.decode_authorization as TokenPayload).user_id
+    } else {
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        throw new ErrorWithStatus({
+          message: "Guest ID is required. Please check X-Guest-ID header",
+          status: httpStatus.BAD_REQUESTED
+        })
+      }
+      userId = guestId
+    }
+
+    // Get product data from MongoDB
+    const product = await databaseServices.product.findOne({
+      _id: new ObjectId(product_id)
     })
+
+    if (!product) {
+      throw new ErrorWithStatus({
+        message: "Product not found",
+        status: httpStatus.NOTFOUND
+      })
+    }
+
+    // ✅ Calculate price after discount
+    const discount = product.discount || 0
+    const priceAfterDiscount = discount > 0 ? product.price * (1 - discount / 100) : product.price
+
+    // ✅ Add to Redis (fast, 2ms)
+    const cartItem = await cartRedisService.addProduct(
+      userId,
+      product_id,
+      {
+        name: product.name,
+        price: product.price,
+        discount: discount,
+        priceAfterDiscount: priceAfterDiscount,
+        image: product.banner?.url || product.medias?.[0]?.url || "",
+        quantity: 0 // Will be set by addProduct
+      },
+      quantity || 1
+    )
+
+    // ✅ Background sync to MongoDB (không block response)
+    cartSyncService.scheduleSync(userId)
+
+    res.json({
+      message: "Product added to cart",
+      result: cartItem
+    })
+  } catch (error) {
+    next(error)
   }
-  const { message } = await collectionServices.addProductToCart(user_id, req.body)
-  res.json({
-    message: message
-  })
 }
 
 export const updateQuantityProductInCartController = async (
-  req: Request<ParamsDictionary, any, CartProduct>,
+  req: Request<ParamsDictionary, any, any>,
   res: Response,
   next: NextFunction
 ) => {
-  const { user_id } = req.decode_authorization as TokenPayload
-  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
-  if (!findUser) {
-    throw new ErrorWithStatus({
-      message: UserMessage.USER_NOT_FOUND,
-      status: httpStatus.NOTFOUND
+  try {
+    const { product_id, quantity } = req.body
+
+    let userId: string
+    if (req.decode_authorization) {
+      userId = (req.decode_authorization as TokenPayload).user_id
+    } else {
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        throw new ErrorWithStatus({
+          message: "Guest ID is required",
+          status: httpStatus.BAD_REQUESTED
+        })
+      }
+      userId = guestId
+    }
+
+    if (quantity <= 0) {
+      // Remove if quantity = 0
+      await cartRedisService.removeProduct(userId, product_id)
+    } else {
+      // ✅ Check if product exists in Redis
+      const existing = await cartRedisService.getProduct(userId, product_id)
+
+      if (!existing) {
+        // ⚠️ Product not in Redis, need to add it first (load from MongoDB)
+        const product = await databaseServices.product.findOne({
+          _id: new ObjectId(product_id)
+        })
+
+        if (!product) {
+          throw new ErrorWithStatus({
+            message: "Product not found",
+            status: httpStatus.NOTFOUND
+          })
+        }
+
+        // Calculate price after discount
+        const discount = product.discount || 0
+        const priceAfterDiscount = discount > 0 ? product.price * (1 - discount / 100) : product.price
+
+        // Add to Redis first
+        await cartRedisService.addProduct(
+          userId,
+          product_id,
+          {
+            name: product.name,
+            price: product.price,
+            discount: discount,
+            priceAfterDiscount: priceAfterDiscount,
+            image: product.banner?.url || product.medias?.[0]?.url || "",
+            quantity: 0
+          },
+          quantity
+        )
+      } else {
+        // Update existing quantity
+        await cartRedisService.updateQuantity(userId, product_id, quantity)
+      }
+    }
+
+    // Background sync
+    cartSyncService.scheduleSync(userId)
+
+    res.json({
+      message: "Cart updated successfully"
     })
+  } catch (error) {
+    next(error)
   }
-  const { message } = await collectionServices.updateQuantityProductToCart(user_id, req.body)
-  res.json({
-    message: message
-  })
 }
 
 export const clearProductInCartController = async (
@@ -256,18 +363,30 @@ export const clearProductInCartController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { user_id } = req.decode_authorization as TokenPayload
-  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
-  if (!findUser) {
-    throw new ErrorWithStatus({
-      message: UserMessage.USER_NOT_FOUND,
-      status: httpStatus.NOTFOUND
+  try {
+    let userId: string
+    if (req.decode_authorization) {
+      userId = (req.decode_authorization as TokenPayload).user_id
+    } else {
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        res.json({ message: "No cart to clear" })
+        return
+      }
+      userId = guestId
+    }
+
+    await cartRedisService.clearCart(userId)
+
+    // Background sync
+    cartSyncService.scheduleSync(userId)
+
+    res.json({
+      message: "Cart cleared successfully"
     })
+  } catch (error) {
+    next(error)
   }
-  const { message } = await collectionServices.clearProductToCart(user_id)
-  res.json({
-    message: message
-  })
 }
 
 export const getCollectionsCartController = async (
@@ -275,22 +394,47 @@ export const getCollectionsCartController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { user_id } = req.decode_authorization as TokenPayload
-  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
-  if (!findUser) {
-    throw new ErrorWithStatus({
-      message: UserMessage.USER_NOT_FOUND,
-      status: httpStatus.NOTFOUND
-    })
-  }
-  const { products, total } = await collectionServices.getProductsInCart(user_id)
-  res.json({
-    message: CollectionMessage.GET_COLLECTION_CART_IS_SUCCESS,
-    result: {
-      products,
-      total
+  try {
+    let userId: string
+    if (req.decode_authorization) {
+      userId = (req.decode_authorization as TokenPayload).user_id
+    } else {
+      const guestId = guestCartHelper.getGuestId(req)
+
+      if (!guestId) {
+        res.json({
+          message: "Cart is empty",
+          result: { items: [], count: 0, total: 0 }
+        })
+        return
+      }
+      userId = guestId
     }
-  })
+
+    // ✅ Get from Redis (fast, 1-2ms)
+    let items = await cartRedisService.getCart(userId)
+
+    // Fallback: nếu Redis empty và là authenticated user, try load từ MongoDB
+    if (items.length === 0 && !guestCartHelper.isGuestId(userId)) {
+      await cartSyncService.loadFromMongoDB(userId)
+      items = await cartRedisService.getCart(userId)
+    }
+
+    // Calculate totals (dùng giá sau discount)
+    const total = items.reduce((sum, item) => sum + item.priceAfterDiscount * item.quantity, 0)
+    const count = items.length
+
+    res.json({
+      message: CollectionMessage.GET_COLLECTION_CART_IS_SUCCESS,
+      result: {
+        items,
+        count,
+        total
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const removeProductToCartController = async (
@@ -298,17 +442,31 @@ export const removeProductToCartController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { user_id } = req.decode_authorization as TokenPayload
-  const findUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
-  if (!findUser) {
-    throw new ErrorWithStatus({
-      message: UserMessage.USER_NOT_FOUND,
-      status: httpStatus.NOTFOUND
+  try {
+    let userId: string
+    if (req.decode_authorization) {
+      userId = (req.decode_authorization as TokenPayload).user_id
+    } else {
+      const guestId = guestCartHelper.getGuestId(req)
+      if (!guestId) {
+        throw new ErrorWithStatus({
+          message: "Guest ID is required",
+          status: httpStatus.BAD_REQUESTED
+        })
+      }
+      userId = guestId
+    }
+
+    const { id } = req.params
+    await cartRedisService.removeProduct(userId, id)
+
+    // Background sync
+    cartSyncService.scheduleSync(userId)
+
+    res.json({
+      message: "Product removed from cart"
     })
+  } catch (error) {
+    next(error)
   }
-  const { id } = req.params
-  const { message } = await collectionServices.removeProductToCart(user_id, id)
-  res.json({
-    message: message
-  })
 }
