@@ -74,6 +74,7 @@ Tình huống:
 ### 🔍 **Nguyên lý hoạt động:**
 
 #### **BƯỚC 1: Khách hàng gửi tin nhắn**
+
 ```typescript
 // Customer gửi message → Tạo conversation với status "pending"
 {
@@ -88,6 +89,7 @@ Tình huống:
 ```
 
 #### **BƯỚC 2: Tin nhắn xuất hiện trong danh sách TẤT CẢ admin**
+
 ```
 ┌───────────────────── ADMIN DASHBOARD ─────────────────────┐
 │  📬 PENDING TICKETS (Chưa ai xử lý)                       │
@@ -100,6 +102,7 @@ Tình huống:
 ```
 
 #### **BƯỚC 3: Admin click vào "XEM CHI TIẾT" → SEEN**
+
 ```typescript
 // Admin2 click vào conversation
 → API: PUT /conversations/:id/seen
@@ -118,6 +121,7 @@ Tình huống:
 ```
 
 #### **BƯỚC 4: Admin khác không còn thấy ticket này**
+
 ```
 Admin1 Dashboard:
 ┌───────────────────────────────────────────────────────────┐
@@ -147,58 +151,60 @@ Admin2 Dashboard:
 import { ObjectId } from "mongodb"
 
 export enum ConversationStatus {
-  PENDING = "pending",       // 🟡 Chờ admin xử lý
-  ASSIGNED = "assigned",     // 🟢 Đã có admin nhận
-  RESOLVED = "resolved",     // ✅ Đã giải quyết xong
-  CLOSED = "closed"          // 🔒 Đã đóng
+  PENDING = "pending", // 🟡 Chờ admin xử lý
+  ASSIGNED = "assigned", // 🟢 Đã có admin nhận
+  RESOLVED = "resolved", // ✅ Đã giải quyết xong
+  CLOSED = "closed" // 🔒 Đã đóng
 }
 
 export interface Conversation {
   _id?: ObjectId
-  
+
   // === THÔNG TIN CƠ BẢN ===
-  customer_id: ObjectId                  // ID khách hàng
-  customer_info?: {                      // Thông tin khách (cache để query nhanh)
+  customer_id: ObjectId // ID khách hàng
+  customer_info?: {
+    // Thông tin khách (cache để query nhanh)
     name: string
     email: string
     avatar?: string
     phone?: string
   }
-  
+
   // === TRẠNG THÁI TICKET ===
-  status: ConversationStatus             // Trạng thái hiện tại
-  assigned_to?: ObjectId                 // ID admin/staff đang xử lý (null nếu pending)
-  assigned_at?: Date                     // Thời điểm admin nhận ticket
-  
+  status: ConversationStatus // Trạng thái hiện tại
+  assigned_to?: ObjectId // ID admin/staff đang xử lý (null nếu pending)
+  assigned_at?: Date // Thời điểm admin nhận ticket
+
   // === SEEN TRACKING (Quan trọng!) ===
-  seen_by: ObjectId[]                    // Danh sách admin đã seen
-  first_seen_by?: ObjectId               // Admin SEEN ĐẦU TIÊN (người claim ticket)
-  first_seen_at?: Date                   // Thời gian seen đầu tiên
-  
+  seen_by: ObjectId[] // Danh sách admin đã seen
+  first_seen_by?: ObjectId // Admin SEEN ĐẦU TIÊN (người claim ticket)
+  first_seen_at?: Date // Thời gian seen đầu tiên
+
   // === THÔNG TIN TIN NHẮN ===
-  subject?: string                       // Chủ đề (optional, có thể để khách tự đặt)
-  last_message: string                   // Nội dung tin nhắn cuối
-  last_message_at: Date                  // Thời gian tin nhắn cuối
-  last_message_sender_type: "customer" | "staff"  // Ai gửi tin cuối
-  
+  subject?: string // Chủ đề (optional, có thể để khách tự đặt)
+  last_message: string // Nội dung tin nhắn cuối
+  last_message_at: Date // Thời gian tin nhắn cuối
+  last_message_sender_type: "customer" | "staff" // Ai gửi tin cuối
+
   // === UNREAD COUNT ===
-  unread_count_customer: number          // Số tin chưa đọc của khách hàng
-  unread_count_staff: number             // Số tin chưa đọc của staff
-  
+  unread_count_customer: number // Số tin chưa đọc của khách hàng
+  unread_count_staff: number // Số tin chưa đọc của staff
+
   // === METADATA ===
-  priority?: "low" | "medium" | "high"   // Độ ưu tiên (VIP, đơn hàng lớn...)
-  tags?: string[]                        // Tags: ["đổi trả", "giao hàng", "kỹ thuật"]
-  order_id?: ObjectId                    // Liên kết với đơn hàng (nếu có)
-  
+  priority?: "low" | "medium" | "high" // Độ ưu tiên (VIP, đơn hàng lớn...)
+  tags?: string[] // Tags: ["đổi trả", "giao hàng", "kỹ thuật"]
+  order_id?: ObjectId // Liên kết với đơn hàng (nếu có)
+
   // === TIMESTAMPS ===
   created_at: Date
   updated_at: Date
-  resolved_at?: Date                     // Thời gian giải quyết xong
-  closed_at?: Date                       // Thời gian đóng ticket
+  resolved_at?: Date // Thời gian giải quyết xong
+  closed_at?: Date // Thời gian đóng ticket
 }
 ```
 
 **Index quan trọng:**
+
 ```typescript
 // Tối ưu query
 await databaseServices.conversation.createIndex({ status: 1, created_at: -1 })
@@ -215,46 +221,48 @@ export enum MessageType {
   TEXT = "text",
   IMAGE = "image",
   FILE = "file",
-  SYSTEM = "system"          // Tin nhắn tự động: "Admin đã nhận ticket"
+  SYSTEM = "system" // Tin nhắn tự động: "Admin đã nhận ticket"
 }
 
 export interface Message {
   _id?: ObjectId
-  
+
   // === LIÊN KẾT ===
-  conversation_id: ObjectId              // ID phòng chat/ticket
-  
+  conversation_id: ObjectId // ID phòng chat/ticket
+
   // === NGƯỜI GỬI ===
-  sender_id: ObjectId                    // ID người gửi
-  sender_type: "customer" | "staff" | "system"  // Loại người gửi
-  sender_name?: string                   // Tên người gửi (cache)
-  sender_avatar?: string                 // Avatar người gửi (cache)
-  
+  sender_id: ObjectId // ID người gửi
+  sender_type: "customer" | "staff" | "system" // Loại người gửi
+  sender_name?: string // Tên người gửi (cache)
+  sender_avatar?: string // Avatar người gửi (cache)
+
   // === NỘI DUNG ===
-  content: string                        // Nội dung tin nhắn
-  type: MessageType                      // Loại tin nhắn
-  attachments?: {                        // File đính kèm
+  content: string // Nội dung tin nhắn
+  type: MessageType // Loại tin nhắn
+  attachments?: {
+    // File đính kèm
     url: string
     filename: string
     size: number
     mimetype: string
   }[]
-  
+
   // === SEEN STATUS (Quan trọng!) ===
-  is_read: boolean                       // Đã đọc chưa
-  read_by: ObjectId[]                    // Danh sách người đã đọc
-  read_at?: Date                         // Thời gian đọc
-  
+  is_read: boolean // Đã đọc chưa
+  read_by: ObjectId[] // Danh sách người đã đọc
+  read_at?: Date // Thời gian đọc
+
   // === METADATA ===
-  reply_to?: ObjectId                    // ID tin nhắn được reply
-  edited_at?: Date                       // Thời gian chỉnh sửa
-  deleted_at?: Date                      // Soft delete
-  
+  reply_to?: ObjectId // ID tin nhắn được reply
+  edited_at?: Date // Thời gian chỉnh sửa
+  deleted_at?: Date // Soft delete
+
   created_at: Date
 }
 ```
 
 **Index:**
+
 ```typescript
 await databaseServices.message.createIndex({ conversation_id: 1, created_at: -1 })
 ```
@@ -314,6 +322,7 @@ async seenAndClaimConversation(conversationId, staffId) {
 ```
 
 **Timeline Bug:**
+
 ```
 Time 0ms:  Admin A → findOne (status = "pending") ✅
 Time 20ms: Admin B → findOne (status = "pending") ✅
@@ -365,6 +374,7 @@ async seenAndClaimConversation(conversationId, staffId) {
 ```
 
 **Timeline Success:**
+
 ```
 Time 0ms:  Admin A → findOneAndUpdate (filter: status="pending")
 Time 20ms: Admin B → findOneAndUpdate (filter: status="pending")
@@ -426,7 +436,7 @@ try {
   if (error.message.includes("đã được admin khác nhận rồi")) {
     // ⚠️ Hiển thị thông báo
     toast.warning("Ticket này đã được admin khác nhận rồi! Vui lòng chọn ticket khác.")
-    
+
     // 🔄 Tự động xóa ticket khỏi danh sách (hoặc đợi Socket.IO emit)
     removeTicketFromList(conversationId)
   }
@@ -442,7 +452,7 @@ try {
 socket.on("staff:seen-conversation", async (data) => {
   try {
     const result = await conversationServices.seenAndClaimConversation(data)
-    
+
     // ✅ Emit tới TẤT CẢ admin khác (trừ Admin A)
     socket.to("staff-room").emit("conversation-claimed", {
       conversation_id: data.conversationId,
@@ -466,7 +476,7 @@ socket.on("staff:seen-conversation", async (data) => {
 socket.on("conversation-claimed", (data) => {
   // Xóa ticket khỏi danh sách
   removeTicketFromList(data.conversation_id)
-  
+
   // Hiển thị toast (optional)
   toast.info(`${data.claimed_by_name} đã nhận ticket này`)
 })
@@ -556,10 +566,10 @@ sequenceDiagram
 
     A1->>API: PUT /conversations/:id/seen (10:00:00.000)
     A2->>API: PUT /conversations/:id/seen (10:00:00.050)
-    
+
     Note over API,DB: Request của Admin1 đến trước
     API->>DB: findOneAndUpdate({ _id, status="pending" })
-    
+
     alt MongoDB tìm thấy document (status=pending)
         DB->>DB: LOCK document
         DB->>DB: UPDATE status="assigned", assigned_to=Admin1
@@ -573,11 +583,11 @@ sequenceDiagram
 
     Note over API,DB: Request của Admin2 đến sau
     API->>DB: findOneAndUpdate({ _id, status="pending" })
-    
+
     alt MongoDB KHÔNG tìm thấy (status đã là "assigned")
         DB-->>API: ❌ Return null
         API-->>A2: ❌ { error: "Already claimed by Admin1" }
-        
+
         Note over A2: Hiển thị toast warning
     end
 ```
@@ -597,7 +607,7 @@ sequenceDiagram
     Socket->>DB: Lưu message
     Socket->>A2: Emit "new-message" (nếu A2 online)
     Socket->>DB: Update unread_count_staff++
-    
+
     A2->>Socket: Emit "send-message"
     Socket->>DB: Lưu message
     Socket->>C: Emit "new-message"
@@ -782,19 +792,13 @@ class ConversationServices {
   /**
    * 4️⃣ SEEN & CLAIM Conversation (QUAN TRỌNG NHẤT!)
    * Logic: Admin SEEN đầu tiên → Người đó nhận ticket
-   * 
+   *
    * ⚠️ RACE CONDITION HANDLING:
    * Trường hợp 2 admin/nhân viên online cùng lúc click vào cùng 1 ticket
    * → Sử dụng findOneAndUpdate với filter status="pending" (ATOMIC OPERATION)
    * → Chỉ 1 admin claim được, admin kia sẽ nhận lỗi
    */
-  async seenAndClaimConversation({
-    conversationId,
-    staffId
-  }: {
-    conversationId: string
-    staffId: string
-  }) {
+  async seenAndClaimConversation({ conversationId, staffId }: { conversationId: string; staffId: string }) {
     const now = new Date()
 
     // ✅ GIẢI PHÁP: Sử dụng findOneAndUpdate (ATOMIC OPERATION)
@@ -827,7 +831,7 @@ class ConversationServices {
       // Không tìm thấy document → Có 2 khả năng:
       // a) Conversation không tồn tại
       // b) Status không phải "pending" (đã bị admin khác claim rồi)
-      
+
       const conversation = await databaseServices.conversation.findOne({
         _id: new ObjectId(conversationId)
       })
@@ -848,10 +852,7 @@ class ConversationServices {
     }
 
     // 2. Tạo system message (chỉ khi claim thành công)
-    const staff = await databaseServices.users.findOne(
-      { _id: new ObjectId(staffId) },
-      { projection: { name: 1 } }
-    )
+    const staff = await databaseServices.users.findOne({ _id: new ObjectId(staffId) }, { projection: { name: 1 } })
 
     await databaseServices.message.insertOne({
       conversation_id: new ObjectId(conversationId),
@@ -922,10 +923,7 @@ class ConversationServices {
       updateData.$inc = { unread_count_customer: 1 }
     }
 
-    await databaseServices.conversation.updateOne(
-      { _id: new ObjectId(conversationId) },
-      updateData
-    )
+    await databaseServices.conversation.updateOne({ _id: new ObjectId(conversationId) }, updateData)
 
     return {
       message_id: message.insertedId.toString(),
@@ -997,8 +995,7 @@ class ConversationServices {
     )
 
     // Reset unread count
-    const updateField =
-      userType === "customer" ? "unread_count_customer" : "unread_count_staff"
+    const updateField = userType === "customer" ? "unread_count_customer" : "unread_count_staff"
 
     await databaseServices.conversation.updateOne(
       { _id: new ObjectId(conversationId) },
@@ -1078,7 +1075,7 @@ export const initSocket = (httpServer: HTTPServer) => {
      */
     socket.on("user:login", (data: { userId: string; userType: "customer" | "staff" }) => {
       userSockets.set(data.userId, socket.id)
-      
+
       if (data.userType === "staff") {
         socket.join("staff-room") // Join room chung cho tất cả staff
         console.log(`👨‍💼 Staff ${data.userId} joined staff-room`)
@@ -1091,61 +1088,55 @@ export const initSocket = (httpServer: HTTPServer) => {
     /**
      * 📨 Customer gửi tin nhắn MỚI (Tạo conversation)
      */
-    socket.on(
-      "customer:new-conversation",
-      async (data: { customerId: string; message: string; subject?: string }) => {
-        try {
-          // Tạo conversation
-          const result = await conversationServices.createConversation({
-            customerId: data.customerId,
-            firstMessage: data.message,
-            subject: data.subject
-          })
+    socket.on("customer:new-conversation", async (data: { customerId: string; message: string; subject?: string }) => {
+      try {
+        // Tạo conversation
+        const result = await conversationServices.createConversation({
+          customerId: data.customerId,
+          firstMessage: data.message,
+          subject: data.subject
+        })
 
-          // ✅ Emit tới TẤT CẢ staff online
-          io.to("staff-room").emit("new-conversation", {
-            conversation_id: result.conversation_id,
-            customer_id: data.customerId,
-            last_message: data.message,
-            created_at: new Date(),
-            status: "pending"
-          })
+        // ✅ Emit tới TẤT CẢ staff online
+        io.to("staff-room").emit("new-conversation", {
+          conversation_id: result.conversation_id,
+          customer_id: data.customerId,
+          last_message: data.message,
+          created_at: new Date(),
+          status: "pending"
+        })
 
-          // Trả về cho customer
-          socket.emit("conversation-created", result)
-        } catch (error: any) {
-          socket.emit("error", { message: error.message })
-        }
+        // Trả về cho customer
+        socket.emit("conversation-created", result)
+      } catch (error: any) {
+        socket.emit("error", { message: error.message })
       }
-    )
+    })
 
     /**
      * 👀 Staff SEEN & CLAIM conversation
      */
-    socket.on(
-      "staff:seen-conversation",
-      async (data: { conversationId: string; staffId: string }) => {
-        try {
-          // CLAIM conversation
-          const result = await conversationServices.seenAndClaimConversation({
-            conversationId: data.conversationId,
-            staffId: data.staffId
-          })
+    socket.on("staff:seen-conversation", async (data: { conversationId: string; staffId: string }) => {
+      try {
+        // CLAIM conversation
+        const result = await conversationServices.seenAndClaimConversation({
+          conversationId: data.conversationId,
+          staffId: data.staffId
+        })
 
-          // ✅ Emit tới TẤT CẢ staff khác → Xóa ticket khỏi danh sách
-          socket.to("staff-room").emit("conversation-claimed", {
-            conversation_id: data.conversationId,
-            claimed_by: data.staffId,
-            message: "Ticket này đã được admin khác nhận"
-          })
+        // ✅ Emit tới TẤT CẢ staff khác → Xóa ticket khỏi danh sách
+        socket.to("staff-room").emit("conversation-claimed", {
+          conversation_id: data.conversationId,
+          claimed_by: data.staffId,
+          message: "Ticket này đã được admin khác nhận"
+        })
 
-          // Trả về cho staff đã claim
-          socket.emit("conversation-claimed-success", result)
-        } catch (error: any) {
-          socket.emit("error", { message: error.message })
-        }
+        // Trả về cho staff đã claim
+        socket.emit("conversation-claimed-success", result)
+      } catch (error: any) {
+        socket.emit("error", { message: error.message })
       }
-    )
+    })
 
     /**
      * 💬 Gửi tin nhắn trong conversation
@@ -1166,9 +1157,7 @@ export const initSocket = (httpServer: HTTPServer) => {
           // Emit tới người nhận
           if (data.senderType === "customer") {
             // Customer gửi → Emit tới staff
-            const conversation = await conversationServices.getConversationById(
-              data.conversationId
-            )
+            const conversation = await conversationServices.getConversationById(data.conversationId)
             if (conversation.assigned_to) {
               const staffSocketId = userSockets.get(conversation.assigned_to.toString())
               if (staffSocketId) {
@@ -1183,9 +1172,7 @@ export const initSocket = (httpServer: HTTPServer) => {
             }
           } else {
             // Staff gửi → Emit tới customer
-            const conversation = await conversationServices.getConversationById(
-              data.conversationId
-            )
+            const conversation = await conversationServices.getConversationById(data.conversationId)
             const customerId = conversation.customer_id.toString()
             const customerSocketId = userSockets.get(customerId)
             if (customerSocketId) {
@@ -1350,6 +1337,7 @@ export const initSocket = (httpServer: HTTPServer) => {
 ### ✅ **DOs (Nên làm):**
 
 1. **Sử dụng findOneAndUpdate ATOMIC cho CLAIM ticket:**
+
 ```typescript
 // ✅ BEST PRACTICE: findOneAndUpdate với filter status="pending"
 // MongoDB đảm bảo ATOMIC operation → Không cần transaction
@@ -1382,6 +1370,7 @@ if (conversation.status === "pending") {
 ```
 
 2. **Cache customer info để query nhanh:**
+
 ```typescript
 // Lưu customer_info trong conversation → Không cần $lookup
 customer_info: {
@@ -1392,6 +1381,7 @@ customer_info: {
 ```
 
 3. **Index database đúng cách:**
+
 ```typescript
 // Tối ưu query pending tickets
 await conversations.createIndex({ status: 1, created_at: -1 })
@@ -1401,6 +1391,7 @@ await conversations.createIndex({ assigned_to: 1, status: 1 })
 ```
 
 4. **Emit Socket.IO có target cụ thể:**
+
 ```typescript
 // ✅ GOOD: Emit tới staff-room
 io.to("staff-room").emit("new-conversation", data)
@@ -1410,6 +1401,7 @@ io.emit("new-conversation", data) // Customer cũng nhận → không cần thi�
 ```
 
 5. **System message khi claim:**
+
 ```typescript
 // Tạo tin nhắn tự động để customer biết admin đã nhận
 await databaseServices.message.insertOne({
@@ -1426,6 +1418,7 @@ await databaseServices.message.insertOne({
 ### ❌ **DON'Ts (Không nên làm):**
 
 1. **Không dùng polling (setInterval) để check ticket mới:**
+
 ```typescript
 // ❌ BAD: Query database liên tục
 setInterval(async () => {
@@ -1439,6 +1432,7 @@ socket.on("new-conversation", (data) => {
 ```
 
 2. **Không để nhiều admin claim cùng 1 ticket:**
+
 ```typescript
 // ✅ GOOD: Check status trước khi claim
 if (conversation.status !== "pending") {
@@ -1447,6 +1441,7 @@ if (conversation.status !== "pending") {
 ```
 
 3. **Không lưu toàn bộ messages vào conversation document:**
+
 ```typescript
 // ❌ BAD: Document quá lớn
 {
@@ -1537,6 +1532,7 @@ async getLoadBalancingStats() {
 ```
 
 **Output:**
+
 ```json
 [
   {
@@ -1654,7 +1650,7 @@ async checkStaffOverloadAlert() {
 ✅ **Scalable** - Dễ mở rộng nhiều admin  
 ✅ **No conflict** - Chỉ 1 admin claim được ticket (ATOMIC operation)  
 ✅ **Race condition safe** - Xử lý đúng khi 2+ admin click cùng lúc  
-✅ **Load balancing** - Phân phối đồng đều ticket  
+✅ **Load balancing** - Phân phối đồng đều ticket
 
 ---
 
@@ -1690,6 +1686,7 @@ async checkStaffOverloadAlert() {
 **�📝 Lưu ý:** Đây là tài liệu chi tiết cho hệ thống chat thương mại điện tử với xử lý race condition an toàn. Bạn có thể tùy chỉnh theo nhu cầu cụ thể của dự án!
 
 **🔗 Các file cần implement:**
+
 - `src/models/schema/conversation.schema.ts` - Schema conversation & message
 - `src/services/conversation.services.ts` - Business logic (8 functions)
 - `src/controllers/conversation.controllers.ts` - API endpoints
@@ -1697,9 +1694,9 @@ async checkStaffOverloadAlert() {
 - `socket.ts` - Socket.IO events (7 events chính)
 
 **🚀 Next Steps:**
+
 1. Tạo schema MongoDB theo document này
 2. Implement services với `findOneAndUpdate` (ATOMIC)
 3. Setup Socket.IO events
 4. Test race condition (2 admin click cùng lúc)
 5. Implement UI dashboard & chat window
-
