@@ -1,5 +1,4 @@
 import { Router } from "express"
-import { ObjectId } from "mongodb"
 import {
   addProductToCartController,
   addProductToFavouriteController,
@@ -13,7 +12,6 @@ import {
 } from "~/controllers/collections.controllers"
 import { getCollectionValidator } from "~/middlewares/collection.middlewares"
 import { accessTokenValidator, verifyUserValidator } from "~/middlewares/user.middlewares"
-import databaseServices from "~/services/database.services"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const collectionsRoute = Router()
