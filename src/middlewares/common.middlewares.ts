@@ -9,6 +9,9 @@ export const filterMiddleware = <P>(filterKey: FilterKey<P>) => {
   }
 }
 
+// dùng formidable để parse form-data (file upload) - formData.append() - multipart/form-data ở frontend
+// nếu gửi text + file -> dùng middleware này để parse
+// gửi text thì không cần formidable, chỉ cần express.json() là đủ
 export const parseFormData = async (req: Request, res: Response, next: NextFunction) => {
   const formidable = (await import("formidable")).default
   const form = formidable({ multiples: true })

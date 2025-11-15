@@ -1,4 +1,5 @@
 import { Router } from "express"
+import { getTicketMessagesForClientController } from "~/controllers/ticket.controllers"
 import {
   changePasswordController,
   forgotPasswordController,
@@ -150,6 +151,17 @@ userRoute.put(
   updateMeValidator,
   filterMiddleware<updateMeReqBody>(["date_of_birth", "name", "numberPhone", "avatar"]),
   wrapRequestHandler(updateMeController)
+)
+
+/**
+ * GET /users/tickets/:id/messages
+ * Lấy tất cả tin nhắn của một ticket của user (client) - dựa vào token
+ */
+userRoute.get(
+  "/tickets/messages",
+  accessTokenValidator,
+  verifyUserValidator,
+  wrapRequestHandler(getTicketMessagesForClientController)
 )
 
 export default userRoute

@@ -251,12 +251,16 @@ export const EmailMessage = {
 }
 
 export const ConversationMessage = {
-  GET_LIST_USER_TYPE_IS_SUCCESS: "Lấy danh sách người dùng thành công",
-  GET_CONVERSATION_IS_SUCCESS: "Lấy danh sách hội thoại thành công"
+  GET_CONVERSATION_IS_SUCCESS: "Lấy danh sách hội thoại thành công",
+
+  GET_LIST_TICKET_IS_SUCCESS: "Lấy danh sách hộp thoại thành công!",
+  UPDATE_STATUS_TICKET_IS_SUCCESS: "Tiếp nhận hỗ trợ thành công",
+
+  UPDATE_READ_MESSAGES_IS_SUCCESS: "Cập nhật trạng thái tin nhắn đã đọc thành công"
 }
 
 export const CategoryMessage = {
-  GET_CATEGORY_LIST_IS_SUCCESS: "Lấy danh sách danh mục thành công",
-  GET_CATEGORY_MENU_LIST_IS_SUCCESS: "Lấy danh sách menu danh mục thành công",
-  GET_BANNER_BASE_ON_SLUG_IS_SUCCESS: "Lấy banner dựa trên slug thành công"
+  GET_CATEGORY_LIST_IS_SUCCESS: "Lấy danh sách danh mục thành công!",
+  GET_CATEGORY_MENU_LIST_IS_SUCCESS: "Lấy danh sách menu danh mục thành công!",
+  GET_BANNER_BASE_ON_SLUG_IS_SUCCESS: "Lấy banner dựa trên slug thành công!"
 }

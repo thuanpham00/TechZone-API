@@ -13,6 +13,7 @@ import { Conversation } from "~/models/schema/conversation.schema"
 import { EmailLog } from "~/models/schema/email.schema"
 import { Permission, Role } from "~/models/schema/role_permission.schema"
 import { Voucher } from "~/models/schema/voucher.schema"
+import { Ticket, TicketMessage } from "~/models/schema/ticket_message.schema"
 config()
 
 const URI = `mongodb+srv://${envConfig.user_name}:${envConfig.password}@cluster0.1nx8m.mongodb.net/${envConfig.name_database}?retryWrites=true&w=majority`
@@ -144,6 +145,14 @@ class DatabaseServices {
 
   get vouchers(): Collection<Voucher> {
     return this.db.collection(envConfig.collection_vouchers)
+  }
+
+  get tickets(): Collection<Ticket> {
+    return this.db.collection(envConfig.collection_tickets)
+  }
+
+  get ticketMessages(): Collection<TicketMessage> {
+    return this.db.collection(envConfig.collection_ticket_messages)
   }
 }
 

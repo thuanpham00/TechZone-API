@@ -2,18 +2,24 @@ import { Server } from "socket.io"
 import { Server as ServerHttp } from "http"
 import { verifyAccessToken } from "./utils/common"
 import { TokenPayload } from "./models/requests/user.requests"
-import { UserVerifyStatus } from "./constant/enum"
-import { ErrorWithStatus } from "./models/errors"
-import { UserMessage } from "./constant/message"
-import httpStatus from "./constant/httpStatus"
+import { TicketStatus, UserVerifyStatus } from "./constant/enum"
 import databaseServices from "./services/database.services"
-import { Conversation } from "./models/schema/conversation.schema"
-import { ObjectId } from "mongodb"
+import { ObjectId, WithId } from "mongodb"
+import { ImageAttachment, Ticket, TicketType } from "./models/schema/ticket_message.schema"
+import { User } from "./models/schema/users.schema"
+import ticketServices from "./services/ticket.services"
+import fs from "fs"
+import path from "path"
+import crypto from "crypto"
+import { UPLOAD_IMAGE_DIR } from "./constant/dir"
+import { mediaServices } from "./services/medias.services"
+import { Media } from "./constant/common"
 
 export const initialSocket = (httpSocket: ServerHttp) => {
   const users: {
     [key: string]: {
-      socket_id: string
+      sockets: string[]
+      roleKey?: string
     }
   } = {}
 
@@ -26,18 +32,20 @@ export const initialSocket = (httpSocket: ServerHttp) => {
   // middleware socket cấp server
   // chạy mỗi khi client bắt đầu handshake/kết nối tới server (ngay trước khi sự kiện connection xảy ra). - chạy 1 lần cho 1 lần kết nối
   io.use(async (socket, next) => {
-    const { Authorization } = socket.handshake.auth
-    const access_token = Authorization.split(" ")[1]
     try {
+      const { Authorization } = socket.handshake.auth
+      if (!Authorization || typeof Authorization !== "string") return next(new Error("Unauthorized"))
+      const parts = Authorization.split(" ")
+
+      if (parts.length < 2) return next(new Error("Unauthorized"))
+      const access_token = parts[1]
+
       // kiểm tra token hợp lệ không và tài khoản đã xác thực chưa
       const decode_authorization = await verifyAccessToken(access_token)
       const { verify } = decode_authorization as TokenPayload
-      if (verify !== UserVerifyStatus.Verified) {
-        new ErrorWithStatus({
-          message: UserMessage.USER_IS_NOT_VERIFIED,
-          status: httpStatus.UNAUTHORIZED
-        })
-      }
+
+      if (verify !== UserVerifyStatus.Verified) return next(new Error("User is not verified"))
+
       socket.handshake.auth.decode_authorization = decode_authorization
       socket.handshake.auth.access_token = access_token
       next()
@@ -51,18 +59,25 @@ export const initialSocket = (httpSocket: ServerHttp) => {
   })
 
   // sự kiện mặc định của socket server - tự động chạy khi có connect từ client tới
-  io.on("connection", (socket) => {
-    console.log(`user ${socket.id} connected`)
+  io.on("connection", async (socket) => {
     const { user_id } = socket.handshake.auth.decode_authorization as TokenPayload
-    users[user_id] = {
-      socket_id: socket.id
+    let roleKey: string | undefined
+    try {
+      const userDoc = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+      const findRole = await databaseServices.role.findOne({ _id: userDoc?.role })
+      roleKey = findRole?.key
+    } catch (error) {
+      console.warn("failed to fetch roleKey on connect", error)
     }
 
-    console.log(users)
+    users[user_id] = users[user_id] || { sockets: [], roleKey } // nếu có rồi thì thôi còn chưa có gán cái roleKey vào
+    users[user_id].sockets.push(socket.id)
+    console.log("connected users:", users)
 
     socket.use(async (packet, next) => {
-      const { access_token } = socket.handshake.auth
       try {
+        const { access_token } = socket.handshake.auth
+        if (!access_token) return next(new Error("Unauthorized"))
         await verifyAccessToken(access_token)
         next()
       } catch (error) {
@@ -76,24 +91,267 @@ export const initialSocket = (httpSocket: ServerHttp) => {
       }
     })
 
-    socket.on("send_message", async (data) => {
-      const { sender_id, receiver_id, content } = data.payload
-      const conversation = new Conversation({
-        sender_id: new ObjectId(sender_id),
-        receiver_id: new ObjectId(receiver_id),
-        content: content
-      })
-      const result = await databaseServices.conversation.insertOne(conversation)
-      conversation._id = result.insertedId
+    // emit tới các socket của 1 user cụ thể
+    const emitToUser = (userId: string, event: string, payload?: any) => {
+      const u = users[userId]
+      if (!u || !u.sockets?.length) return
+      u.sockets.forEach((sId) => io.to(sId).emit(event, payload))
+    }
 
-      const receiver_socket_id = users[receiver_id]?.socket_id
-      socket.to(receiver_socket_id).emit("received_message", { payload: conversation })
+    const getOnlineAdminIds = () => {
+      return Object.entries(users)
+        .filter(([_, v]) => v.roleKey === "ADMIN" || v.roleKey === "SALES_STAFF")
+        .map(([id]) => id)
+    }
+
+    // sự kiện gửi và nhận từ customer - admin
+    socket.on("send_message", async (data, ...buffers) => {
+      // lắng nghe sự kiện gửi tin nhắn từ client
+      let tempFiles: Array<{ filepath: string; newFilename: string }> = []
+
+      try {
+        const { content, type, sender_type } = data.payload
+        const fileMetas: Array<{ fileName: string; fileType: string; fileSize: number }> = data.files || [] // mảng object
+        const { user_id: sender_id } = socket.handshake.auth.decode_authorization as TokenPayload
+
+        // xử lý file
+        for (let i = 0; i < fileMetas.length; i++) {
+          const meta = fileMetas[i]
+          const bin = buffers[i]
+          if (!bin) continue
+          const buf = Buffer.from(bin as ArrayBuffer)
+          const safeName = meta.fileName.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "")
+          const uid =
+            typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Math.random().toString(36).slice(2, 9)
+          const tmpName = `${Date.now()}_${uid}_${safeName}`
+          const tmpPath = path.join(UPLOAD_IMAGE_DIR, tmpName)
+          await fs.promises.mkdir(path.dirname(tmpPath), { recursive: true })
+          await fs.promises.writeFile(tmpPath, buf)
+          // create minimal File-like object expected by mediaServices
+          tempFiles.push({ filepath: tmpPath, newFilename: tmpName })
+        }
+
+        const [findUser, findTicket] = await Promise.all([
+          databaseServices.users.findOne({ _id: new ObjectId(sender_id) }),
+          databaseServices.tickets.findOne({
+            customer_id: new ObjectId(sender_id),
+            status: { $in: [TicketStatus.PENDING, TicketStatus.ASSIGNED] }
+          })
+        ])
+
+        if (findTicket !== null) {
+          // upload attachments for existing ticket via media service
+          let attachments: Media[] = []
+          if (tempFiles.length > 0) {
+            const { upload } = await mediaServices.uploadListImageMessage(
+              tempFiles as any,
+              findTicket._id.toString(),
+              sender_id
+            )
+            attachments = upload
+          }
+
+          const [ticketMessage] = await Promise.all([
+            ticketServices.insertMessageTicket({
+              ticketId: findTicket._id.toString(),
+              sender_id: sender_id,
+              content: content,
+              infoUser: findUser as WithId<User>,
+              type: type,
+              sender_type: sender_type,
+              attachments
+            }),
+            databaseServices.tickets.updateOne(
+              {
+                _id: findTicket._id
+              },
+              {
+                $inc: {
+                  unread_count_staff: 1
+                },
+                $set: {
+                  last_message: content !== "" ? content : null, // tin nhắn
+                  last_message_at: new Date(),
+                  last_message_sender_type: sender_type
+                },
+                $currentDate: { updated_at: true }
+              }
+            )
+          ])
+          if (findTicket?.status === TicketStatus.ASSIGNED || findTicket?.status === TicketStatus.PENDING) {
+            /**
+             *│→ Gửi tin vào ticket này
+              │→ Tăng unread_count_staff++
+              │→ Emit tới TẤT CẢ admin
+               -> Nhưng chỉ admin được assign_to mới reply lại được
+             */
+            getOnlineAdminIds().forEach((adminIds) => {
+              emitToUser(adminIds, "received_message", { payload: ticketMessage })
+              emitToUser(adminIds, "reload_ticket_list")
+            })
+          }
+        } else {
+          // trường hợp chưa có ticket nào - tạo mới ticket và tin nhắn
+          const now = new Date()
+          const payloadTicket: TicketType = {
+            customer_id: new ObjectId(sender_id),
+            assigned_to: null, // chưa có ai nhận dành cho admin
+            status: TicketStatus.PENDING, // chưa có ai nhận
+            served_by: [], // chưa có ai tiếp nhận
+            last_message: content, // tin nhắn
+            last_message_at: new Date(),
+            last_message_sender_type: "customer",
+            unread_count_staff: 1,
+            unread_count_customer: 0,
+            created_at: now,
+            updated_at: now
+          }
+          const newTicket = await databaseServices.tickets.insertOne(new Ticket(payloadTicket))
+          const ticketMessage = await ticketServices.insertMessageTicket({
+            ticketId: newTicket.insertedId.toString(),
+            sender_id: sender_id,
+            content: content,
+            infoUser: findUser as WithId<User>,
+            type: type,
+            sender_type: sender_type
+          })
+          getOnlineAdminIds().forEach((adminIds) => {
+            emitToUser(adminIds, "received_message", { payload: ticketMessage })
+            emitToUser(adminIds, "reload_ticket_list")
+          })
+        }
+      } catch (error) {
+        console.error("send_message error", error)
+        socket.emit("error", { message: "Failed to send message" })
+      } finally {
+        // best-effort cleanup of temp files (in case mediaService didn't remove them)
+        try {
+          for (const f of tempFiles) {
+            if (f && f.filepath && fs.existsSync(f.filepath)) {
+              try {
+                fs.unlinkSync(f.filepath)
+              } catch (e) {}
+            }
+          }
+        } catch {}
+      }
+    })
+
+    // sự kiện gửi và nhận từ admin - customer
+    socket.on("admin:send_message", async (data, ...buffers) => {
+      let tempFiles: Array<{ filepath: string; newFilename: string }> = []
+
+      try {
+        const { ticket_id, content, type, sender_type } = data.payload
+        const fileMetas: Array<{ fileName: string; fileType: string; fileSize: number }> = data.files || [] // mảng object
+
+        const { user_id: sender_id } = socket.handshake.auth.decode_authorization as TokenPayload
+
+        // xử lý file
+        for (let i = 0; i < fileMetas.length; i++) {
+          const meta = fileMetas[i]
+          const bin = buffers[i]
+          if (!bin) continue
+          const buf = Buffer.from(bin as ArrayBuffer)
+          const safeName = meta.fileName.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "")
+          const uid =
+            typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Math.random().toString(36).slice(2, 9)
+          const tmpName = `${Date.now()}_${uid}_${safeName}`
+          const tmpPath = path.join(UPLOAD_IMAGE_DIR, tmpName)
+          await fs.promises.mkdir(path.dirname(tmpPath), { recursive: true })
+          await fs.promises.writeFile(tmpPath, buf)
+          // create minimal File-like object expected by mediaServices
+          tempFiles.push({ filepath: tmpPath, newFilename: tmpName })
+        }
+
+        const [findUser, findTicket] = await Promise.all([
+          databaseServices.users.findOne({ _id: new ObjectId(sender_id) }),
+          databaseServices.tickets.findOne({
+            _id: new ObjectId(ticket_id)
+          })
+        ])
+
+        if (!findTicket || sender_id !== (findTicket?.assigned_to as ObjectId).toString()) {
+          return socket.emit("error", { message: "Ticket not found" })
+        }
+
+        let attachments: Media[] = []
+        if (tempFiles.length > 0) {
+          const { upload } = await mediaServices.uploadListImageMessage(
+            tempFiles as any,
+            findTicket._id.toString(),
+            sender_id
+          )
+          attachments = upload
+        }
+
+        const [ticketMessage] = await Promise.all([
+          ticketServices.insertMessageTicket({
+            ticketId: findTicket._id.toString(),
+            sender_id: sender_id,
+            content: content,
+            infoUser: findUser as WithId<User>,
+            type: type,
+            sender_type: sender_type,
+            attachments
+          }),
+          databaseServices.tickets.updateOne(
+            {
+              _id: findTicket._id
+            },
+            {
+              $inc: {
+                unread_count_customer: 1
+              },
+              $set: {
+                last_message: content !== "" ? content : null, // tin nhắn
+                last_message_at: new Date(),
+                last_message_sender_type: sender_type
+              },
+              $currentDate: { updated_at: true }
+            }
+          )
+        ])
+
+        emitToUser(findTicket.customer_id.toString(), "received_message", { payload: ticketMessage })
+
+        getOnlineAdminIds().forEach((adminIds) => {
+          emitToUser(adminIds, "reload_ticket_list")
+        })
+      } catch (error) {
+        console.error("send_message error", error)
+        socket.emit("error", { message: "Failed to send message" })
+      } finally {
+        // best-effort cleanup of temp files (in case mediaService didn't remove them)
+        try {
+          for (const f of tempFiles) {
+            if (f && f.filepath && fs.existsSync(f.filepath)) {
+              try {
+                fs.unlinkSync(f.filepath)
+              } catch (e) {}
+            }
+          }
+        } catch {}
+      }
+    })
+
+    socket.on("admin:read-message-from-assigned", async (data) => {
+      const { ticket_id, assigned_to } = data.payload
+      await ticketServices.updateReadMessagesService(ticket_id, assigned_to, user_id)
+
+      getOnlineAdminIds().forEach((adminIds) => {
+        emitToUser(adminIds, "reload_ticket_list")
+      })
     })
 
     // sự kiện mặc định của socket server - nếu ngắt kết nối (client ngắt, đóng tab) -> nó chạy
     socket.on("disconnect", () => {
-      delete users[user_id]
-      console.log(`user ${socket.id} disconnected`)
+      const u = users[user_id]
+      if (u) {
+        u.sockets = u.sockets.filter((s) => s !== socket.id)
+        if (u.sockets.length === 0) delete users[user_id]
+      }
+      console.log(`socket ${socket.id} disconnected for user ${user_id}`)
     })
   })
 }
