@@ -344,6 +344,21 @@ export const initialSocket = (httpSocket: ServerHttp) => {
       })
     })
 
+    socket.on("admin:assign_ticket", async (data) => {
+      const { ticket_id, assigned_to } = data.payload
+      await ticketServices.updateStatusAssignTicket(ticket_id, assigned_to)
+      const findCustomerId = await databaseServices.tickets
+        .findOne({ _id: new ObjectId(ticket_id) })
+        .then((res) => res?.customer_id)
+
+      if (findCustomerId) {
+        emitToUser(findCustomerId.toString(), "reload_reservation")
+      }
+      getOnlineAdminIds().forEach((adminIds) => {
+        emitToUser(adminIds, "reload_ticket_list")
+      })
+    })
+
     // sự kiện mặc định của socket server - nếu ngắt kết nối (client ngắt, đóng tab) -> nó chạy
     socket.on("disconnect", () => {
       const u = users[user_id]

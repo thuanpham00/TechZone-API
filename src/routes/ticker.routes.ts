@@ -1,9 +1,5 @@
 import { Router } from "express"
-import {
-  getListTicketBaseOnStatus,
-  getTicketMessagesForAdminController,
-  updateTicketController
-} from "~/controllers/ticket.controllers"
+import { getListTicketBaseOnStatus, getTicketMessagesForAdminController } from "~/controllers/ticket.controllers"
 import { accessTokenValidator, checkRole, verifyUserValidator } from "~/middlewares/user.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -20,19 +16,6 @@ ticketRoute.get(
   verifyUserValidator,
   checkRole(),
   wrapRequestHandler(getListTicketBaseOnStatus)
-)
-
-/**
- * Description: update ticket (pending -> assigned)
- * Path: /
- * Method: GET
- */
-ticketRoute.put(
-  "/status/:id",
-  accessTokenValidator,
-  verifyUserValidator,
-  // checkRole(),
-  wrapRequestHandler(updateTicketController)
 )
 
 /**

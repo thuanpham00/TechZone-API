@@ -86,22 +86,22 @@ class TicketServices {
     return listTicket
   }
 
-  async updateStatusAssignTicket(idTicket: string, status: string, userIdAdminAssigned: string) {
-    const findUserAdmin = await databaseServices.users.findOne({ _id: new ObjectId(userIdAdminAssigned) })
+  async updateStatusAssignTicket(idTicket: string, assigned_to: string) {
+    const findUserAdmin = await databaseServices.users.findOne({ _id: new ObjectId(assigned_to) })
     const date = new Date()
     await Promise.all([
       databaseServices.tickets.updateOne(
         { _id: new ObjectId(idTicket) },
         {
           $set: {
-            status: status as TicketStatus,
+            status: TicketStatus.ASSIGNED,
             unread_count_staff: 0,
-            assigned_to: new ObjectId(userIdAdminAssigned),
+            assigned_to: new ObjectId(assigned_to),
             assigned_at: date
           },
           $push: {
             served_by: {
-              admin_id: new ObjectId(userIdAdminAssigned),
+              admin_id: new ObjectId(assigned_to),
               admin_name: findUserAdmin?.name,
               started_at: date,
               is_active: true // đang xử lý

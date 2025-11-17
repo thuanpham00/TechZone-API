@@ -24,16 +24,6 @@ export const getListTicketBaseOnStatus = async (
   })
 }
 
-export const updateTicketController = async (req: Request, res: Response) => {
-  const { id: idTicket } = req.params
-  const { status } = req.body
-  const { user_id: userIdAdminAssigned } = req.decode_authorization
-  await ticketServices.updateStatusAssignTicket(idTicket, status, userIdAdminAssigned)
-  res.json({
-    message: ConversationMessage.UPDATE_STATUS_TICKET_IS_SUCCESS
-  })
-}
-
 export const getTicketMessagesForAdminController = async (req: Request, res: Response) => {
   const ticketId = req.params.id
   const { limit, page } = req.query
