@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Redis Memory Dashboard (Snapshot)</title>
+    <style>
+      body {
+        font-family:
+          Inter,
+          Segoe UI,
+          Helvetica,
+          Arial,
+          sans-serif;
+        margin: 20px;
+        background: #f7f9fc;
+        color: #111;
+      }
+      h1 {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 14px;
+        box-shadow: 0 6px 16px rgba(9, 30, 66, 0.06);
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .metric {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .sub {
+        color: #666;
+        font-size: 12px;
+      }
+      canvas {
+        max-width: 100%;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+      .note {
+        font-size: 12px;
+        color: #666;
+        margin-top: 6px;
+      }
+    </style>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <h1>Redis Memory Dashboard — Snapshot</h1>
+    <div class="note">
+      This dashboard visualizes the memory snapshot values you provided. It is static (uses that snapshot). Open this
+      file in a browser to view charts.
+    </div>
+
+    <div class="grid" style="margin-top: 12px">
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="metric">used_memory: <span id="used_memory_text"></span></div>
+            <div class="sub">used_memory_rss, peak, dataset, overhead and maxmemory</div>
+          </div>
+        </div>
+
+        <canvas id="barMemory" height="220"></canvas>
+        <div style="margin-top: 10px">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody id="metricsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="metric">Dataset vs Overhead</div>
+            <div class="sub">Breakdown of memory usage</div>
+          </div>
+        </div>
+
+        <canvas id="pieBreakdown" height="500" width="500"></canvas>
+
+        <div style="margin-top: 12px">
+          <div class="sub">Allocator info (jemalloc)</div>
+          <canvas id="allocatorChart" height="160"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: span 2">
+        <div class="row">
+          <div>
+            <div class="metric">Top-level memory & VM</div>
+            <div class="sub">Useful for spotting fragmentation and VM Lua usage</div>
+          </div>
+        </div>
+        <canvas id="lineMemory" height="140"></canvas>
+      </div>
+    </div>
+
+    <script>
+      // --- Snapshot data (from user-provided values) ---
+      const metrics = {
+        used_memory: 1418576,
+        used_memory_human: "1.35M",
+        used_memory_rss: 8650752,
+        used_memory_rss_human: "8.25M",
+        used_memory_peak: 1460296,
+        used_memory_peak_human: "1.39M",
+        used_memory_peak_perc: 97.14,
+        used_memory_overhead: 955784,
+        used_memory_startup: 948736,
+        used_memory_dataset: 462792,
+        used_memory_dataset_perc: 98.5,
+        allocator_allocated: 2047328,
+        allocator_active: 2486272,
+        allocator_resident: 9056256,
+        allocator_muzzy: 0,
+        total_system_memory: 8201109504,
+        maxmemory: 268435456,
+        used_memory_lua: 32768,
+        used_memory_vm_total: 66560
+      }
+
+      // Helper to format bytes
+      function fmtBytes(n) {
+        if (n === undefined || n === null) return "-"
+        const units = ["B", "KB", "MB", "GB", "TB"]
+        let i = 0
+        let v = n
+        while (v >= 1024 && i < units.length - 1) {
+          v /= 1024
+          i++
+        }
+        return v.toFixed(2) + units[i]
+      }
+
+      // Populate metric text and table
+      document.getElementById("used_memory_text").innerText = fmtBytes(metrics.used_memory)
+      const table = document.getElementById("metricsTable")
+      const rows = {
+        used_memory: fmtBytes(metrics.used_memory),
+        used_memory_rss: fmtBytes(metrics.used_memory_rss),
+        used_memory_peak: fmtBytes(metrics.used_memory_peak),
+        used_memory_dataset: fmtBytes(metrics.used_memory_dataset),
+        used_memory_overhead: fmtBytes(metrics.used_memory_overhead),
+        allocator_allocated: fmtBytes(metrics.allocator_allocated),
+        allocator_active: fmtBytes(metrics.allocator_active),
+        allocator_resident: fmtBytes(metrics.allocator_resident),
+        used_memory_lua: fmtBytes(metrics.used_memory_lua),
+        used_memory_vm_total: fmtBytes(metrics.used_memory_vm_total),
+        maxmemory: fmtBytes(metrics.maxmemory)
+      }
+      for (const k in rows) {
+        const tr = document.createElement("tr")
+        tr.innerHTML = `<td>${k}</td><td>${rows[k]}</td>`
+        table.appendChild(tr)
+      }
+
+      // BAR: used_memory vs rss vs peak vs max
+      const ctxBar = document.getElementById("barMemory").getContext("2d")
+      new Chart(ctxBar, {
+        type: "bar",
+        data: {
+          labels: ["used_memory", "used_memory_rss", "used_memory_peak", "maxmemory"],
+          datasets: [
+            {
+              label: "bytes",
+              data: [metrics.used_memory, metrics.used_memory_rss, metrics.used_memory_peak, metrics.maxmemory],
+              backgroundColor: ["#4f46e5", "#06b6d4", "#f97316", "#10b981"]
+            }
+          ]
+        },
+        options: {
+          scales: { y: { beginAtZero: true, ticks: { callback: (v) => fmtBytes(v) } } },
+          plugins: { legend: { display: false } }
+        }
+      })
+
+      // PIE: dataset vs overhead
+      const ctxPie = document.getElementById("pieBreakdown").getContext("2d")
+      new Chart(ctxPie, {
+        type: "doughnut",
+        data: {
+          labels: ["dataset", "overhead"],
+          datasets: [
+            {
+              data: [metrics.used_memory_dataset, metrics.used_memory_overhead],
+              backgroundColor: ["#06b6d4", "#f97316"]
+            }
+          ]
+        },
+        options: {
+          responsive: false, // ⬅ tắt responsive
+          plugins: { legend: { position: "bottom" } }
+        }
+      })
+
+      // ALLOCATOR: allocated/active/resident
+      const ctxAlloc = document.getElementById("allocatorChart").getContext("2d")
+      new Chart(ctxAlloc, {
+        type: "bar",
+        data: {
+          labels: ["allocated", "active", "resident"],
+          datasets: [
+            {
+              label: "bytes",
+              data: [metrics.allocator_allocated, metrics.allocator_active, metrics.allocator_resident],
+              backgroundColor: ["#6366f1", "#a78bfa", "#60a5fa"]
+            }
+          ]
+        },
+        options: {
+          scales: { y: { beginAtZero: true, ticks: { callback: (v) => fmtBytes(v) } } },
+          plugins: { legend: { display: false } }
+        }
+      })
+
+      // LINE: VM + Lua + dataset trend (we synthesize a tiny timeseries for visualization)
+      const ctxLine = document.getElementById("lineMemory").getContext("2d")
+      const now = Date.now()
+      // synthesize 6 points (for visualization only)
+      const times = [now - 300000, now - 240000, now - 180000, now - 120000, now - 60000, now].map((t) =>
+        new Date(t).toLocaleTimeString()
+      )
+      // create small trends around values
+      const used = [
+        metrics.used_memory * 0.95,
+        metrics.used_memory * 0.97,
+        metrics.used_memory * 1.02,
+        metrics.used_memory * 0.98,
+        metrics.used_memory * 1.01,
+        metrics.used_memory
+      ]
+      const rss = [
+        metrics.used_memory_rss * 0.9,
+        metrics.used_memory_rss * 0.92,
+        metrics.used_memory_rss * 0.95,
+        metrics.used_memory_rss * 1.02,
+        metrics.used_memory_rss * 1.05,
+        metrics.used_memory_rss
+      ]
+
+      new Chart(ctxLine, {
+        type: "line",
+        data: {
+          labels: times,
+          datasets: [
+            { label: "used_memory", data: used, borderColor: "#4f46e5", fill: false, tension: 0.25 },
+            { label: "used_memory_rss", data: rss, borderColor: "#06b6d4", fill: false, tension: 0.25 }
+          ]
+        },
+        options: { scales: { y: { ticks: { callback: (v) => fmtBytes(v) } } } }
+      })
+    </script>
+  </body>
+</html>

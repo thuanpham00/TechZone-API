@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Redis Stats Dashboard (snapshot)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family:
+          Inter,
+          Segoe UI,
+          Arial;
+        margin: 20px;
+        color: #222;
+      }
+      .grid {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e6e6e6;
+        border-radius: 8px;
+        padding: 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      }
+      .card.wide {
+        flex: 1 1 100%;
+      }
+      .card.half {
+        flex: 1 1 48%;
+      }
+      canvas {
+        max-width: 100%;
+        height: 240px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      th,
+      td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+      }
+      .small {
+        font-size: 13px;
+        color: #666;
+      }
+      .badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        color: #fff;
+        margin-right: 8px;
+      }
+      .ok {
+        background: #10b981;
+      }
+      .warn {
+        background: #f59e0b;
+      }
+      .crit {
+        background: #ef4444;
+      }
+      #warnings {
+        margin: 10px 0;
+      }
+      .row-warn td {
+        background: rgba(245, 158, 11, 0.06);
+      }
+      .row-crit td {
+        background: rgba(239, 68, 68, 0.06);
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Redis Stats Snapshot</h2>
+    <p class="small">
+      Dữ liệu từ `INFO stats` (snapshot) — biểu đồ và bảng giúp đánh giá throughput, network, evictions, keyspace hit
+      ratio và các chỉ số ảnh hưởng hiệu suất.
+    </p>
+
+    <div id="warnings"></div>
+
+    <div class="grid">
+      <div class="card half">
+        <h4>Total counters</h4>
+        <canvas id="totalsChart"></canvas>
+      </div>
+
+      <div class="card half">
+        <h4>Network IO (total bytes)</h4>
+        <canvas id="netChart"></canvas>
+      </div>
+
+      <div class="card half">
+        <h4>Instantaneous / Throughput</h4>
+        <canvas id="instantChart"></canvas>
+      </div>
+
+      <div class="card half">
+        <h4>Keyspace hit ratio</h4>
+        <canvas id="hitPie"></canvas>
+      </div>
+
+      <div class="card wide">
+        <h4>Raw stats</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+              <th class="small">Human</th>
+            </tr>
+          </thead>
+          <tbody id="statsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // Provided snapshot (from user)
+      const stats = {
+        total_connections_received: 295,
+        total_commands_processed: 739,
+        instantaneous_ops_per_sec: 0,
+        total_net_input_bytes: 24880,
+        total_net_output_bytes: 373430,
+        total_net_repl_input_bytes: 0,
+        total_net_repl_output_bytes: 0,
+        instantaneous_input_kbps: 0.01,
+        instantaneous_output_kbps: 3.26,
+        instantaneous_input_repl_kbps: 0.0,
+        instantaneous_output_repl_kbps: 0.0,
+        rejected_connections: 0,
+        sync_full: 0,
+        sync_partial_ok: 0,
+        sync_partial_err: 0,
+        expired_subkeys: 0,
+        expired_keys: 0,
+        expired_stale_perc: 0.0,
+        expired_time_cap_reached_count: 0,
+        expire_cycle_cpu_milliseconds: 45,
+        evicted_keys: 0,
+        evicted_clients: 0,
+        evicted_scripts: 0,
+        total_eviction_exceeded_time: 0,
+        current_eviction_exceeded_time: 0,
+        keyspace_hits: 36,
+        keyspace_misses: 13,
+        pubsub_channels: 0,
+        pubsub_patterns: 0,
+        pubsubshard_channels: 0,
+        latest_fork_usec: 0
+      }
+
+      function fmtBytes(n) {
+        if (n === 0) return "0 B"
+        const sizes = ["B", "KB", "MB", "GB", "TB"]
+        const i = Math.floor(Math.log(Math.abs(n)) / Math.log(1024))
+        return (n / Math.pow(1024, i)).toFixed(2) + " " + sizes[i]
+      }
+      function fmtNumber(n) {
+        return n.toLocaleString()
+      }
+
+      // Derived metrics
+      const hits = stats.keyspace_hits || 0
+      const misses = stats.keyspace_misses || 0
+      const hitRatio = hits + misses ? Math.round((hits / (hits + misses)) * 100) : null
+
+      // Evaluate thresholds and build warnings
+      const warnings = []
+      const flagged = {} // metric -> level
+
+      if (stats.evicted_keys && stats.evicted_keys > 0) {
+        warnings.push({
+          level: "crit",
+          text: `Evicted keys = ${stats.evicted_keys} → memory pressure / eviction active`
+        })
+        flagged.evicted_keys = "crit"
+      }
+      if (stats.expired_keys && stats.expired_keys > 100) {
+        warnings.push({ level: "warn", text: `High expired_keys = ${stats.expired_keys} → TTL churn` })
+        flagged.expired_keys = "warn"
+      }
+      if (hitRatio !== null && hitRatio < 70) {
+        warnings.push({ level: "warn", text: `Keyspace hit ratio low = ${hitRatio}% → cache effectiveness issue` })
+        flagged.keyspace_hits = "warn"
+        flagged.keyspace_misses = "warn"
+      }
+      if (stats.rejected_connections && stats.rejected_connections > 0) {
+        warnings.push({
+          level: "warn",
+          text: `Rejected connections = ${stats.rejected_connections} → check maxclients/network`
+        })
+        flagged.rejected_connections = "warn"
+      }
+      if (stats.instantaneous_ops_per_sec === 0 && stats.total_commands_processed > 0) {
+        warnings.push({
+          level: "warn",
+          text: `instantaneous_ops_per_sec = 0 but total_commands_processed > 0 → possibly idle or traffic drop`
+        })
+      }
+      if (stats.instantaneous_output_kbps && stats.instantaneous_output_kbps > 100) {
+        warnings.push({
+          level: "warn",
+          text: `High instantaneous_output_kbps = ${stats.instantaneous_output_kbps} kbps`
+        })
+        flagged.instantaneous_output_kbps = "warn"
+      }
+
+      // Render warnings
+      const warnContainer = document.getElementById("warnings")
+      if (warnings.length) {
+        const card = document.createElement("div")
+        card.className = "card wide"
+        const title = document.createElement("div")
+        title.innerHTML = "<strong>Warnings</strong> — các chỉ số cần kiểm tra ngay"
+        card.appendChild(title)
+        const ul = document.createElement("ul")
+        ul.style.marginTop = "8px"
+        for (const w of warnings) {
+          const li = document.createElement("li")
+          li.style.marginBottom = "6px"
+          const badge = document.createElement("span")
+          badge.className = "badge " + (w.level === "crit" ? "crit" : "warn")
+          badge.textContent = w.level === "crit" ? "CRITICAL" : "WARN"
+          li.appendChild(badge)
+          const txt = document.createTextNode(" " + w.text)
+          li.appendChild(txt)
+          ul.appendChild(li)
+        }
+        card.appendChild(ul)
+        warnContainer.appendChild(card)
+      } else {
+        const card = document.createElement("div")
+        card.className = "card wide"
+        card.innerHTML = "<strong>OK</strong> — no immediate issues detected from snapshot."
+        warnContainer.appendChild(card)
+      }
+
+      // Totals chart
+      const totalsCtx = document.getElementById("totalsChart").getContext("2d")
+      new Chart(totalsCtx, {
+        type: "bar",
+        data: {
+          labels: ["Connections received", "Commands processed", "Rejected connections", "Evicted keys"],
+          datasets: [
+            {
+              label: "count",
+              backgroundColor: ["#4f46e5", "#06b6d4", "#f97316", "#ef4444"],
+              data: [
+                stats.total_connections_received,
+                stats.total_commands_processed,
+                stats.rejected_connections,
+                stats.evicted_keys
+              ]
+            }
+          ]
+        },
+        options: { plugins: { legend: { display: false } } }
+      })
+
+      // Network chart
+      const netCtx = document.getElementById("netChart").getContext("2d")
+      new Chart(netCtx, {
+        type: "bar",
+        data: {
+          labels: ["net input bytes", "net output bytes", "inst input kbps", "inst output kbps"],
+          datasets: [
+            {
+              label: "bytes / kbps",
+              backgroundColor: ["#2563eb", "#059669", "#8b5cf6", "#06b6d4"],
+              data: [
+                stats.total_net_input_bytes,
+                stats.total_net_output_bytes,
+                stats.instantaneous_input_kbps,
+                stats.instantaneous_output_kbps
+              ]
+            }
+          ]
+        },
+        options: {
+          scales: { y: { beginAtZero: true } },
+          plugins: { legend: { display: false } },
+          tooltips: { mode: "index" }
+        }
+      })
+
+      // Instant / throughput - small timeseries (snapshot shown as last point)
+      const instCtx = document.getElementById("instantChart").getContext("2d")
+      const times = ["-4m", "-3m", "-2m", "-1m", "now"]
+      const simulatedOps = [5, 3, 1, 0, stats.instantaneous_ops_per_sec]
+      const simulatedOut = [1.2, 2.4, 3.1, 3.0, stats.instantaneous_output_kbps]
+      new Chart(instCtx, {
+        type: "line",
+        data: {
+          labels: times,
+          datasets: [
+            { label: "ops/sec", data: simulatedOps, borderColor: "#ef4444", fill: false, yAxisID: "y1" },
+            { label: "output kbps", data: simulatedOut, borderColor: "#2563eb", fill: false, yAxisID: "y2" }
+          ]
+        },
+        options: {
+          scales: {
+            y1: { type: "linear", position: "left" },
+            y2: { type: "linear", position: "right", grid: { drawOnChartArea: false } }
+          },
+          plugins: { legend: { position: "bottom" } }
+        }
+      })
+
+      // Hit ratio pie
+      const pieCtx = document.getElementById("hitPie").getContext("2d")
+      new Chart(pieCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Hits", "Misses"],
+          datasets: [{ data: [hits, misses], backgroundColor: ["#10b981", "#f97316"] }]
+        },
+        options: {
+          responsive: false, // ⬅ tắt responsive
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  const val = ctx.raw
+                  const label = ctx.label
+                  return label + ": " + val + " (" + (label === "Hits" && hitRatio !== null ? hitRatio + "%" : "") + ")"
+                }
+              }
+            }
+          }
+        }
+      })
+
+      // Raw table (with highlights)
+      const tableBody = document.getElementById("statsTable")
+      const entries = Object.entries(stats)
+      for (const [k, v] of entries) {
+        const tr = document.createElement("tr")
+        const human = k.includes("bytes") || k.includes("net") ? fmtBytes(v) : typeof v === "number" ? fmtNumber(v) : v
+        const level = flagged[k]
+        if (level === "crit") tr.className = "row-crit"
+        else if (level === "warn") tr.className = "row-warn"
+        tr.innerHTML = `<td><strong>${k}</strong></td><td>${v}</td><td class="small">${human}</td>`
+        tableBody.appendChild(tr)
+      }
+
+      // Add a small summary note
+      const summary = document.createElement("p")
+      summary.className = "small"
+      summary.innerText = `Summary: instantaneous ops/sec = ${stats.instantaneous_ops_per_sec}, keyspace hit ratio = ${hitRatio !== null ? hitRatio + "%" : "N/A"}. Evicted keys = ${stats.evicted_keys}, expired_keys = ${stats.expired_keys}.`
+      document.body.insertBefore(summary, document.querySelector(".grid"))
+    </script>
+  </body>
+</html>
