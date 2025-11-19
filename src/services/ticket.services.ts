@@ -1,7 +1,7 @@
 import { UserType } from "~/models/schema/users.schema"
 import databaseServices from "./database.services"
 import { TicketMessage } from "~/models/schema/ticket_message.schema"
-import { ObjectId, WithId } from "mongodb"
+import { ObjectId } from "mongodb"
 import { MessageType, TicketStatus } from "~/constant/enum"
 import { ErrorWithStatus } from "~/models/errors"
 import { Media } from "~/constant/common"
@@ -228,6 +228,42 @@ class TicketServices {
         }
       )
     ])
+  }
+
+  async getTicketImagesAdminService(ticketId: string) {
+    let arrImg: string[] = []
+    const result = await databaseServices.ticketMessages
+      .aggregate([
+        {
+          $match: {
+            ticket_id: new ObjectId(ticketId),
+            attachments: { $exists: true, $ne: [] } // chỉ lấy những tin nhắn có attachments
+          }
+        },
+        {
+          $unwind: {
+            path: "$attachments"
+          }
+        },
+        {
+          $sort: {
+            created_at: -1 // sắp xếp theo thời gian tạo tin nhắn giảm dần
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            "attachments.url": 1
+          }
+        }
+      ])
+      .toArray()
+
+    result.forEach((item) => {
+      arrImg.push(item.attachments.url)
+    })
+
+    return arrImg
   }
 }
 

@@ -256,7 +256,8 @@ export const ConversationMessage = {
   GET_LIST_TICKET_IS_SUCCESS: "Lấy danh sách hộp thoại thành công!",
   UPDATE_STATUS_TICKET_IS_SUCCESS: "Tiếp nhận hỗ trợ thành công",
 
-  UPDATE_READ_MESSAGES_IS_SUCCESS: "Cập nhật trạng thái tin nhắn đã đọc thành công"
+  UPDATE_READ_MESSAGES_IS_SUCCESS: "Cập nhật trạng thái tin nhắn đã đọc thành công",
+  GET_TICKET_IMAGES_SUCCESS: "Lấy hình ảnh của ticket thành công"
 }
 
 export const CategoryMessage = {

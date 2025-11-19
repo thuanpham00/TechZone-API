@@ -64,3 +64,13 @@ export const getTicketMessagesForClientController = async (req: Request, res: Re
     message: ConversationMessage.GET_CONVERSATION_IS_SUCCESS
   })
 }
+
+export const getTicketImagesForAdminController = async (req: Request, res: Response) => {
+  const ticketId = req.params.id
+  const images = await ticketServices.getTicketImagesAdminService(ticketId)
+
+  res.json({
+    data: images,
+    message: ConversationMessage.GET_TICKET_IMAGES_SUCCESS
+  })
+}

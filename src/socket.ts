@@ -139,18 +139,17 @@ export const initialSocket = (httpSocket: ServerHttp) => {
           })
         ])
 
+        let attachments: Media[] = []
+        if (tempFiles.length > 0) {
+          const { upload } = await mediaServices.uploadListImageMessage(
+            tempFiles as any,
+            (findTicket as WithId<Ticket>)._id.toString(),
+            sender_id
+          )
+          attachments = upload
+        }
         if (findTicket !== null) {
           // upload attachments for existing ticket via media service
-          let attachments: Media[] = []
-          if (tempFiles.length > 0) {
-            const { upload } = await mediaServices.uploadListImageMessage(
-              tempFiles as any,
-              findTicket._id.toString(),
-              sender_id
-            )
-            attachments = upload
-          }
-
           const [ticketMessage] = await Promise.all([
             ticketServices.insertMessageTicket({
               ticketId: findTicket._id.toString(),
@@ -188,6 +187,9 @@ export const initialSocket = (httpSocket: ServerHttp) => {
             getOnlineAdminIds().forEach((adminIds) => {
               emitToUser(adminIds, "received_message", { payload: ticketMessage })
               emitToUser(adminIds, "reload_ticket_list")
+              if (data.files && data.files.length > 0) {
+                emitToUser(adminIds, "reload_ticket_images")
+              }
             })
           }
         } else {
@@ -213,11 +215,15 @@ export const initialSocket = (httpSocket: ServerHttp) => {
             content: content,
             infoUser: findUser as WithId<User>,
             type: type,
-            sender_type: sender_type
+            sender_type: sender_type,
+            attachments
           })
           getOnlineAdminIds().forEach((adminIds) => {
             emitToUser(adminIds, "received_message", { payload: ticketMessage })
             emitToUser(adminIds, "reload_ticket_list")
+            if (data.files && data.files.length > 0) {
+              emitToUser(adminIds, "reload_ticket_images")
+            }
           })
         }
       } catch (error) {
