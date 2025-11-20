@@ -17,11 +17,11 @@ import ordersRoute from "./routes/order.routes"
 import paymentRoute from "./routes/payment.routes"
 import rateLimit from "express-rate-limit"
 import emailRoute from "./routes/email.routes"
-import conversationRoute from "./routes/conversation.routes"
 import { createServer } from "http"
 import { initialSocket } from "./socket"
 import categoryClientRoute from "./routes/category.routes"
 import voucherRoute from "./routes/voucher.routes"
+import ticketRoute from "./routes/ticker.routes"
 import { RedisClient } from "./redis/redisClient" // ✅ ADD: Import Redis client
 config()
 
@@ -30,7 +30,7 @@ const PORT = envConfig.port
 // giới hạn số lượng request với rate limit
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes). // mỗi IP 100 request cho 15 phút
+  limit: 200, // Limit each IP to 200 requests per `window` (here, per 15 minutes). // mỗi IP 100 request cho 15 phút
   standardHeaders: "draft-8", // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   ipv6Subnet: 56 // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
@@ -50,7 +50,22 @@ app.use(
     credentials: true
   })
 )
-app.use(limiter)
+app.use(
+  [
+    "/users",
+    "/products",
+    "/categories",
+    "/medias",
+    "/collections",
+    "/orders",
+    "/static",
+    "/payment",
+    "/email",
+    "/vouchers",
+    "/admin"
+  ],
+  limiter
+) // loại trừ /tickets do có thể có nhiều request từ client để lấy trạng thái ticket
 
 const httpServer = createServer(app) // tạo 1 server đựa trên app của Express
 
@@ -64,8 +79,9 @@ app.use("/orders", ordersRoute)
 app.use("/static", staticRoute)
 app.use("/payment", paymentRoute)
 app.use("/email", emailRoute)
-app.use("/conversation", conversationRoute)
 app.use("/vouchers", voucherRoute)
+
+app.use("/tickets", ticketRoute)
 
 // admin
 app.use("/admin", adminRouter)

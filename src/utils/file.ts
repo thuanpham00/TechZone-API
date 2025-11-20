@@ -9,6 +9,7 @@ export const initFolder = () => {
   }
 }
 
+// dùng để parse files - fields từ request
 export const handleUploadImage = async (req: Request, opts?: { required?: boolean }) => {
   const { required = true } = opts || {}
   // do formidable v3 sử dụng ESModule mà dự án dùng commonJS nên cần chuyển formidable v3 sang commonJS để biên dịch chính xác

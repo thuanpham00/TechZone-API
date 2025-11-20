@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb"
 import { EmployeeInfoStatus, UserVerifyStatus } from "~/constant/enum"
 
-type UserType = {
+export type UserType = {
   _id?: ObjectId
   name?: string
 

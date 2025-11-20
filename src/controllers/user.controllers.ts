@@ -15,7 +15,6 @@ import {
   TokenPayload,
   updateMeReqBody
 } from "~/models/requests/user.requests"
-import { User } from "~/models/schema/users.schema"
 import databaseServices from "~/services/database.services"
 import { userServices } from "~/services/user.services"
 import { envConfig } from "~/utils/config"
