@@ -202,6 +202,28 @@ class ProductServices {
           }
         },
         {
+          $lookup: {
+            from: "specification",
+            localField: "specifications",
+            foreignField: "_id",
+            as: "specifications"
+          }
+        },
+        {
+          $addFields: {
+            specifications: {
+              $map: {
+                input: "$specifications",
+                as: "specification",
+                in: {
+                  name: "$$specification.name",
+                  value: "$$specification.value"
+                }
+              }
+            }
+          }
+        },
+        {
           $facet: {
             // chạy song song 1 lần nhiều pipe // $match là dùng chung giữa 2 pipe này
             data: [
@@ -211,7 +233,8 @@ class ProductServices {
                   name: 1,
                   price: 1,
                   discount: 1,
-                  banner: 1
+                  banner: 1,
+                  specifications: 1
                 }
               },
               { $limit: 10 } // chỉ lấy 10 gợi ý đầu tiên

@@ -323,6 +323,10 @@ export const initialSocket = (httpSocket: ServerHttp) => {
 
         getOnlineAdminIds().forEach((adminIds) => {
           emitToUser(adminIds, "reload_ticket_list")
+
+          if (data.files && data.files.length > 0) {
+            emitToUser(adminIds, "reload_ticket_images")
+          }
         })
       } catch (error) {
         console.error("send_message error", error)
