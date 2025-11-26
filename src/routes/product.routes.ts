@@ -1,5 +1,6 @@
 import { Router } from "express"
 import {
+  getAllProductController,
   getProductDetailController,
   getProductRelatedController,
   getSearchProductController
@@ -20,6 +21,13 @@ const productRoute = Router()
  * Method: GET
  */
 productRoute.get("/", wrapRequestHandler(getSearchProductController))
+
+/**
+ * Description: Get search product
+ * Path: /search
+ * Method: GET
+ */
+productRoute.get("/all", wrapRequestHandler(getAllProductController))
 
 /**
  * Description: Get product related

@@ -88,6 +88,11 @@ export type ConditionQuery = {
   brand?: string
   category?: string
   price?: { $gte?: number; $lt?: number }
+  other?: string
+  capacity_ram?: string
+  type_ram?: string
+  capacity_hdd?: string
+  capacity_sdd?: string
 }
 
 export type specificationType = {
@@ -117,4 +122,11 @@ export type GetCollectionQuery = {
   cpu?: string
   ram?: string
   ssd?: string
+  resolution?: string
+  type_screen?: string
+  screen_panel?: string
+  layout?: string
+  led?: string
+  color?: string
+  type_connect?: string
 }

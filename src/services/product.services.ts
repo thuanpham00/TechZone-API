@@ -202,6 +202,53 @@ class ProductServices {
           }
         },
         {
+          $facet: {
+            // chạy song song 1 lần nhiều pipe // $match là dùng chung giữa 2 pipe này
+            data: [
+              {
+                $project: {
+                  _id: 1,
+                  name: 1,
+                  price: 1,
+                  discount: 1,
+                  banner: 1
+                }
+              },
+              { $limit: 10 } // chỉ lấy 10 gợi ý đầu tiên
+            ],
+            total: [{ $count: "total" }]
+          }
+        }
+      ])
+      .toArray()
+
+    return result[0]
+  }
+
+  async getAllProduct() {
+    const result = await databaseServices.product
+      .aggregate([
+        {
+          $lookup: {
+            from: "category",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+            pipeline: [
+              {
+                $project: {
+                  name: 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          $unwind: {
+            path: "$category"
+          }
+        },
+        {
           $lookup: {
             from: "specification",
             localField: "specifications",
@@ -234,10 +281,10 @@ class ProductServices {
                   price: 1,
                   discount: 1,
                   banner: 1,
-                  specifications: 1
+                  specifications: 1,
+                  category: 1
                 }
-              },
-              { $limit: 10 } // chỉ lấy 10 gợi ý đầu tiên
+              }
             ],
             total: [{ $count: "total" }]
           }

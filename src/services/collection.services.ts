@@ -72,7 +72,7 @@ class CollectionServices {
     }
   }
 
-  private async addSpecificationFilters(query: GetCollectionQuery, specConditions: any[]) {
+  private async addSpecificationLaptopFilters(query: GetCollectionQuery, specConditions: any[]) {
     if (query.screen_size) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
@@ -116,6 +116,124 @@ class CollectionServices {
     if (query.ssd) {
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.ssd}`, $options: "i" }, name: "Ổ cứng" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+  }
+
+  private async addSpecificationScreenFilters(query: GetCollectionQuery, specConditions: any[]) {
+    if (query.resolution) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.resolution, name: "Độ phân giải" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (query.type_screen) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.type_screen, name: "Kiểu màn hình" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (query.screen_panel) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.screen_panel, name: "Tấm nền" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (query.screen_size) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.screen_size, name: "Kích thước" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+  }
+
+  private async addSpecificationKeyboardFilters(query: GetCollectionQuery, specConditions: any[]) {
+    if (query.layout) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.layout, name: "Layout" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (query.led) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.led, name: "Led" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+  }
+
+  private async addSpecificationMouseFilters(query: GetCollectionQuery, specConditions: any[]) {
+    if (query.color) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.color, name: "Màu sắc" })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (res.length) {
+        specConditions.push({
+          specifications: { $in: res }
+        })
+      }
+    }
+
+    if (query.type_connect) {
+      // trả về các thông số kĩ thuật includes cái query.screen_size
+      const res = await databaseServices.specification
+        .find({ value: query.type_connect, name: "Kết nối" })
         .toArray()
         .then((res) => res.map((item) => item._id))
 
@@ -219,14 +337,166 @@ class CollectionServices {
   async getCollection(condition: ConditionQuery, slug: string, query: GetCollectionQuery) {
     const $match: any = {}
     const checkBanChay = slug.includes("ban-chay") // Check trước
-
+    let categoryId = null
+    let brandId = null
     if (condition.category) {
-      const categoryId = await databaseServices.category.findOne({ name: condition.category }).then((res) => res?._id)
+      categoryId = await databaseServices.category.findOne({ name: condition.category }).then((res) => res?._id)
       $match["category"] = categoryId
     }
     if (condition.brand) {
-      const brandId = await databaseServices.brand.findOne({ name: condition.brand }).then((res) => res?._id)
+      brandId = await databaseServices.brand.findOne({ name: condition.brand }).then((res) => res?._id)
       $match["brand"] = brandId
+    }
+
+    if (condition.other) {
+      const specId = await databaseServices.specification
+        .findOne({ name: "Kiểu tai nghe", value: condition.other, category_id: categoryId as ObjectId }) // ràng buộc category_id để tránh nhầm lẫn // vì có 1 số category có cùng tên specification
+        .then((res) => res?._id)
+      $match["specifications"] = specId
+    }
+
+    if (condition.capacity_ram) {
+      const specId = await databaseServices.specification
+        .findOne({ name: "Dung lượng", value: condition.capacity_ram, category_id: categoryId as ObjectId })
+        .then((res) => res?._id)
+      $match["specifications"] = specId
+      console.log(specId)
+    }
+
+    if (condition.type_ram) {
+      const specId = await databaseServices.specification
+        .findOne({ name: "Loại RAM", value: condition.type_ram, category_id: categoryId as ObjectId })
+        .then((res) => res?._id)
+      $match["specifications"] = specId
+    }
+
+    if (condition.capacity_hdd) {
+      if (condition.capacity_hdd === "larger than 2TB") {
+        const specIds = await databaseServices.specification
+          .find({ name: "Dung lượng", value: { $regex: `TB`, $options: "i" }, category_id: categoryId as ObjectId })
+          .toArray()
+          .then((res) =>
+            res
+              .filter((item) => {
+                const valueNumber = parseFloat((item.value as string).replace("TB", "").trim())
+                return valueNumber > 2
+              })
+              .map((item) => item._id)
+          )
+        $match["specifications"] = { $in: specIds }
+      } else {
+        const specId = await databaseServices.specification
+          .findOne({ name: "Dung lượng", value: condition.capacity_hdd, category_id: categoryId as ObjectId })
+          .then((res) => res?._id)
+        $match["specifications"] = specId
+      }
+    }
+
+    if (condition.capacity_sdd) {
+      if (condition.capacity_sdd === "120-128GB") {
+        const specIds = await databaseServices.specification
+          .find({
+            name: "Dung lượng",
+            value: { $regex: `GB`, $options: "i" },
+            category_id: categoryId as ObjectId
+          })
+          .toArray()
+          .then((res) =>
+            res
+              .filter((item) => {
+                const valueNumber = parseFloat((item.value as string).replace("GB", "").trim())
+                return valueNumber <= 128
+              })
+              .map((item) => item._id)
+          )
+        $match["specifications"] = { $in: specIds }
+      } else if (condition.capacity_sdd === "250-256GB") {
+        const specIds = await databaseServices.specification
+          .find({
+            name: "Dung lượng",
+            value: { $regex: `GB`, $options: "i" },
+            category_id: categoryId as ObjectId
+          })
+          .toArray()
+          .then((res) =>
+            res
+              .filter((item) => {
+                const valueNumber = parseFloat((item.value as string).replace("GB", "").trim())
+                return valueNumber > 128 && valueNumber <= 256
+              })
+              .map((item) => item._id)
+          )
+        $match["specifications"] = { $in: specIds }
+      } else if (condition.capacity_sdd === "480-512GB") {
+        const specIds = await databaseServices.specification
+          .find({
+            name: "Dung lượng",
+            value: { $regex: `GB`, $options: "i" },
+            category_id: categoryId as ObjectId
+          })
+          .toArray()
+          .then((res) =>
+            res
+              .filter((item) => {
+                const valueNumber = parseFloat((item.value as string).replace("GB", "").trim())
+                return valueNumber > 256 && valueNumber <= 512
+              })
+              .map((item) => item._id)
+          )
+        $match["specifications"] = { $in: specIds }
+      } else if (condition.capacity_sdd === "960-1TB") {
+        // Lấy tất cả spec "Dung lượng" trong category rồi chuyển về số GB để lọc chính xác
+        const specs = await databaseServices.specification
+          .find({
+            name: "Dung lượng",
+            category_id: categoryId as ObjectId
+          })
+          .toArray()
+
+        // trả về mảng các giá trị (GB) tìm được trong chuỗi (hỗ trợ "GB","G","TB","T")
+        const parseAllToGB = (val: string) => {
+          if (!val) return []
+          const s = String(val).replace(/[()]/g, " ").toLowerCase()
+          // match tất cả số kèm unit trong chuỗi
+          const matches = Array.from(s.matchAll(/([\d.,]+)\s*(tb|t|gb|g)\b/gi))
+          return matches
+            .map((m) => {
+              const raw = (m[1] || "").replace(/,/g, ".")
+              const n = parseFloat(raw)
+              if (!Number.isFinite(n)) return NaN
+              const unit = (m[2] || "").toLowerCase()
+              return unit === "tb" || unit === "t" ? n * 1024 : n
+            })
+            .filter((x) => !isNaN(x))
+        }
+
+        const specIds = specs
+          .filter((item) => {
+            const gbs = parseAllToGB(item.value as string)
+            // nếu bất kỳ giá trị nào trong chuỗi nằm trong khoảng 960 - 1024 => giữ
+            return gbs.some((gb) => gb >= 960 && gb <= 1024)
+          })
+          .map((item) => item._id)
+
+        $match["specifications"] = { $in: specIds }
+      } else if (condition.capacity_sdd === "larger than 2TB") {
+        const specIds = await databaseServices.specification
+          .find({
+            name: "Dung lượng",
+            value: { $regex: `TB`, $options: "i" },
+            category_id: categoryId as ObjectId
+          })
+          .toArray()
+          .then((res) =>
+            res
+              .filter((item) => {
+                const valueNumber = parseFloat((item.value as string).replace("TB", "").trim())
+                return valueNumber >= 2
+              })
+              .map((item) => item._id)
+          )
+        $match["specifications"] = { $in: specIds }
+      }
     }
 
     if (checkBanChay) {
@@ -260,7 +530,11 @@ class CollectionServices {
     }
 
     const specConditions: any[] = []
-    await this.addSpecificationFilters(query, specConditions)
+    await this.addSpecificationLaptopFilters(query, specConditions)
+    await this.addSpecificationScreenFilters(query, specConditions)
+    await this.addSpecificationKeyboardFilters(query, specConditions)
+    await this.addSpecificationMouseFilters(query, specConditions)
+
     if (specConditions.length > 0) {
       $match["$and"] = ($match["$and"] || []).concat(specConditions)
     }

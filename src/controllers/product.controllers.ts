@@ -27,3 +27,11 @@ export const getSearchProductController = async (req: Request, res: Response, ne
     result
   })
 }
+
+export const getAllProductController = async (req: Request, res: Response, next: NextFunction) => {
+  const result = await productServices.getAllProduct()
+  res.json({
+    message: ProductMessage.GET_ALL_PRODUCT,
+    result
+  })
+}

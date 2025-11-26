@@ -123,6 +123,22 @@ class TicketServices {
     ])
   }
 
+  async updateStatusCloseTicket(idTicket: string, assigned_to: string) {
+    await Promise.all([
+      databaseServices.tickets.updateOne(
+        { _id: new ObjectId(idTicket), assigned_to: new ObjectId(assigned_to) },
+        {
+          $set: {
+            status: TicketStatus.CLOSED,
+            closed_at: new Date(),
+            assigned_to: null
+          },
+          $currentDate: { updated_at: true }
+        }
+      )
+    ])
+  }
+
   async getTicketMessagesAdminService(ticketId: string, limit: number, page: number) {
     // lấy tất cả tin nhắn (TicketMessage) thuộc Ticket có ID = ticketId
     const [conversations, total] = await Promise.all([
@@ -146,6 +162,7 @@ class TicketServices {
     const findTicketForUser = await databaseServices.tickets
       .findOne({ customer_id: new ObjectId(userId) })
       .then((ticket) => ticket?._id)
+    console.log(findTicketForUser)
     const [conversations, total, ticket] = await Promise.all([
       databaseServices.ticketMessages
         .find({ ticket_id: new ObjectId(findTicketForUser) })
@@ -181,11 +198,13 @@ class TicketServices {
           },
           {
             $project: {
-              assigned_to: 1
+              assigned_to: 1,
+              unread_count_customer: 1
             }
           }
         ])
-        .toArray()
+        .toArray(),
+      this.updateReadClientMessagesService(findTicketForUser!.toString(), userId)
     ])
 
     return {
@@ -195,7 +214,7 @@ class TicketServices {
     }
   }
 
-  async updateReadMessagesService(ticketId: string, assignedTo: string, userIdAdmin: string) {
+  async updateReadAdminMessagesService(ticketId: string, assignedTo: string, userIdAdmin: string) {
     if (userIdAdmin !== assignedTo) {
       throw new ErrorWithStatus({
         message: "You are not assigned to this ticket",
@@ -217,7 +236,38 @@ class TicketServices {
       ),
       databaseServices.ticketMessages.updateMany(
         {
-          ticket_id: new ObjectId(ticketId)
+          ticket_id: new ObjectId(ticketId),
+          sender_type: "customer" // chi cap nhat nhung tin nhan do user gui
+        },
+        {
+          $set: {
+            is_read: true,
+            read_at: new Date()
+          },
+          $currentDate: { updated_at: true }
+        }
+      )
+    ])
+  }
+
+  async updateReadClientMessagesService(ticketId: string, userIdClient: string) {
+    Promise.all([
+      databaseServices.tickets.updateOne(
+        {
+          _id: new ObjectId(ticketId),
+          customer_id: new ObjectId(userIdClient)
+        },
+        {
+          $set: {
+            unread_count_customer: 0
+          },
+          $currentDate: { updated_at: true }
+        }
+      ),
+      databaseServices.ticketMessages.updateMany(
+        {
+          ticket_id: new ObjectId(ticketId),
+          sender_type: "staff" // chi cap nhat nhung tin nhan do admin gui
         },
         {
           $set: {

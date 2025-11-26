@@ -5,7 +5,7 @@ import { TokenPayload } from "./models/requests/user.requests"
 import { TicketStatus, UserVerifyStatus } from "./constant/enum"
 import databaseServices from "./services/database.services"
 import { ObjectId, WithId } from "mongodb"
-import { ImageAttachment, Ticket, TicketType } from "./models/schema/ticket_message.schema"
+import { Ticket, TicketType } from "./models/schema/ticket_message.schema"
 import { User } from "./models/schema/users.schema"
 import ticketServices from "./services/ticket.services"
 import fs from "fs"
@@ -135,7 +135,7 @@ export const initialSocket = (httpSocket: ServerHttp) => {
           databaseServices.users.findOne({ _id: new ObjectId(sender_id) }),
           databaseServices.tickets.findOne({
             customer_id: new ObjectId(sender_id),
-            status: { $in: [TicketStatus.PENDING, TicketStatus.ASSIGNED] }
+            status: { $in: [TicketStatus.PENDING, TicketStatus.ASSIGNED, TicketStatus.CLOSED] }
           })
         ])
 
@@ -184,6 +184,31 @@ export const initialSocket = (httpSocket: ServerHttp) => {
               │→ Emit tới TẤT CẢ admin
                -> Nhưng chỉ admin được assign_to mới reply lại được
              */
+            if (findTicket.unread_count_customer > 0) {
+              await ticketServices.updateReadClientMessagesService(findTicket._id.toString(), user_id)
+            }
+
+            getOnlineAdminIds().forEach((adminIds) => {
+              emitToUser(adminIds, "received_message", { payload: ticketMessage })
+              emitToUser(adminIds, "reload_ticket_list")
+              if (data.files && data.files.length > 0) {
+                emitToUser(adminIds, "reload_ticket_images")
+              }
+            })
+          } else if (findTicket?.status === TicketStatus.CLOSED) {
+            // ticker đã đóng rồi thì mở lại
+            await databaseServices.tickets.updateOne(
+              {
+                _id: findTicket._id
+              },
+              {
+                $set: {
+                  status: TicketStatus.PENDING
+                },
+                $currentDate: { updated_at: true }
+              }
+            )
+
             getOnlineAdminIds().forEach((adminIds) => {
               emitToUser(adminIds, "received_message", { payload: ticketMessage })
               emitToUser(adminIds, "reload_ticket_list")
@@ -291,7 +316,7 @@ export const initialSocket = (httpSocket: ServerHttp) => {
           attachments = upload
         }
 
-        const [ticketMessage] = await Promise.all([
+        const [ticketMessage, ticketCurrent] = await Promise.all([
           ticketServices.insertMessageTicket({
             ticketId: findTicket._id.toString(),
             sender_id: sender_id,
@@ -300,6 +325,9 @@ export const initialSocket = (httpSocket: ServerHttp) => {
             type: type,
             sender_type: sender_type,
             attachments
+          }),
+          databaseServices.tickets.findOne({
+            _id: new ObjectId(ticket_id)
           }),
           databaseServices.tickets.updateOne(
             {
@@ -319,7 +347,22 @@ export const initialSocket = (httpSocket: ServerHttp) => {
           )
         ])
 
-        emitToUser(findTicket.customer_id.toString(), "received_message", { payload: ticketMessage })
+        if (!ticketCurrent) {
+          return socket.emit("error", { message: "Ticket not found" })
+        }
+
+        if (ticketCurrent.unread_count_staff > 0) {
+          await ticketServices.updateReadAdminMessagesService(
+            ticket_id,
+            (ticketCurrent.assigned_to as ObjectId).toString(),
+            user_id
+          )
+        }
+
+        emitToUser(findTicket.customer_id.toString(), "received_message", {
+          payload: ticketMessage,
+          unreadCountCustomer: ticketCurrent.unread_count_customer + 1
+        })
 
         getOnlineAdminIds().forEach((adminIds) => {
           emitToUser(adminIds, "reload_ticket_list")
@@ -347,7 +390,7 @@ export const initialSocket = (httpSocket: ServerHttp) => {
 
     socket.on("admin:read-message-from-assigned", async (data) => {
       const { ticket_id, assigned_to } = data.payload
-      await ticketServices.updateReadMessagesService(ticket_id, assigned_to, user_id)
+      await ticketServices.updateReadAdminMessagesService(ticket_id, assigned_to, user_id)
 
       getOnlineAdminIds().forEach((adminIds) => {
         emitToUser(adminIds, "reload_ticket_list")
@@ -362,11 +405,36 @@ export const initialSocket = (httpSocket: ServerHttp) => {
         .then((res) => res?.customer_id)
 
       if (findCustomerId) {
-        emitToUser(findCustomerId.toString(), "reload_reservation")
+        emitToUser(findCustomerId.toString(), "reload_conversation")
       }
       getOnlineAdminIds().forEach((adminIds) => {
         emitToUser(adminIds, "reload_ticket_list")
       })
+    })
+
+    socket.on("admin:close_ticket", async (data) => {
+      const { ticket_id, assigned_to } = data.payload
+      await ticketServices.updateStatusCloseTicket(ticket_id, assigned_to)
+      const findCustomerId = await databaseServices.tickets
+        .findOne({ _id: new ObjectId(ticket_id) })
+        .then((res) => res?.customer_id)
+
+      if (findCustomerId) {
+        emitToUser(findCustomerId.toString(), "reload_conversation")
+      }
+      getOnlineAdminIds().forEach((adminIds) => {
+        emitToUser(adminIds, "reload_ticket_list")
+      })
+    })
+
+    socket.on("client:read_messages", async (data) => {
+      const { user_id } = data.payload
+      const findTicket = await databaseServices.tickets
+        .findOne({ customer_id: new ObjectId(user_id) })
+        .then((ticket) => ticket?._id.toString())
+      if (!findTicket) return
+
+      await ticketServices.updateReadClientMessagesService(findTicket, user_id)
     })
 
     // sự kiện mặc định của socket server - nếu ngắt kết nối (client ngắt, đóng tab) -> nó chạy

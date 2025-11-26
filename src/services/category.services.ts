@@ -68,7 +68,8 @@ class CategoryClientServices {
             _id: 0,
             slug: "$sections.items.slug",
             banner: "$sections.items.banner",
-            type_filter: "$sections.items.type_filter"
+            type_filter: "$sections.items.type_filter",
+            name: "$sections.items.name"
           }
         }
       ])

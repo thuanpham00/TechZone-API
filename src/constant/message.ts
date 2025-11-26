@@ -59,6 +59,7 @@ export const UserMessage = {
 } as const
 
 export const ProductMessage = {
+  GET_ALL_PRODUCT: "Lấy tất cả sản phẩm thành công!",
   PRODUCT_ID_IS_INVALID: "Id sản phẩm không hợp lệ!",
   NAME_IS_EXISTS: "Tên sản phẩm đã tồn tại!",
 
@@ -257,7 +258,8 @@ export const ConversationMessage = {
   UPDATE_STATUS_TICKET_IS_SUCCESS: "Tiếp nhận hỗ trợ thành công",
 
   UPDATE_READ_MESSAGES_IS_SUCCESS: "Cập nhật trạng thái tin nhắn đã đọc thành công",
-  GET_TICKET_IMAGES_SUCCESS: "Lấy hình ảnh của ticket thành công"
+  GET_TICKET_IMAGES_SUCCESS: "Lấy hình ảnh của ticket thành công",
+  GET_UNREAD_COUNT_MESSAGES_SUCCESS: "Lấy số tin nhắn chưa đọc thành công"
 }
 
 export const CategoryMessage = {

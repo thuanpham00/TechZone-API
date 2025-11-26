@@ -281,7 +281,7 @@ adminRouter.put(
   checkRole(),
   checkIdValidator,
   updateCategoryValidator,
-  filterMiddleware<UpdateCategoryBodyReq>(["name", "is_active"]),
+  filterMiddleware<UpdateCategoryBodyReq>(["name", "is_active", "desc"]),
   checkCategoryValidator,
   wrapRequestHandler(updateCategoryDetailController)
 )

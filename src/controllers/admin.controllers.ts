@@ -221,8 +221,8 @@ export const createCategoryController = async (
   req: Request<ParamsDictionary, any, UpdateCategoryBodyReq>,
   res: Response
 ) => {
-  const { name, is_active } = req.body
-  const result = await adminServices.createCategory(name, is_active)
+  const { name, is_active, desc } = req.body
+  const result = await adminServices.createCategory(name, is_active, desc)
 
   res.json({
     message: AdminMessage.CREATE_CATEGORY_DETAIL,
@@ -350,7 +350,8 @@ export const updateLinkCategoryMenuController = async (req: Request, res: Respon
   const name = fields.name?.[0] as string
   const slug = fields.slug?.[0] as string
   const type_filter = fields.type_filter?.[0] as string
-  await adminServices.updateLinkCategoryMenu(id, id_category, name, slug, type_filter, files[0])
+  const urlBannerDelete = fields.urlBannerDelete?.[0] as string
+  await adminServices.updateLinkCategoryMenu(id, id_category, name, slug, type_filter, files[0], urlBannerDelete)
   res.json({
     message: AdminMessage.UPDATE_CATEGORY_LINK
   })

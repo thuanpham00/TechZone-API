@@ -9,65 +9,7 @@ import databaseServices from "~/services/database.services"
 import { ObjectId } from "mongodb"
 import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
-
-export const slugConditionMap = {
-  laptop: { category: "Laptop" },
-  "laptop-asus-hoc-tap-va-lam-viec": { brand: "ASUS", category: "Laptop" },
-  "laptop-acer-hoc-tap-va-lam-viec": { brand: "ACER", category: "Laptop" },
-  "laptop-msi-hoc-tap-va-lam-viec": { brand: "MSI", category: "Laptop" },
-  "laptop-lenovo-hoc-tap-va-lam-viec": { brand: "LENOVO", category: "Laptop" },
-  "laptop-duoi-15-trieu": { price: { $lt: 15000000 }, category: "Laptop" },
-  "laptop-tu-15-den-20-trieu": { price: { $gte: 15000000, $lt: 20000000 }, category: "Laptop" },
-  "laptop-tren-20-trieu": { price: { $gte: 20000000 }, category: "Laptop" },
-  "top-10-laptop-ban-chay": { category: "Laptop" },
-
-  "laptop-gaming": { category: "Laptop Gaming" },
-  "top-10-laptop-gaming-ban-chay": { category: "Laptop Gaming" },
-  "laptop-gaming-asus": { category: "Laptop Gaming", brand: "ASUS" },
-  "laptop-gaming-acer": { category: "Laptop Gaming", brand: "ACER" },
-  "laptop-gaming-msi": { category: "Laptop Gaming", brand: "MSI" },
-  "laptop-gaming-lenovo": { category: "Laptop Gaming", brand: "LENOVO" },
-  "laptop-gaming-duoi-20-trieu": { price: { $lt: 20000000 }, category: "Laptop Gaming" },
-  "laptop-gaming-tu-20-den-25-trieu": { price: { $gte: 20000000, $lt: 25000000 }, category: "Laptop Gaming" },
-  "laptop-gaming-tren-25-trieu": { price: { $gte: 25000000 }, category: "Laptop Gaming" },
-
-  "pc-gvn": { category: "PC GVN" },
-  "pc-gvn-rtx-5090": { category: "PC GVN", brand: "GVN" },
-  "pc-gvn-rtx-5080": { category: "PC GVN", brand: "GVN" },
-  "pc-gvn-rtx-5070Ti": { category: "PC GVN", brand: "GVN" },
-  "pc-gvn-rtx-5060Ti": { category: "PC GVN", brand: "GVN" },
-  "pc-gvn-rtx-5060": { category: "PC GVN", brand: "GVN" },
-  "pc-gvn-rtx-4060": { category: "PC GVN", brand: "GVN" },
-  "pc-gvn-rtx-3060": { category: "PC GVN", brand: "GVN" },
-  "top-10-pc-ban-chay": { category: "PC GVN" },
-
-  "man-hinh": { category: "Màn hình" },
-  "top-10-man-hinh-ban-chay": { category: "Màn hình" },
-  "man-hinh-samsung": { category: "Màn hình", brand: "SAMSUNG" },
-  "man-hinh-asus": { category: "Màn hình", brand: "ASUS" },
-  "man-hinh-dell": { category: "Màn hình", brand: "DELL" },
-  "man-hinh-viewsonic": { category: "Màn hình", brand: "VIEWSONIC" },
-  "man-hinh-acer": { category: "Màn hình", brand: "ACER" },
-  "man-hinh-lg": { category: "Màn hình", brand: "LG" },
-  "man-hinh-duoi-5-trieu": { price: { $lt: 5000000 }, category: "Màn hình" },
-  "man-hinh-tu-5-den-10-trieu": { price: { $gte: 5000000, $lt: 10000000 }, category: "Màn hình" },
-  "man-hinh-tu-10-den-20-trieu": { price: { $gte: 10000000, $lt: 20000000 }, category: "Màn hình" },
-  "man-hinh-tren-20-trieu": { price: { $gte: 20000000 }, category: "Màn hình" },
-
-  "ban-phim": { category: "Bàn phím" },
-  "ban-phim-akko": { category: "Bàn phím", brand: "AKKO" },
-  "ban-phim-aula": { category: "Bàn phím", brand: "AULA" },
-  "ban-phim-dareu": { category: "Bàn phím", brand: "DARE-U" },
-  "ban-phim-keychron": { category: "Bàn phím", brand: "KEYCHRON" },
-  "ban-phim-corsair": { category: "Bàn phím", brand: "CORSAIR" },
-  "ban-phim-asus": { category: "Bàn phím", brand: "ASUS" },
-  "ban-phim-logitech": { category: "Bàn phím", brand: "LOGITECH" },
-  "ban-phim-razer": { category: "Bàn phím", brand: "RAZER" },
-  "ban-phim-duoi-1-trieu": { price: { $lt: 1000000 }, category: "Bàn phím" },
-  "ban-phim-tu-1-den-2-trieu": { price: { $gte: 1000000, $lt: 2000000 }, category: "Bàn phím" },
-  "ban-phim-tu-2-den-3-trieu": { price: { $gte: 2000000, $lt: 3000000 }, category: "Bàn phím" },
-  "ban-phim-tren-3-trieu": { price: { $gte: 3000000 }, category: "Bàn phím" }
-}
+import { slugConditionMap } from "~/constant/slug"
 
 export const getFilterBaseOnCategory = async (req: Request, res: Response) => {
   const category = req.query.category
@@ -144,14 +86,207 @@ export const getFilterBaseOnCategory = async (req: Request, res: Response) => {
     })
     return
   } else if (category === "Màn hình") {
-    const [specs_resolution] = await Promise.all([
+    const resolutions = new Set<string>()
+    const type_screens = new Set<string>()
+    const screen_panel = new Set<string>()
+    const screen_size = new Set<string>()
+
+    const [specs_resolution, specs_type_screen, specs_screen_panel, specs_screen_size] = await Promise.all([
       databaseServices.specification
         .find({
           category_id: new ObjectId(findCategory?._id),
           name: "Độ phân giải"
         })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Kiểu màn hình"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Tấm nền"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Kích thước"
+        })
         .toArray()
     ])
+
+    specs_resolution.forEach((spec) => {
+      const value = spec.value.toString()
+      if (resolutions.has(value) === false) {
+        resolutions.add(value)
+      }
+    })
+    specs_type_screen.forEach((spec) => {
+      const value = spec.value.toString()
+      if (type_screens.has(value) === false) {
+        type_screens.add(value)
+      }
+    })
+    specs_screen_panel.forEach((spec) => {
+      const value = spec.value.toString()
+      if (screen_panel.has(value) === false) {
+        screen_panel.add(value)
+      }
+    })
+    specs_screen_size.forEach((spec) => {
+      const value = spec.value.toString()
+      if (screen_size.has(value) === false) {
+        screen_size.add(value)
+      }
+    })
+
+    res.json({
+      specs_resolution: Array.from(resolutions),
+      specs_type_screen: Array.from(type_screens),
+      specs_screen_panel: Array.from(screen_panel),
+      specs_screen_size: Array.from(screen_size)
+    })
+    return
+  } else if (category === "Bàn phím") {
+    const layouts = new Set<string>()
+    const leds = new Set<string>()
+
+    const [specs_layouts, specs_leds] = await Promise.all([
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+
+          name: "Layout"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Led"
+        })
+        .toArray()
+    ])
+
+    specs_layouts.forEach((spec) => {
+      const value = spec.value.toString()
+      if (layouts.has(value) === false) {
+        layouts.add(value)
+      }
+    })
+
+    specs_leds.forEach((spec) => {
+      const value = spec.value.toString()
+      if (leds.has(value) === false) {
+        leds.add(value)
+      }
+    })
+
+    res.json({
+      specs_layout: Array.from(layouts),
+      specs_led: Array.from(leds)
+    })
+    return
+  } else if (category === "Chuột") {
+    const colors = new Set<string>()
+    const connections = new Set<string>()
+    const [specs_colors, specs_connections] = await Promise.all([
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+
+          name: "Màu sắc"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Kết nối"
+        })
+        .toArray()
+    ])
+
+    specs_colors.forEach((spec) => {
+      const value = spec.value.toString()
+      if (colors.has(value) === false) {
+        colors.add(value)
+      }
+    })
+
+    specs_connections.forEach((spec) => {
+      const value = spec.value.toString()
+      if (connections.has(value) === false) {
+        connections.add(value)
+      }
+    })
+
+    res.json({
+      specs_color: Array.from(colors),
+      specs_type_connect: Array.from(connections)
+    })
+    return
+  } else if (category === "Tai nghe") {
+    const colors = new Set<string>()
+    const connections = new Set<string>()
+    const [specs_colors, specs_connections] = await Promise.all([
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+
+          name: "Màu sắc"
+        })
+        .toArray(),
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Kết nối"
+        })
+        .toArray()
+    ])
+
+    specs_colors.forEach((spec) => {
+      const value = spec.value.toString()
+      if (colors.has(value) === false) {
+        colors.add(value)
+      }
+    })
+
+    specs_connections.forEach((spec) => {
+      const value = spec.value.toString()
+      if (connections.has(value) === false) {
+        connections.add(value)
+      }
+    })
+
+    res.json({
+      specs_color: Array.from(colors),
+      specs_type_connect: Array.from(connections)
+    })
+    return
+  } else if (category === "RAM, SSD, HDD") {
+    const colors = new Set<string>()
+    const [specs_colors] = await Promise.all([
+      databaseServices.specification
+        .find({
+          category_id: new ObjectId(findCategory?._id),
+          name: "Màu sắc"
+        })
+        .toArray()
+    ])
+
+    specs_colors.forEach((spec) => {
+      const value = spec.value.toString()
+      if (colors.has(value) === false) {
+        colors.add(value)
+      }
+    })
+
+    res.json({
+      specs_color: Array.from(colors)
+    })
+    return
   }
 }
 

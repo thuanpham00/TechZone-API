@@ -619,8 +619,8 @@ class AdminServices {
     return result
   }
 
-  async createCategory(name: string, is_active: Boolean) {
-    const result = await databaseServices.category.insertOne(new Category({ name, is_active }))
+  async createCategory(name: string, is_active: Boolean, desc: string) {
+    const result = await databaseServices.category.insertOne(new Category({ name, is_active, desc }))
     return result
   }
 
@@ -853,7 +853,8 @@ class AdminServices {
     name: string,
     slug: string,
     type_filter: string,
-    banner?: File
+    banner?: File,
+    urlBannerDelete?: string
   ) {
     const itemId = new ObjectId(idLink)
     const payload: any = {
@@ -897,6 +898,32 @@ class AdminServices {
 
     if (payload.banner) {
       updateFields["sections.$[].items.$[item].banner"] = payload.banner
+    }
+
+    // xóa ảnh cũ trên R2 nếu có
+    if (urlBannerDelete) {
+      // verify banner thuộc item này
+      const found = await databaseServices.category_menu
+        .aggregate([
+          { $match: { "sections.items.id_item": itemId } },
+          { $unwind: "$sections" },
+          { $unwind: "$sections.items" },
+          { $match: { "sections.items.id_item": itemId } },
+          { $project: { _id: 0, banner: "$sections.items.banner" } }
+        ])
+        .toArray()
+
+      const currentBanner = found[0]?.banner as string | undefined
+
+      if (!currentBanner) {
+        throw new Error("Item has no banner to delete")
+      }
+      if (currentBanner !== urlBannerDelete) {
+        throw new Error("Banner URL mismatch")
+      }
+
+      await deleteFromR2ByUrl(urlBannerDelete)
+      updateFields["sections.$[].items.$[item].banner"] = ""
     }
 
     await databaseServices.category_menu.updateOne(
@@ -1494,7 +1521,7 @@ class AdminServices {
           price: payload.price,
           discount: payload.discount,
           priceAfterDiscount: payload.priceAfterDiscount,
-          isFeatured: payload.isFeatured,
+          isFeatured: payload.isFeatured === "undefined" ? "false" : payload.isFeatured,
           description: payload.description,
           banner: {
             id: new ObjectId(),

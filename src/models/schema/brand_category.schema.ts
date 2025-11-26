@@ -4,6 +4,7 @@ interface CategoryType {
   name: string
   is_active: Boolean
   brand_ids?: ObjectId[]
+  desc?: string
   created_at?: Date
   updated_at?: Date
 }
@@ -13,6 +14,7 @@ export class Category {
   name: string
   is_active: Boolean
   brand_ids: ObjectId[]
+  desc: string
   created_at: Date
   updated_at: Date
   constructor(category: CategoryType) {
@@ -20,6 +22,7 @@ export class Category {
     this._id = category._id || new ObjectId()
     this.name = category.name
     this.is_active = category.is_active
+    this.desc = category.desc || ""
     this.brand_ids = category.brand_ids || [] // lúc mới tạo không cần thiết phải có thương hiệu
     this.created_at = category.created_at || date
     this.updated_at = category.updated_at || date
