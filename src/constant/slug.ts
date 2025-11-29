@@ -109,5 +109,18 @@ export const slugConditionMap = {
   "ssd-kingston": { category: "SSD", brand: "KingSton" },
   "ssd-corsair": { category: "SSD", brand: "CORSAIR" },
   "ssd-pny": { category: "SSD", brand: "PNY" },
-  "ssd-all-brand": { category: "SSD" }
+  "ssd-all-brand": { category: "SSD" },
+
+  "loa-edifier": { category: "Loa", brand: "Edifier" },
+  "loa-razer": { category: "Loa", brand: "RAZER" },
+  "loa-soundmax": { category: "Loa", brand: "SoundMax" },
+  "loa-logitech": { category: "Loa", brand: "LOGITECH" },
+  "loa-vi-tinh": { category: "Loa", type_loudspeaker: "Vi tính" },
+  "loa-bluetooth": { category: "Loa", type_loudspeaker: "Bluetooth" },
+  "loa-soundbar": { category: "Loa", type_loudspeaker: "Soundbar" },
+  "loa-mini": { category: "Loa", type_loudspeaker: "Mini" },
+  "loa-duoi-1-trieu": { price: { $lt: 1000000 }, category: "Loa" },
+  "loa-tu-1-den-3-trieu": { price: { $gte: 1000000, $lt: 3000000 }, category: "Loa" },
+  "loa-tren-3-trieu": { price: { $gte: 3000000 }, category: "Loa" },
+  loa: { category: "Loa" }
 }

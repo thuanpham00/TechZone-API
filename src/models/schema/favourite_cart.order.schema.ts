@@ -92,6 +92,7 @@ interface OrderType {
     updated_at: Date
   }[]
   note?: string
+  isReview?: boolean
   created_at?: Date
   updated_at?: Date
 }
@@ -119,6 +120,7 @@ export class Order {
     updated_at: Date
   }[]
   note: string
+  isReview: boolean
   created_at: Date
   updated_at: Date
   constructor(order: OrderType) {
@@ -142,6 +144,7 @@ export class Order {
     this.type_order = order.type_order || TypeOrder.vnpay
     this.status_history = order.status_history || []
     this.note = order.note || ""
+    this.isReview = order.isReview || false
     this.created_at = order.created_at || date
     this.updated_at = order.updated_at || date
   }

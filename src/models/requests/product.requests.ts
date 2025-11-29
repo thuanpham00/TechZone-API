@@ -93,6 +93,7 @@ export type ConditionQuery = {
   type_ram?: string
   capacity_hdd?: string
   capacity_sdd?: string
+  type_loudspeaker?: string
 }
 
 export type specificationType = {

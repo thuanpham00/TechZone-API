@@ -360,7 +360,6 @@ class CollectionServices {
         .findOne({ name: "Dung lượng", value: condition.capacity_ram, category_id: categoryId as ObjectId })
         .then((res) => res?._id)
       $match["specifications"] = specId
-      console.log(specId)
     }
 
     if (condition.type_ram) {
@@ -496,6 +495,31 @@ class CollectionServices {
               .map((item) => item._id)
           )
         $match["specifications"] = { $in: specIds }
+      }
+    }
+
+    if (condition.type_loudspeaker) {
+      const term = String(condition.type_loudspeaker).trim()
+      // tách theo / , ; hoặc dấu cách kèm / ; (ví dụ "Bluetooth / Mini")
+      const tokens = term
+        .split(/\s*[\/,;]\s*/)
+        .map((t) => t.trim())
+        .filter(Boolean)
+      // escape regex
+      const escapeReg = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      const orClauses = tokens.map((t) => ({ value: new RegExp(`(?:^|\\W)${escapeReg(t)}(?:\\W|$)`, "i") }))
+
+      const ids = await databaseServices.specification
+        .find({
+          name: "Kiểu loa",
+          category_id: categoryId as ObjectId,
+          $or: orClauses
+        })
+        .toArray()
+        .then((res) => res.map((item) => item._id))
+
+      if (ids.length) {
+        $match["specifications"] = { $in: ids }
       }
     }
 

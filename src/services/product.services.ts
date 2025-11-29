@@ -78,6 +78,50 @@ class ProductServices {
                 }
               }
             }
+          },
+          {
+            $lookup: {
+              from: "reviews",
+              localField: "reviews",
+              foreignField: "_id",
+              as: "reviews",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    title: 1,
+                    rating: 1,
+                    comment: 1,
+                    created_at: 1,
+                    images: 1,
+                    userId: 1
+                  }
+                },
+                {
+                  $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "userId",
+                    pipeline: [
+                      {
+                        $project: {
+                          _id: 1,
+                          name: 1,
+                          avatar: 1
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  $unwind: {
+                    path: "$userId",
+                    preserveNullAndEmptyArrays: true
+                  }
+                }
+              ]
+            }
           }
         ])
         .toArray(),

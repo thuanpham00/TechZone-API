@@ -1,9 +1,12 @@
-import { OrderMessage } from "~/constant/message"
+import { OrderMessage, UserMessage } from "~/constant/message"
 import { CreateOrderBodyReq } from "~/models/requests/product.requests"
 import databaseServices from "./database.services"
 import { Order } from "~/models/schema/favourite_cart.order.schema"
+import Review from "~/models/schema/review.schema"
 import { ObjectId } from "mongodb"
 import { OrderStatus, TypeOrder } from "~/constant/enum"
+import { mediaServices } from "./medias.services"
+import { pipeline } from "stream"
 
 class OrderServices {
   async getOrder(user_id: string) {
@@ -14,7 +17,7 @@ class OrderServices {
         total: 0
       }
     }
-    const result = await databaseServices.order
+    let result = await databaseServices.order
       .aggregate([
         {
           $match: {
@@ -29,6 +32,46 @@ class OrderServices {
       ])
       .toArray()
     const total = result.length
+    const orderIdReview = result.filter((order) => order.isReview === true).map((order) => order._id.toString())
+    const listReviewOrders = await Promise.all(
+      orderIdReview.map(async (id) => {
+        const reviews = await databaseServices.reviews
+          .find(
+            { orderId: new ObjectId(id) },
+            {
+              projection: { productId: 1, orderId: 1, rating: 1, comment: 1, title: 1, images: 1, created_at: 1 }
+            }
+          )
+          .toArray()
+        return await Promise.all(
+          reviews.map(async (r) => {
+            const product = await databaseServices.product.findOne(
+              { _id: r.productId },
+              {
+                projection: { name: 1, banner: 1 }
+              }
+            )
+            return {
+              ...r,
+              productId: product
+            }
+          })
+        )
+      })
+    )
+    let list: any = []
+    listReviewOrders.map((reviewOrder, index) => {
+      list = [...list, ...reviewOrder] // gộp các mảng con thành một mảng lớn
+    })
+    list.forEach((item: any) => {
+      const findOrder = result.findIndex((ord) => ord._id.toString() === item.orderId.toString())
+      if (findOrder !== -1) {
+        if (!result[findOrder].reviews) {
+          result[findOrder].reviews = []
+        }
+        result[findOrder].reviews.push(item)
+      }
+    })
     return {
       result,
       total
@@ -106,6 +149,106 @@ class OrderServices {
     return {
       message: status === 0 ? OrderMessage.CANCEL_ORDER_IS_SUCCESS : OrderMessage.RECEIVE_ORDER_IS_SUCCESS
     }
+  }
+
+  async addReviewToOrder(
+    orderId: string,
+    userId: string,
+    reviews: { product_id: string; rating: number; comment: string; title: string; images: any[] }[]
+  ) {
+    await Promise.all(
+      reviews.map(async (r) => {
+        const { upload } = await mediaServices.uploadListImageReviewOrder(r.images, orderId)
+        const reviewId = new ObjectId()
+        await Promise.all([
+          databaseServices.reviews.insertOne(
+            new Review({
+              _id: reviewId,
+              productId: new ObjectId(r.product_id),
+              userId: new ObjectId(userId),
+              orderId: new ObjectId(orderId),
+              rating: Number(r.rating),
+              title: r.title,
+              comment: r.comment,
+              images: upload
+            })
+          ),
+          databaseServices.order.updateOne(
+            { _id: new ObjectId(orderId) },
+            {
+              $set: { isReview: true },
+              $currentDate: { updated_at: true }
+            }
+          )
+        ])
+        const findReviews = await databaseServices.reviews.find({ productId: new ObjectId(r.product_id) }).toArray()
+        const totalRating = findReviews.reduce((sum, review) => sum + review.rating, 0)
+        const averageRating = findReviews.length ? totalRating / findReviews.length : 0
+        const rounded = Math.round(averageRating * 10) / 10
+        databaseServices.product.updateOne(
+          { _id: new ObjectId(r.product_id) },
+          {
+            $addToSet: { reviews: reviewId },
+            $set: { averageRating: rounded },
+            $currentDate: { updated_at: true }
+          }
+        )
+      })
+    )
+
+    return {
+      message: UserMessage.ADD_REVIEW_IS_SUCCESS
+    }
+  }
+
+  async getOrderTopReview() {
+    const result = await databaseServices.reviews
+      .aggregate([
+        {
+          $match: {
+            rating: { $gte: 4 }
+          }
+        },
+        {
+          $lookup: {
+            from: "product",
+            localField: "productId",
+            foreignField: "_id",
+            as: "productId",
+            pipeline: [{ $project: { _id: 1, name: 1, discount: 1, price: 1, priceAfterDiscount: 1, banner: 1 } }]
+          }
+        },
+        {
+          $unwind: {
+            path: "$productId"
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "userId",
+            pipeline: [{ $project: { avatar: 1, _id: 1, name: 1 } }]
+          }
+        },
+        {
+          $unwind: {
+            path: "$userId"
+          }
+        },
+        {
+          $sort: {
+            created_at: -1 // Sắp xếp theo ngày tạo giảm dần
+          }
+        },
+        {
+          $limit: 10
+        }
+      ])
+      .toArray()
+
+    return result
   }
 }
 

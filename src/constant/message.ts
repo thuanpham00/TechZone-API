@@ -55,7 +55,9 @@ export const UserMessage = {
   UPDATE_PROFILE_IS_SUCCESS: "Cập nhật profile thành công!",
   EMAIL_NOT_VERIFY: "Email chưa xác thực!",
   REFRESH_TOKEN_IS_SUCCESS: "RefreshToken thành công!",
-  PERMISSION_DENIED: "Không có quyền truy cập!"
+  PERMISSION_DENIED: "Không có quyền truy cập!",
+
+  ADD_REVIEW_IS_SUCCESS: "Thêm đánh giá thành công!"
 } as const
 
 export const ProductMessage = {
@@ -129,7 +131,9 @@ export const OrderMessage = {
   CREATE_ORDER_IS_SUCCESS: "Tạo đơn hàng thành công!",
   GET_ORDER_IS_SUCCESS: "Lấy danh sách đơn hàng thành công!",
   CANCEL_ORDER_IS_SUCCESS: "Hủy đơn hàng thành công",
-  RECEIVE_ORDER_IS_SUCCESS: "Xác nhận giao hàng thành công"
+  RECEIVE_ORDER_IS_SUCCESS: "Xác nhận giao hàng thành công",
+
+  GET_TOP_REVIEW_ORDER_NEWEST_IS_SUCCESS: "Lấy top 10 đánh giá mới nhất và 4 sao trở lên thành công!"
 }
 
 export const Path = {

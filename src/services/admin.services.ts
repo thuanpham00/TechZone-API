@@ -2463,6 +2463,21 @@ class AdminServices {
 
     const pipeline: any[] = [
       { $match },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "user_id",
+          pipeline: [{ $project: { avatar: 1, _id: 1 } }]
+        }
+      },
+      {
+        $unwind: {
+          path: "$user_id",
+          preserveNullAndEmptyArrays: true
+        }
+      },
       { $sort: { created_at: sortBy === "new" ? -1 : 1, _id: 1 } },
       {
         $skip: limit && page ? limit * (page - 1) : 0
@@ -2489,6 +2504,57 @@ class AdminServices {
         .toArray()
     ])
 
+    if (type_filter === "completed") {
+      // nếu các đơn hoàn thành (đã nhận hàng) - thì mới xử lý review trả về
+      const orderIdReview = result.filter((ord) => ord.isReview === true).map((ord) => ord._id.toString())
+      const listReviewOrders = await Promise.all(
+        orderIdReview.map(async (id) => {
+          const reviews = await databaseServices.reviews
+            .find(
+              { orderId: new ObjectId(id) },
+              {
+                projection: {
+                  orderId: 1,
+                  productId: 1,
+                  rating: 1,
+                  comment: 1,
+                  title: 1,
+                  images: 1,
+                  created_at: 1
+                }
+              }
+            )
+            .toArray()
+          return await Promise.all(
+            reviews.map(async (r) => {
+              const product = await databaseServices.product.findOne(
+                { _id: r.productId },
+                {
+                  projection: { name: 1, banner: 1 }
+                }
+              )
+              return {
+                ...r,
+                productId: product
+              }
+            })
+          )
+        })
+      )
+      let list: any = []
+      listReviewOrders.map((reviewOrder, index) => {
+        list = [...list, ...reviewOrder] // gộp các mảng con thành một mảng lớn
+      })
+      list.forEach((item: any) => {
+        const findOrder = result.findIndex((ord) => ord._id.toString() === item.orderId.toString())
+        if (findOrder !== -1) {
+          if (!result[findOrder].reviews) {
+            result[findOrder].reviews = []
+          }
+          result[findOrder].reviews.push(item)
+        }
+      })
+    }
     return {
       result,
       limitRes: limit || 5,

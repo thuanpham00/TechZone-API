@@ -52,6 +52,7 @@ export const envConfig = {
   collection_vouchers: process.env.COLLECTION_VOUCHERS as string,
   collection_tickets: process.env.COLLECTION_TICKETS as string,
   collection_ticket_messages: process.env.COLLECTION_TICKET_MESSAGES as string,
+  collection_review: process.env.COLLECTION_REVIEW as string,
 
   aws_region: process.env.AWS_REGION as string,
   aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY as string,

@@ -144,6 +144,33 @@ class MediaServices {
     )
     return { upload }
   }
+
+  async uploadListImageReviewOrder(files: File[], idOrder: string) {
+    const upload: Media[] = await Promise.all(
+      files.map(async (file) => {
+        const newName = getNameImage(file.newFilename)
+        const newFullName = `${newName}.jpg`
+        const newPath = path.resolve(UPLOAD_IMAGE_DIR, newFullName)
+        sharp.cache(false)
+        await sharp(file.filepath).jpeg().toFile(newPath) // lấy đường dẫn ảnh temp và chuyển thành ảnh jpeg và lưu vào đường dẫn mới
+        const mime = (await import("mime")).default
+        const r2Result = await uploadToR2({
+          fileName: "orders/" + idOrder + "/medias/" + newFullName,
+          filePath: newPath,
+          ContentType: mime.getType(newPath) as string // chặn người khác download hình ảnh
+        })
+        fs.unlinkSync(file.filepath) // xóa ảnh tạm
+        fs.unlinkSync(newPath) // xóa ảnh gốc sau khi chuyển đổi
+
+        return {
+          id: new ObjectId(),
+          url: (r2Result as CompleteMultipartUploadCommandOutput).Location as string,
+          type: MediaType.Image
+        }
+      })
+    )
+    return { upload }
+  }
 }
 
 export const mediaServices = new MediaServices()
