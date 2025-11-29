@@ -25,7 +25,7 @@ export const initialSocket = (httpSocket: ServerHttp) => {
 
   const io = new Server(httpSocket, {
     cors: {
-      origin: "http://localhost:3500" // url của frontend
+      origin: ["http://localhost:3500", "https://tech-zone-shop.vercel.app/"] // url của frontend
     }
   })
 
