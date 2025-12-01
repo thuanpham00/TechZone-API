@@ -96,9 +96,20 @@ function sortObject(obj: Record<string, string>): Record<string, string> {
 }
 
 export const callBackVnpayController = async (req: Request, res: Response, next: NextFunction) => {
+  console.log("callback")
   const { orderId } = req.body
   const findOrder = await databaseServices.order.findOne({ _id: new ObjectId(orderId) })
   if (findOrder) {
+    // Thêm đoạn này ngay sau khi tìm thấy đơn hàng
+    await databaseServices.order.updateMany(
+      {
+        user_id: findOrder.user_id,
+        status: OrderStatus.loading // "Đang thực hiện"
+      },
+      {
+        $set: { status: OrderStatus.cancelled }
+      }
+    )
     const productOrder = findOrder.products.map((item) => ({
       ...item,
       product_id: new ObjectId(item.product_id)
@@ -210,6 +221,15 @@ export const createOrderCODController = async (req: Request, res: Response, next
 
   // cập nhật giỏ hàng
   await Promise.all([
+    await databaseServices.order.updateMany(
+      {
+        user_id: new ObjectId(user_id),
+        status: OrderStatus.loading // "Đang thực hiện"
+      },
+      {
+        $set: { status: OrderStatus.cancelled }
+      }
+    ),
     databaseServices.cart.updateOne(
       {
         user_id: new ObjectId(user_id)

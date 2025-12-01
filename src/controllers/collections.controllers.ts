@@ -2,14 +2,14 @@ import { Request, Response, NextFunction } from "express"
 import { CollectionMessage, UserMessage } from "~/constant/message"
 import collectionServices from "~/services/collection.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { GetCollectionQuery, GetCollectionReq } from "~/models/requests/product.requests"
+import { GetCollectionQuery } from "~/models/requests/product.requests"
 import { TokenPayload } from "~/models/requests/user.requests"
 import { CartProduct, ProductInFavourite } from "~/models/schema/favourite_cart.order.schema"
 import databaseServices from "~/services/database.services"
 import { ObjectId } from "mongodb"
 import { ErrorWithStatus } from "~/models/errors"
 import httpStatus from "~/constant/httpStatus"
-import { slugConditionMap } from "~/constant/slug"
+import { slugConditionMap, slugTop10Product } from "~/constant/slug"
 
 export const getFilterBaseOnCategory = async (req: Request, res: Response) => {
   const category = req.query.category
@@ -303,6 +303,28 @@ export const getCollectionsController = async (
     message: CollectionMessage.GET_COLLECTION_IS_SUCCESS,
     result,
     total
+  })
+}
+
+export const getCollectionsTop10ProductController = async (
+  req: Request<ParamsDictionary, any, any, GetCollectionQuery>,
+  res: Response,
+  next: NextFunction
+) => {
+  const entries = Object.entries(slugTop10Product)
+
+  const pairs = await Promise.all(
+    entries.map(async ([key, value]) => {
+      const { result, total } = await collectionServices.getCollection(value, key)
+      return [key, { result, total }] as const
+    })
+  )
+  const resultsObj = Object.fromEntries(pairs)
+
+  res.json({
+    message: CollectionMessage.GET_COLLECTION_IS_SUCCESS,
+    result: resultsObj, // hoặc đổi thành dạng bạn muốn (flatten, map theo slug...)
+    total: Object.values(resultsObj).reduce((sum, r) => sum + (r.total || 0), 0)
   })
 }
 

@@ -332,12 +332,29 @@ class AdminServices {
       }
     }
 
-    const [totalCustomer, top10CustomerBuyTheMost, rateReturningCustomers] = await Promise.all([
+    const findIdCustomerRole = await databaseServices.role.findOne({ key: "CUSTOMER" }).then((res) => res?._id)
+    const staffRoles = await databaseServices.role.find({ key: { $nin: ["CUSTOMER", "ADMIN"] } }).toArray()
+    const findIdStaffRole = staffRoles.map((r) => r._id)
+
+    const [totalCustomer, totalStaff, top10CustomerBuyTheMost, rateReturningCustomers] = await Promise.all([
       databaseServices.users
         .aggregate([
           {
             $match: {
-              role: "User"
+              role: findIdCustomerRole
+            }
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+
+      databaseServices.users
+        .aggregate([
+          {
+            $match: {
+              role: { $in: findIdStaffRole }
             }
           },
           {
@@ -434,7 +451,7 @@ class AdminServices {
       },
       totalStaff: {
         title: "Nhân viên",
-        value: 0,
+        value: totalStaff[0]?.total || 0,
         color: "#3a86ff"
       },
       top10CustomerBuyTheMost,
@@ -3036,6 +3053,174 @@ class AdminServices {
 
     return {
       user
+    }
+  }
+
+  async getListReviewsOrders(
+    limit?: number,
+    page?: number,
+    sortBy?: string,
+    created_at_start?: string,
+    created_at_end?: string,
+    updated_at_start?: string,
+    updated_at_end?: string,
+    name?: string,
+    rating?: string
+  ) {
+    const $match: any = {}
+
+    if (created_at_start) {
+      const startDate = new Date(created_at_start)
+      $match["created_at"] = {
+        $gte: startDate
+      }
+    }
+    if (created_at_end) {
+      const endDate = new Date(created_at_end)
+      if ($match["created_at"]) {
+        $match["created_at"]["$lte"] = endDate
+      } else {
+        $match["created_at"] = {
+          $lte: endDate
+        }
+      }
+    }
+    if (updated_at_start) {
+      const startDate = new Date(updated_at_start)
+      $match["updated_at"] = {
+        $gte: startDate
+      }
+    }
+    if (updated_at_end) {
+      const endDate = new Date(updated_at_end)
+      if ($match["updated_at"]) {
+        $match["updated_at"]["$lte"] = endDate
+      } else {
+        $match["updated_at"] = {
+          $lte: endDate
+        }
+      }
+    }
+
+    if (rating) {
+      $match["rating"] = Number(rating)
+    }
+
+    if (name) {
+      const listProductIncludeName = await databaseServices.product
+        .find({ name: { $regex: name, $options: "i" } })
+        .toArray()
+      const listIdProduct = listProductIncludeName.map((item) => item._id)
+      $match["productId"] = { $in: listIdProduct }
+    }
+
+    const [result, total, totalOfPage] = await Promise.all([
+      databaseServices.reviews
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "userId",
+              pipeline: [{ $project: { avatar: 1, _id: 1, name: 1 } }]
+            }
+          },
+          {
+            $unwind: {
+              path: "$userId",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup: {
+              from: "product",
+              localField: "productId",
+              foreignField: "_id",
+              as: "productId",
+              pipeline: [{ $project: { name: 1, _id: 1, banner: 1 } }]
+            }
+          },
+          {
+            $unwind: {
+              path: "$productId",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $sort: { created_at: sortBy === "new" ? -1 : 1 }
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          }
+        ])
+        .toArray(),
+      databaseServices.reviews
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray(),
+      databaseServices.reviews
+        .aggregate([
+          {
+            $match
+          },
+          {
+            $skip: limit && page ? limit * (page - 1) : 0
+          },
+          {
+            $limit: limit ? limit : 5
+          },
+          {
+            $count: "total"
+          }
+        ])
+        .toArray()
+    ])
+
+    return {
+      result,
+      limitRes: limit || 5,
+      pageRes: page || 1,
+      total: total[0]?.total || 0,
+      totalOfPage: totalOfPage[0]?.total || 0
+    }
+  }
+
+  async deleteReviewOrder(id: string) {
+    const findReview = await databaseServices.reviews.findOne({ _id: new ObjectId(id) })
+    // xóa đánh giá hiện tại
+    await databaseServices.reviews.deleteOne({ _id: new ObjectId(id) })
+
+    // tính lại average rating cho sản phẩm
+    const findReviews = await databaseServices.reviews
+      .find({ productId: new ObjectId(findReview?.productId) })
+      .toArray()
+    const totalRating = findReviews.reduce((sum, review) => sum + review.rating, 0)
+    const averageRating = findReviews.length ? totalRating / findReviews.length : 0
+    const rounded = Math.round(averageRating * 10) / 10
+
+    await databaseServices.product.updateOne(
+      { _id: new ObjectId(findReview?.productId) },
+      {
+        $pull: { reviews: new ObjectId(id) },
+        $set: { averageRating: rounded },
+        $currentDate: { updated_at: true }
+      }
+    )
+    return {
+      message: AdminMessage.DELETE_REVIEW_ORDER_SUCCESS
     }
   }
 }

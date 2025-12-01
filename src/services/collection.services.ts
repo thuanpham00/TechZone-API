@@ -72,8 +72,8 @@ class CollectionServices {
     }
   }
 
-  private async addSpecificationLaptopFilters(query: GetCollectionQuery, specConditions: any[]) {
-    if (query.screen_size) {
+  private async addSpecificationLaptopFilters(specConditions: any[], query?: GetCollectionQuery) {
+    if (query?.screen_size) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.screen_size}inch`, $options: "i" }, name: "Màn hình" })
@@ -87,7 +87,7 @@ class CollectionServices {
       }
     }
 
-    if (query.cpu) {
+    if (query?.cpu) {
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.cpu}`, $options: "i" }, name: "Cpu" })
         .toArray()
@@ -100,7 +100,7 @@ class CollectionServices {
       }
     }
 
-    if (query.ram) {
+    if (query?.ram) {
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.ram}`, $options: "i" }, name: "Ram" })
         .toArray()
@@ -113,7 +113,7 @@ class CollectionServices {
       }
     }
 
-    if (query.ssd) {
+    if (query?.ssd) {
       const res = await databaseServices.specification
         .find({ value: { $regex: `${query.ssd}`, $options: "i" }, name: "Ổ cứng" })
         .toArray()
@@ -127,8 +127,8 @@ class CollectionServices {
     }
   }
 
-  private async addSpecificationScreenFilters(query: GetCollectionQuery, specConditions: any[]) {
-    if (query.resolution) {
+  private async addSpecificationScreenFilters(specConditions: any[], query?: GetCollectionQuery) {
+    if (query?.resolution) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.resolution, name: "Độ phân giải" })
@@ -142,7 +142,7 @@ class CollectionServices {
       }
     }
 
-    if (query.type_screen) {
+    if (query?.type_screen) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.type_screen, name: "Kiểu màn hình" })
@@ -156,7 +156,7 @@ class CollectionServices {
       }
     }
 
-    if (query.screen_panel) {
+    if (query?.screen_panel) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.screen_panel, name: "Tấm nền" })
@@ -170,7 +170,7 @@ class CollectionServices {
       }
     }
 
-    if (query.screen_size) {
+    if (query?.screen_size) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.screen_size, name: "Kích thước" })
@@ -185,8 +185,8 @@ class CollectionServices {
     }
   }
 
-  private async addSpecificationKeyboardFilters(query: GetCollectionQuery, specConditions: any[]) {
-    if (query.layout) {
+  private async addSpecificationKeyboardFilters(specConditions: any[], query?: GetCollectionQuery) {
+    if (query?.layout) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.layout, name: "Layout" })
@@ -200,7 +200,7 @@ class CollectionServices {
       }
     }
 
-    if (query.led) {
+    if (query?.led) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.led, name: "Led" })
@@ -215,8 +215,8 @@ class CollectionServices {
     }
   }
 
-  private async addSpecificationMouseFilters(query: GetCollectionQuery, specConditions: any[]) {
-    if (query.color) {
+  private async addSpecificationMouseFilters(specConditions: any[], query?: GetCollectionQuery) {
+    if (query?.color) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.color, name: "Màu sắc" })
@@ -230,7 +230,7 @@ class CollectionServices {
       }
     }
 
-    if (query.type_connect) {
+    if (query?.type_connect) {
       // trả về các thông số kĩ thuật includes cái query.screen_size
       const res = await databaseServices.specification
         .find({ value: query.type_connect, name: "Kết nối" })
@@ -245,9 +245,9 @@ class CollectionServices {
     }
   }
 
-  private addSortFieldsToPipeline(query: GetCollectionQuery, resultPipeline: any[]) {
+  private addSortFieldsToPipeline(resultPipeline: any[], query?: GetCollectionQuery) {
     if (
-      query.sort &&
+      query?.sort &&
       (query.sort === "name_asc" ||
         query.sort === "name_desc" ||
         query.sort === "price_asc" ||
@@ -334,7 +334,7 @@ class CollectionServices {
     }
   }
 
-  async getCollection(condition: ConditionQuery, slug: string, query: GetCollectionQuery) {
+  async getCollection(condition: ConditionQuery, slug: string, query?: GetCollectionQuery) {
     const $match: any = {}
     const checkBanChay = slug.includes("ban-chay") // Check trước
     let categoryId = null
@@ -542,7 +542,7 @@ class CollectionServices {
       await this.filterCollectionProducts(condition, slug, $match)
     }
 
-    if (query.status) {
+    if (query?.status) {
       if (query.status === "all") {
         // không lọc
         $match["status"] = {
@@ -554,10 +554,10 @@ class CollectionServices {
     }
 
     const specConditions: any[] = []
-    await this.addSpecificationLaptopFilters(query, specConditions)
-    await this.addSpecificationScreenFilters(query, specConditions)
-    await this.addSpecificationKeyboardFilters(query, specConditions)
-    await this.addSpecificationMouseFilters(query, specConditions)
+    await this.addSpecificationLaptopFilters(specConditions, query)
+    await this.addSpecificationScreenFilters(specConditions, query)
+    await this.addSpecificationKeyboardFilters(specConditions, query)
+    await this.addSpecificationMouseFilters(specConditions, query)
 
     if (specConditions.length > 0) {
       $match["$and"] = ($match["$and"] || []).concat(specConditions)
@@ -607,8 +607,8 @@ class CollectionServices {
 
     const resultPipeline = [...basePipeline]
 
-    if (query.sort) {
-      this.addSortFieldsToPipeline(query, resultPipeline)
+    if (query?.sort) {
+      this.addSortFieldsToPipeline(resultPipeline, query)
       const sortStage: any = {}
 
       switch (query.sort) {
@@ -641,7 +641,7 @@ class CollectionServices {
       gifts: 0
     }
 
-    if (query.sort) {
+    if (query?.sort) {
       projectFields.sortableName = 0
       projectFields.finalPrice = 0
     }

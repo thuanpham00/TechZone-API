@@ -25,7 +25,7 @@ export const initialSocket = (httpSocket: ServerHttp) => {
 
   const io = new Server(httpSocket, {
     cors: {
-      origin: ["http://localhost:3500", "https://tech-zone-shop.vercel.app/"], // url của frontend
+      origin: ["http://localhost:3500", "https://tech-zone-shop.vercel.app"], // url của frontend
       methods: ["GET", "POST", "PUT", "DELETE"]
     }
   })
@@ -436,6 +436,19 @@ export const initialSocket = (httpSocket: ServerHttp) => {
       if (!findTicket) return
 
       await ticketServices.updateReadClientMessagesService(findTicket, user_id)
+    })
+
+    socket.on("client:order_notification", async (data) => {
+      const userId = data.payload
+      console.log(userId)
+      const findOnlineAdminIds = getOnlineAdminIds()
+      findOnlineAdminIds.forEach((adminIds) => {
+        emitToUser(adminIds, "admin:order_notification", {
+          payload: {
+            user_id: userId
+          }
+        })
+      })
     })
 
     // sự kiện mặc định của socket server - nếu ngắt kết nối (client ngắt, đóng tab) -> nó chạy

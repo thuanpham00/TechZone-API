@@ -1331,3 +1331,56 @@ export const createStaffController = async (req: Request<ParamsDictionary, any, 
     }
   })
 }
+
+export const getReviewsOrdersController = async (
+  req: Request<
+    ParamsDictionary,
+    any,
+    any,
+    {
+      limit: string
+      page: string
+      created_at_start: string
+      created_at_end: string
+      updated_at_start: string
+      updated_at_end: string
+      sortBy: string
+      name: string
+      rating: string
+    }
+  >,
+  res: Response
+) => {
+  const { limit, page, created_at_start, created_at_end, updated_at_start, updated_at_end, sortBy, name, rating } = req.query
+  const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getListReviewsOrders(
+    Number(limit),
+    Number(page),
+    sortBy,
+    created_at_start,
+    created_at_end,
+    updated_at_start,
+    updated_at_end,
+    name,
+    rating
+  )
+
+  res.json({
+    message: AdminMessage.GET_REVIEWS_ORDERS,
+    result: {
+      result,
+      limit: limitRes,
+      page: pageRes,
+      total,
+      totalOfPage
+    }
+  })
+}
+
+export const deleteReviewOrderController = async (req: Request<{ id: string }, any, any>, res: Response) => {
+  const { id } = req.params
+  const { message } = await adminServices.deleteReviewOrder(id)
+
+  res.json({
+    message: message
+  })
+}

@@ -162,7 +162,6 @@ class TicketServices {
     const findTicketForUser = await databaseServices.tickets
       .findOne({ customer_id: new ObjectId(userId) })
       .then((ticket) => ticket?._id)
-    console.log(findTicketForUser)
     const [conversations, total, ticket] = await Promise.all([
       databaseServices.ticketMessages
         .find({ ticket_id: new ObjectId(findTicketForUser) })

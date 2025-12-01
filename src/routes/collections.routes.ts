@@ -6,6 +6,7 @@ import {
   getCollectionsCartController,
   getCollectionsController,
   getCollectionsFavouriteController,
+  getCollectionsTop10ProductController,
   getFilterBaseOnCategory,
   removeProductToCartController,
   updateQuantityProductInCartController
@@ -106,6 +107,13 @@ collectionsRoute.delete(
   verifyUserValidator,
   wrapRequestHandler(removeProductToCartController)
 )
+
+/**
+ * Description: Lấy danh sách sản phẩm top 10 
+ * Path: /
+ * Method: GET
+ */
+collectionsRoute.get("/top-10-product", wrapRequestHandler(getCollectionsTop10ProductController))
 
 /**
  * Description: Lấy danh sách sản phẩm dựa vào /:slug

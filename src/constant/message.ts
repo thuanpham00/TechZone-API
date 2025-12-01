@@ -210,7 +210,9 @@ export const AdminMessage = {
   CREATE_ROLE_DETAIL: "Thêm vai trò thành công!",
   UPDATE_ROLE_DETAIL: "Cập nhật vai trò thành công!",
 
-  CANNOT_DELETE_ROLE: "Vai trò đang được sử dụng không thể xóa!"
+  CANNOT_DELETE_ROLE: "Vai trò đang được sử dụng không thể xóa!",
+  GET_REVIEWS_ORDERS: "Lấy danh sách đánh giá đơn hàng thành công!",
+  DELETE_REVIEW_ORDER_SUCCESS: "Xóa đánh giá đơn hàng thành công!"
 }
 
 export const SupplierMessage = {

@@ -18,6 +18,7 @@ import {
   deleteLinkCategoryMenuController,
   deleteMenuCategoryController,
   deleteProductController,
+  deleteReviewOrderController,
   deleteRoleController,
   deleteSupplierController,
   deleteSupplyController,
@@ -41,6 +42,7 @@ import {
   getPriceProductController,
   getProductController,
   getReceiptsController,
+  getReviewsOrdersController,
   getRolesController,
   getStaffsController,
   getStatistical_Product_Controller,
@@ -1098,6 +1100,35 @@ adminRouter.delete(
   deleteRoleValidator,
   wrapRequestHandler(deleteCustomerController)
 )
+
+/**
+ * Description: get reviews orders
+ * Path: /reviews
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/reviews",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getReviewsOrdersController)
+)
+
+/**
+ * Description: xóa review order
+ * Path: /reviews/:id
+ * Method: DELETE
+ * Headers: {Authorization: AT}
+ */
+adminRouter.delete(
+  "/reviews/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(deleteReviewOrderController)
+)
+
 export default adminRouter
 
 // 40 permissions

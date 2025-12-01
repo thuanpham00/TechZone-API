@@ -1,4 +1,22 @@
+export const slugTop10Product = {
+  "top-10-laptop-ban-chay": { category: "Laptop" },
+  "top-10-laptop-gaming-ban-chay": { category: "Laptop Gaming" },
+  "top-10-pc-ban-chay": { category: "PC GVN" },
+  "top-10-man-hinh-ban-chay": { category: "Màn hình" },
+  "top-10-ban-phim-ban-chay": { category: "Bàn phím" },
+  "top-10-chuot-ban-chay": { category: "Chuột" },
+  "top-10-tai-nghe-ban-chay": { category: "Tai nghe" }
+}
+
 export const slugConditionMap = {
+  "top-10-laptop-ban-chay": { category: "Laptop" },
+  "top-10-laptop-gaming-ban-chay": { category: "Laptop Gaming" },
+  "top-10-pc-ban-chay": { category: "PC GVN" },
+  "top-10-man-hinh-ban-chay": { category: "Màn hình" },
+  "top-10-ban-phim-ban-chay": { category: "Bàn phím" },
+  "top-10-chuot-ban-chay": { category: "Chuột" },
+  "top-10-tai-nghe-ban-chay": { category: "Tai nghe" },
+
   laptop: { category: "Laptop" },
   "laptop-asus-hoc-tap-va-lam-viec": { brand: "ASUS", category: "Laptop" },
   "laptop-acer-hoc-tap-va-lam-viec": { brand: "ACER", category: "Laptop" },
@@ -7,10 +25,8 @@ export const slugConditionMap = {
   "laptop-duoi-15-trieu": { price: { $lt: 15000000 }, category: "Laptop" },
   "laptop-tu-15-den-20-trieu": { price: { $gte: 15000000, $lt: 20000000 }, category: "Laptop" },
   "laptop-tren-20-trieu": { price: { $gte: 20000000 }, category: "Laptop" },
-  "top-10-laptop-ban-chay": { category: "Laptop" },
 
   "laptop-gaming": { category: "Laptop Gaming" },
-  "top-10-laptop-gaming-ban-chay": { category: "Laptop Gaming" },
   "laptop-gaming-asus": { category: "Laptop Gaming", brand: "ASUS" },
   "laptop-gaming-acer": { category: "Laptop Gaming", brand: "ACER" },
   "laptop-gaming-msi": { category: "Laptop Gaming", brand: "MSI" },
@@ -27,10 +43,8 @@ export const slugConditionMap = {
   "pc-gvn-rtx-5060": { category: "PC GVN", brand: "GVN" },
   "pc-gvn-rtx-4060": { category: "PC GVN", brand: "GVN" },
   "pc-gvn-rtx-3060": { category: "PC GVN", brand: "GVN" },
-  "top-10-pc-ban-chay": { category: "PC GVN" },
 
   "man-hinh": { category: "Màn hình" },
-  "top-10-man-hinh-ban-chay": { category: "Màn hình" },
   "man-hinh-samsung": { category: "Màn hình", brand: "SAMSUNG" },
   "man-hinh-asus": { category: "Màn hình", brand: "ASUS" },
   "man-hinh-dell": { category: "Màn hình", brand: "DELL" },
@@ -55,7 +69,6 @@ export const slugConditionMap = {
   "ban-phim-tu-1-den-2-trieu": { price: { $gte: 1000000, $lt: 2000000 }, category: "Bàn phím" },
   "ban-phim-tu-2-den-3-trieu": { price: { $gte: 2000000, $lt: 3000000 }, category: "Bàn phím" },
   "ban-phim-tren-3-trieu": { price: { $gte: 3000000 }, category: "Bàn phím" },
-  "top-10-ban-phim-ban-chay": { category: "Bàn phím" },
 
   chuot: { category: "Chuột" },
   "chuot-dareu": { category: "Chuột", brand: "DARE-U" },
@@ -66,7 +79,6 @@ export const slugConditionMap = {
   "chuot-duoi-1-trieu": { price: { $lt: 1000000 }, category: "Chuột" },
   "chuot-tu-1-den-3-trieu": { price: { $gte: 1000000, $lt: 3000000 }, category: "Chuột" },
   "chuot-tren-3-trieu": { price: { $gte: 3000000 }, category: "Chuột" },
-  "top-10-chuot-ban-chay": { category: "Chuột" },
 
   "tai-nghe": { category: "Tai nghe" },
   "tai-nghe-asus": { category: "Tai nghe", brand: "ASUS" },
@@ -77,7 +89,6 @@ export const slugConditionMap = {
   "tai-nghe-duoi-1-trieu": { price: { $lt: 1000000 }, category: "Tai nghe" },
   "tai-nghe-tu-1-den-3-trieu": { price: { $gte: 1000000, $lt: 3000000 }, category: "Tai nghe" },
   "tai-nghe-tren-3-trieu": { price: { $gte: 3000000 }, category: "Tai nghe" },
-  "top-10-tai-nghe-ban-chay": { category: "Tai nghe" },
   "tai-nghe-wireless": { category: "Tai nghe", other: "Wireless" },
   "tai-nghe-bluetooth": { category: "Tai nghe", other: "Bluetooth" },
   "tai-nghe-over-ear": { category: "Tai nghe", other: "Over-ear" },
