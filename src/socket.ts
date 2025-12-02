@@ -105,6 +105,12 @@ export const initialSocket = (httpSocket: ServerHttp) => {
         .map(([id]) => id)
     }
 
+    const getOnlineCustomerIds = () => {
+      return Object.entries(users)
+        .filter(([_, v]) => v.roleKey === "CUSTOMER")
+        .map(([id]) => id)
+    }
+
     // sự kiện gửi và nhận từ customer - admin
     socket.on("send_message", async (data, ...buffers) => {
       // lắng nghe sự kiện gửi tin nhắn từ client
@@ -440,8 +446,11 @@ export const initialSocket = (httpSocket: ServerHttp) => {
 
     socket.on("client:order_notification", async (data) => {
       const userId = data.payload
-      console.log(userId)
       const findOnlineAdminIds = getOnlineAdminIds()
+      const findOnlineCustomerIds = getOnlineCustomerIds()
+      findOnlineCustomerIds.forEach((customerIds) => {
+        emitToUser(customerIds, "client:update_quantity_product_display")
+      })
       findOnlineAdminIds.forEach((adminIds) => {
         emitToUser(adminIds, "admin:order_notification", {
           payload: {

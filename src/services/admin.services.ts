@@ -34,8 +34,50 @@ import { File } from "formidable"
 import { deleteFromR2ByUrl } from "~/utils/r2_cloudflare"
 import { Voucher } from "~/models/schema/voucher.schema"
 import { escapeRegex } from "~/utils/common"
+import { ErrorWithStatus } from "~/models/errors"
+import httpStatus from "~/constant/httpStatus"
 
 class AdminServices {
+  async getPermissionForUser(user_id: string) {
+    const findRoleBaseOnUser = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+    if (!findRoleBaseOnUser) {
+      throw new ErrorWithStatus({
+        message: "User not found",
+        status: httpStatus.NOTFOUND
+      })
+    }
+    const findPermissions = await databaseServices.role
+      .aggregate([
+        { $match: { _id: findRoleBaseOnUser.role } },
+        {
+          $lookup: {
+            from: "permissions",
+            localField: "permissions",
+            foreignField: "_id",
+            as: "permissions",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  code: 1,
+                  api_endpoints: 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            permissions: 1
+          }
+        }
+      ])
+      .toArray()
+
+    return findPermissions
+  }
+
   async getStatisticalSell(month: number, year: number) {
     let filterMonthYear: any = {}
     if (month && year) {

@@ -36,6 +36,7 @@ import {
   getOrdersInCanceledController,
   getOrdersInCompletedController,
   getOrdersInProcessController,
+  getPermissionForUserController,
   getPermissionsBasedOnIdRoleController,
   getPermissionsController,
   getPricePerUnitBasedOnProductAndSupplierController,
@@ -107,6 +108,20 @@ import { updateMeReqBody } from "~/models/requests/user.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const adminRouter = Router()
+
+/**
+ * Description: Get permissions for user
+ * Path: /permission-for-user
+ * Method: GET
+ */
+adminRouter.get(
+  "/permission-for-user",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getPermissionForUserController)
+)
+
 /**
  * Description: Login user for admin
  * Path: /login

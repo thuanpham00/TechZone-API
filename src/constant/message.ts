@@ -141,6 +141,8 @@ export const Path = {
 }
 
 export const AdminMessage = {
+  GET_PERMISSION_FOR_USER: "Lấy quyền của người dùng thành công!",
+
   GET_STATISTICAL: "Lấy số liệu thống kê thành công!",
   GET_CUSTOMERS: "Lấy danh sách khách hàng thành công!",
   CREATE_CUSTOMER_DETAIL: "Thêm người dùng thành công!",
