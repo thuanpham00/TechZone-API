@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb"
+import { ReceiptStatus } from "~/constant/enum"
 
 // nhà cung cấp
 interface SupplierType {
@@ -91,6 +92,7 @@ interface ReceiptType {
   totalAmount: number // Tổng giá trị toàn bộ đơn hàng
   totalItem: number // tổng sản phẩm trong đơn hàng
   importDate: Date // Ngày nhập hàng
+  status?: ReceiptStatus
   note?: string
   created_at?: Date
   updated_at?: Date
@@ -103,6 +105,7 @@ export class Receipt {
   totalItem: number // số lượng sản phẩm trong đơn hàng
   importDate: Date // Ngày nhập hàng
   note: string
+  status: ReceiptStatus
   created_at: Date
   updated_at: Date
   constructor(receipt: ReceiptType) {
@@ -112,6 +115,7 @@ export class Receipt {
     this.totalAmount = receipt.totalAmount
     this.totalItem = receipt.totalItem
     this.importDate = receipt.importDate
+    this.status = receipt.status || ReceiptStatus.DRAFT
     this.note = receipt.note || ""
     this.created_at = receipt.created_at || date
     this.updated_at = receipt.updated_at || date

@@ -18,6 +18,7 @@ import {
   deleteLinkCategoryMenuController,
   deleteMenuCategoryController,
   deleteProductController,
+  deleteReceiptController,
   deleteReviewOrderController,
   deleteRoleController,
   deleteSupplierController,
@@ -60,6 +61,7 @@ import {
   updateLinkCategoryMenuController,
   updatePermissionsBasedOnIdRoleController,
   updateProductController,
+  updateReceiptController,
   updateRoleController,
   updateStatusOrderController,
   updateSupplierDetailController,
@@ -779,6 +781,22 @@ adminRouter.delete(
 )
 
 /**
+ * Description: get receipt for products
+ * Path: /receipts
+ * Method: GET
+ * Headers: {Authorization: AT}
+ * Body: CreateSupplyBodyReq
+ */
+adminRouter.get(
+  "/receipts",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  queryValidator,
+  wrapRequestHandler(getReceiptsController)
+)
+
+/**
  * Description: create receipt for products
  * Path: /receipts
  * Method: POST
@@ -795,19 +813,45 @@ adminRouter.post(
 )
 
 /**
- * Description: get receipt for products
- * Path: /receipts
- * Method: GET
- * Headers: {Authorization: AT}
- * Body: CreateSupplyBodyReq
+ * Description: update receipt (only when status = DRAFT)
+ * Path: /receipts/:id
+ * Method: PUT
  */
-adminRouter.get(
-  "/receipts",
+adminRouter.put(
+  "/receipts/:id",
   accessTokenValidator,
   verifyUserValidator,
   checkRole(),
-  queryValidator,
-  wrapRequestHandler(getReceiptsController)
+  checkIdValidator,
+  wrapRequestHandler(updateReceiptController)
+)
+
+// /**
+//  * Description: change receipt status (DRAFT -> RECEIVED). Stock will be increased once.
+//  * Path: /receipts/:id/status
+//  * Method: PUT
+//  */
+// adminRouter.put(
+//   "/receipts/:id/status",
+//   accessTokenValidator,
+//   verifyUserValidator,
+//   checkRole(),
+//   checkIdValidator,
+//   wrapRequestHandler(updateReceiptStatusController)
+// )
+
+/**
+ * Description: delete receipt (only when status = DRAFT)
+ * Path: /receipts/:id
+ * Method: DELETE
+ */
+adminRouter.delete(
+  "/receipts/:id",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkIdValidator,
+  wrapRequestHandler(deleteReceiptController)
 )
 
 /**

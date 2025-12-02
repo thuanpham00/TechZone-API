@@ -52,6 +52,19 @@ export type CreateReceiptBodyReq = {
   note?: string
 }
 
+export type UpdateReceiptBodyReq = {
+  items?: ReceiptProductBodyReq[]
+  importDate?: string
+  note?: string
+  totalAmount?: number
+  totalItem?: number
+  // không cho đổi status ở đây
+}
+
+export type UpdateReceiptStatusBodyReq = {
+  status: "RECEIVED" // hoặc ReceiptStatus nếu bạn export enum
+}
+
 export type CreateOrderBodyReq = {
   type_order: TypeOrder
   customer_info: {

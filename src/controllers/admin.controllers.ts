@@ -20,6 +20,7 @@ import {
   UpdatePermissionsRole
 } from "~/models/requests/product.requests"
 import { handleUploadImage } from "~/utils/file"
+import { ReceiptStatus } from "~/constant/enum"
 
 export const getPermissionForUserController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { user_id } = req.decode_authorization as TokenPayload
@@ -847,6 +848,26 @@ export const createReceiptController = async (req: Request<any, any, CreateRecei
   res.json({
     message: message
   })
+}
+
+export const updateReceiptController = async (req: Request, res: Response) => {
+  const id = req.params.id
+  const result = await adminServices.updateReceipt(id, req.body)
+  res.json(result)
+}
+
+// // Chỉ cho phép chuyển từ DRAFT -> RECEIVED, và chỉ cộng tồn kho một lần
+// export const updateReceiptStatusController = async (req: Request, res: Response) => {
+//   const id = req.params.id
+//   const { status } = req.body as { status: ReceiptStatus | string }
+//   const result = await adminServices.updateReceiptStatus(id, status as ReceiptStatus)
+//   res.json(result)
+// }
+
+export const deleteReceiptController = async (req: Request, res: Response) => {
+  const id = req.params.id
+  const result = await adminServices.deleteReceipt(id)
+  res.json(result)
 }
 
 export const getReceiptsController = async (

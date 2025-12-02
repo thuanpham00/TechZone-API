@@ -81,3 +81,8 @@ export enum MessageType {
   TEXT = "text",
   FILE_TEXT = "file_text"
 }
+
+export enum ReceiptStatus {
+  DRAFT = "DRAFT",
+  RECEIVED = "RECEIVED"
+}

@@ -17,13 +17,21 @@ import {
   CreateSupplierBodyReq,
   CreateSupplyBodyReq,
   specificationType,
-  UpdatePermissionsRole
+  UpdatePermissionsRole,
+  UpdateReceiptBodyReq
 } from "~/models/requests/product.requests"
 import { mediaServices } from "./medias.services"
 import Product from "~/models/schema/product.schema"
 import Specification from "~/models/schema/specification.schema"
 import { Receipt, Supplier, Supply } from "~/models/schema/supply_supplier.schema"
-import { OrderStatus, ProductStatus, UserVerifyStatus, VoucherStatus, VoucherType } from "~/constant/enum"
+import {
+  OrderStatus,
+  ProductStatus,
+  ReceiptStatus,
+  UserVerifyStatus,
+  VoucherStatus,
+  VoucherType
+} from "~/constant/enum"
 import { userServices } from "./user.services"
 import { hashPassword } from "~/utils/scripto"
 import { User } from "~/models/schema/users.schema"
@@ -2205,49 +2213,130 @@ class AdminServices {
         }
       })
     )
-    const listItemNameAndQuantity = listItem.map((item) => {
-      const itemNameAndQuantity = {
-        idProduct: item.productId,
-        quantityProduct: item.quantity
-      }
-      return itemNameAndQuantity
-    })
 
-    await Promise.all([
-      databaseServices.receipt.insertOne(
-        new Receipt({
-          items: listItem,
-          importDate: body.importDate,
-          totalAmount: body.totalAmount,
-          totalItem: body.totalItem,
-          note: body.note
-        })
-      ),
-      Promise.all(
-        listItemNameAndQuantity.map(async (item) => {
-          await databaseServices.product.updateOne(
-            {
-              _id: new ObjectId(item.idProduct)
-            },
-            {
-              $inc: {
-                stock: item.quantityProduct
-              },
-              $set: {
-                status: ProductStatus.AVAILABLE // set trạng thái có hàng
-              },
-              $currentDate: {
-                updated_at: true
-              }
-            }
-          )
-        })
-      )
-    ])
+    await databaseServices.receipt.insertOne(
+      new Receipt({
+        items: listItem,
+        importDate: body.importDate ? new Date(body.importDate) : new Date(),
+        totalAmount: body.totalAmount,
+        totalItem: body.totalItem,
+        note: body.note,
+        status: ReceiptStatus.DRAFT
+      })
+    )
 
     return {
       message: ReceiptMessage.CREATE_RECEIPT_IS_SUCCESS
     }
+  }
+
+  async updateReceipt(id: string, body: UpdateReceiptBodyReq) {
+    const receipt = await databaseServices.receipt.findOne({ _id: new ObjectId(id) })
+    if (!receipt) {
+      throw Error("Receipt not found")
+    }
+
+    if (receipt.status !== ReceiptStatus.DRAFT) {
+      throw Error("Cannot update receipt after received")
+    }
+
+    // Chuẩn hóa items giống createReceipt (đang resolve theo name -> ObjectId)
+    const items = await Promise.all(
+      (body.items || []).map(async (item: any) => {
+        const [product, supplier] = await Promise.all([
+          databaseServices.product.findOne({ name: item.productId }),
+          databaseServices.supplier.findOne({ name: item.supplierId })
+        ])
+        if (!product || !supplier) {
+          throw new Error(`Invalid product or supplier: ${item.productId} - ${item.supplierId}`)
+        }
+        return {
+          ...item,
+          productId: new ObjectId(product._id),
+          supplierId: new ObjectId(supplier._id)
+        }
+      })
+    )
+
+    // Nếu FE đã tính sẵn, có thể dùng trực tiếp; ở đây vẫn chuẩn hóa tối thiểu
+    const importDate = body.importDate ? new Date(body.importDate) : receipt.importDate
+    const totalAmount =
+      body.totalAmount ??
+      items.reduce(
+        (s: number, it: any) => s + Number(it.totalPrice || Number(it.quantity) * Number(it.pricePerUnit) || 0),
+        0
+      )
+    const totalItem = body.totalItem ?? items.reduce((s: number, it: any) => s + Number(it.quantity || 0), 0)
+
+    await databaseServices.receipt.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          items,
+          importDate,
+          totalAmount,
+          totalItem,
+          note: body.note ?? receipt.note
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+
+    return { message: "UPDATE_RECEIPT_SUCCESS" }
+  }
+
+  // // Chuyển trạng thái: DRAFT -> RECEIVED. Khi RECEIVED thì cộng tồn kho theo từng item
+  // async updateReceiptStatus(id: string, status: ReceiptStatus | string) {
+  //   if (status !== ReceiptStatus.RECEIVED) {
+  //     return { message: "INVALID_STATUS_TRANSITION" }
+  //   }
+
+  //   const receipt = await databaseServices.receipt.findOne({ _id: new ObjectId(id) })
+  //   if (!receipt) {
+  //     return { message: "RECEIPT_NOT_FOUND" }
+  //   }
+  //   if (receipt.status === ReceiptStatus.RECEIVED) {
+  //     return { message: "RECEIPT_ALREADY_RECEIVED" }
+  //   }
+
+  //   const bulkOps =
+  //     (receipt.items || []).map((it: any) => ({
+  //       updateOne: {
+  //         filter: { _id: new ObjectId(it.productId) },
+  //         update: {
+  //           $inc: { stock: Number(it.quantity) || 0 },
+  //           $set: { status: ProductStatus.AVAILABLE },
+  //           $currentDate: { updated_at: true }
+  //         }
+  //       }
+  //     })) || []
+
+  //   if (bulkOps.length) {
+  //     await databaseServices.product.bulkWrite(bulkOps)
+  //   }
+
+  //   await databaseServices.receipt.updateOne(
+  //     { _id: new ObjectId(id) },
+  //     {
+  //       $set: { status: ReceiptStatus.RECEIVED },
+  //       $currentDate: { updated_at: true }
+  //     }
+  //   )
+
+  //   return { message: "UPDATE_RECEIPT_STATUS_SUCCESS" }
+  // }
+
+  async deleteReceipt(id: string) {
+    const receipt = await databaseServices.receipt.findOne({ _id: new ObjectId(id) })
+    if (!receipt) {
+      return { message: "RECEIPT_NOT_FOUND" }
+    }
+    if (receipt.status !== ReceiptStatus.DRAFT) {
+      return { message: "CANNOT_DELETE_RECEIPT_AFTER_RECEIVED" }
+    }
+
+    await databaseServices.receipt.deleteOne({ _id: new ObjectId(id) })
+    return { message: "DELETE_RECEIPT_SUCCESS" }
   }
 
   async getReceipts(
