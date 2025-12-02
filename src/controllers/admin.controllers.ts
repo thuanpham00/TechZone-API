@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express"
 import adminServices from "~/services/admin.services"
 import { ParamsDictionary } from "express-serve-static-core"
 import { AdminMessage, ProductMessage, ReceiptMessage, UserMessage } from "~/constant/message"
-import { updateMeReqBody } from "~/models/requests/user.requests"
+import { TokenPayload, updateMeReqBody } from "~/models/requests/user.requests"
 import { userServices } from "~/services/user.services"
 import {
   CreateCustomerBodyReq,
@@ -20,6 +20,15 @@ import {
   UpdatePermissionsRole
 } from "~/models/requests/product.requests"
 import { handleUploadImage } from "~/utils/file"
+
+export const getPermissionForUserController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const listPermission = await adminServices.getPermissionForUser(user_id)
+  res.json({
+    message: AdminMessage.GET_PERMISSION_FOR_USER,
+    result: listPermission
+  })
+}
 
 export const getStatistical_Sell_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { year, month } = req.query
@@ -1351,7 +1360,8 @@ export const getReviewsOrdersController = async (
   >,
   res: Response
 ) => {
-  const { limit, page, created_at_start, created_at_end, updated_at_start, updated_at_end, sortBy, name, rating } = req.query
+  const { limit, page, created_at_start, created_at_end, updated_at_start, updated_at_end, sortBy, name, rating } =
+    req.query
   const { result, total, totalOfPage, limitRes, pageRes } = await adminServices.getListReviewsOrders(
     Number(limit),
     Number(page),

@@ -47,17 +47,18 @@ export const getTicketMessagesForAdminController = async (req: Request, res: Res
 export const getTicketMessagesForClientController = async (req: Request, res: Response) => {
   const { user_id } = req.decode_authorization
   const { limit, page } = req.query
-  const { conversations, total, ticket } = await ticketServices.getTicketMessagesClientService(
-    user_id,
-    Number(limit),
-    Number(page)
-  )
+
+  const data = await ticketServices.getTicketMessagesClientService(user_id, Number(limit), Number(page))
+
+  const conversations = data?.conversations ?? []
+  const total = data?.total ?? 0
+  const ticket = data?.ticket ?? null
 
   res.json({
     result: {
       limit: Number(limit),
       page: Number(page),
-      total_page: Math.ceil(total / Number(limit)),
+      total_page: Number(limit) ? Math.ceil(total / Number(limit)) : 0,
       conversation: conversations,
       ticket
     },

@@ -553,6 +553,18 @@ class CollectionServices {
       }
     }
 
+    if (query?.review) {
+      if (query.review === "all") {
+        // không lọc gì cả
+      } else if (query.review === "has_review") {
+        // sản phẩm có ít nhất 1 review
+        $match["$expr"] = { $gt: [{ $size: "$reviews" }, 0] }
+      } else if (query.review === "no_review") {
+        // sản phẩm không có review (mảng rỗng)
+        $match["$expr"] = { $eq: [{ $size: "$reviews" }, 0] }
+      }
+    }
+
     const specConditions: any[] = []
     await this.addSpecificationLaptopFilters(specConditions, query)
     await this.addSpecificationScreenFilters(specConditions, query)

@@ -158,52 +158,51 @@ class TicketServices {
   }
 
   async getTicketMessagesClientService(userId: string, limit: number, page: number) {
-    // do mỗi user chỉ có 1 ticket -> tìm ticket thuộc về user đó sau đó kéo id ticket ra để tìm tin nhắn
-    const findTicketForUser = await databaseServices.tickets
+    // đảm bảo limit/page hợp lệ
+    const lim = Number.isFinite(limit) && limit > 0 ? limit : 10
+    const pg = Number.isFinite(page) && page > 0 ? page : 1
+
+    // tìm ticket của user (mỗi user chỉ có 1 ticket)
+    const findTicketForUserId = await databaseServices.tickets
       .findOne({ customer_id: new ObjectId(userId) })
-      .then((ticket) => ticket?._id)
+      .then((ticket) => ticket?._id?.toString())
+
+    // nếu chưa có ticket thì trả về rỗng ngay lập tức
+    if (!findTicketForUserId) {
+      return {
+        conversations: [],
+        total: 0,
+        ticket: null
+      }
+    }
+
+    const ticketObjectId = new ObjectId(findTicketForUserId)
+
     const [conversations, total, ticket] = await Promise.all([
       databaseServices.ticketMessages
-        .find({ ticket_id: new ObjectId(findTicketForUser) })
+        .find({ ticket_id: ticketObjectId })
         .sort({ created_at: -1 })
-        .skip(limit * (page - 1))
-        .limit(limit)
+        .skip(lim * (pg - 1))
+        .limit(lim)
         .toArray(),
-      databaseServices.ticketMessages.find({ ticket_id: new ObjectId(findTicketForUser) }).toArray(),
+      databaseServices.ticketMessages.find({ ticket_id: ticketObjectId }).toArray(),
       databaseServices.tickets
         .aggregate([
-          {
-            $match: { _id: new ObjectId(findTicketForUser) }
-          },
+          { $match: { _id: ticketObjectId } },
           {
             $lookup: {
               from: "users",
               localField: "assigned_to",
               foreignField: "_id",
               as: "assigned_to",
-              pipeline: [
-                {
-                  $project: {
-                    name: 1
-                  }
-                }
-              ]
+              pipeline: [{ $project: { name: 1 } }]
             }
           },
-          {
-            $unwind: {
-              path: "$assigned_to"
-            }
-          },
-          {
-            $project: {
-              assigned_to: 1,
-              unread_count_customer: 1
-            }
-          }
+          { $unwind: { path: "$assigned_to", preserveNullAndEmptyArrays: true } },
+          { $project: { assigned_to: 1, unread_count_customer: 1 } }
         ])
         .toArray(),
-      this.updateReadClientMessagesService(findTicketForUser!.toString(), userId)
+      this.updateReadClientMessagesService(findTicketForUserId, userId)
     ])
 
     return {
