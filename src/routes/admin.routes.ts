@@ -49,6 +49,7 @@ import {
   getStaffsController,
   getStatistical_Product_Controller,
   getStatistical_Sell_Controller,
+  getStatistical_Profit_Controller,
   getStatistical_User_Controller,
   getSuppliersController,
   getSuppliesController,
@@ -62,6 +63,7 @@ import {
   updatePermissionsBasedOnIdRoleController,
   updateProductController,
   updateReceiptController,
+  updateReceiptStatusController,
   updateRoleController,
   updateStatusOrderController,
   updateSupplierDetailController,
@@ -144,6 +146,20 @@ adminRouter.get(
   verifyUserValidator,
   checkRole(),
   wrapRequestHandler(getStatistical_Sell_Controller)
+)
+
+/**
+ * Description: get statistical profit dashboard
+ * Path: /statistical-profit
+ * Method: GET
+ * Headers: {Authorization: AT}
+ */
+adminRouter.get(
+  "/statistical-profit",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  wrapRequestHandler(getStatistical_Profit_Controller)
 )
 
 /**
@@ -826,19 +842,19 @@ adminRouter.put(
   wrapRequestHandler(updateReceiptController)
 )
 
-// /**
-//  * Description: change receipt status (DRAFT -> RECEIVED). Stock will be increased once.
-//  * Path: /receipts/:id/status
-//  * Method: PUT
-//  */
-// adminRouter.put(
-//   "/receipts/:id/status",
-//   accessTokenValidator,
-//   verifyUserValidator,
-//   checkRole(),
-//   checkIdValidator,
-//   wrapRequestHandler(updateReceiptStatusController)
-// )
+/**
+ * Description: change receipt status (DRAFT -> RECEIVED). Stock will be increased once.
+ * Path: /receipts/:id/status
+ * Method: PUT
+ */
+adminRouter.put(
+  "/receipts/:id/status",
+  accessTokenValidator,
+  verifyUserValidator,
+  checkRole(),
+  checkIdValidator,
+  wrapRequestHandler(updateReceiptStatusController)
+)
 
 /**
  * Description: delete receipt (only when status = DRAFT)

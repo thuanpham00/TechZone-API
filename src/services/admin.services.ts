@@ -269,6 +269,295 @@ class AdminServices {
     }
   }
 
+  async getStatisticalProfit(month?: number, year?: number) {
+    // Lọc theo tháng/năm trên created_at của order, chỉ tính đơn "Đã giao hàng"
+    // Một số DB lưu status dạng chuỗi "Đã giao hàng" thay vì enum.
+    // Match cả hai trường hợp để tránh lọc rỗng dẫn đến doanh thu = 0.
+    const matchStage: any = { $or: [{ status: OrderStatus.delivered }, { status: "Đã giao hàng" }] }
+    if (month && year) {
+      matchStage.$expr = {
+        $and: [{ $eq: [{ $month: "$created_at" }, month] }, { $eq: [{ $year: "$created_at" }, year] }]
+      }
+    } else if (year) {
+      matchStage.$expr = { $eq: [{ $year: "$created_at" }, year] }
+    }
+
+    const pipeline: any[] = [
+      { $match: matchStage },
+      { $unwind: "$products" },
+      // Xác định đơn giá bán ưu tiên lấy theo thứ tự: price -> priceAfterDiscount -> priceBeforeDiscount
+      {
+        $addFields: {
+          sellPerUnit: {
+            $ifNull: ["$products.price", { $ifNull: ["$products.priceAfterDiscount", "$products.priceBeforeDiscount"] }]
+          },
+          lineRevenue: { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] }
+        }
+      },
+      // Tổng doanh thu theo đơn để phân bổ voucher (discount_amount)
+      {
+        $group: {
+          _id: "$_id",
+          doc: { $first: "$$ROOT" },
+          orderRevenue: { $sum: "$lineRevenue" },
+          discount_amount: { $first: "$discount_amount" }
+        }
+      },
+      {
+        $replaceRoot: {
+          newRoot: { $mergeObjects: ["$doc", { orderRevenue: "$orderRevenue", discount_amount: "$discount_amount" }] }
+        }
+      },
+      { $unwind: "$products" },
+      // Phân bổ chiết khấu theo tỷ lệ doanh thu dòng
+      {
+        $addFields: {
+          sellPerUnit: {
+            $ifNull: ["$products.price", { $ifNull: ["$products.priceAfterDiscount", "$products.priceBeforeDiscount"] }]
+          },
+          lineRevenue: { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] },
+          allocatedDiscount: {
+            $cond: [
+              { $and: [{ $gt: ["$orderRevenue", 0] }, { $gt: [{ $ifNull: ["$discount_amount", 0] }, 0] }] },
+              {
+                $min: [
+                  "$lineRevenue",
+                  { $multiply: [{ $ifNull: ["$discount_amount", 0] }, { $divide: ["$lineRevenue", "$orderRevenue"] }] }
+                ]
+              },
+              0
+            ]
+          },
+          netRevenue: {
+            $cond: [
+              { $gt: ["$orderRevenue", 0] },
+              {
+                $subtract: [
+                  { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] },
+                  "$allocatedDiscount"
+                ]
+              },
+              { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] }
+            ]
+          },
+          productName: "$products.name",
+          productId: "$products.product_id",
+          quantity: "$products.quantity"
+        }
+      },
+      // Lấy giá vốn AVG(importPrice) theo productId
+      {
+        $lookup: {
+          from: "supply",
+          localField: "productId",
+          foreignField: "productId",
+          as: "supplyAgg",
+          pipeline: [{ $group: { _id: "$productId", avgImportPrice: { $avg: "$importPrice" } } }]
+        }
+      },
+      {
+        $addFields: {
+          costPerUnit: { $ifNull: [{ $arrayElemAt: ["$supplyAgg.avgImportPrice", 0] }, 0] },
+          cost: { $multiply: [{ $ifNull: [{ $arrayElemAt: ["$supplyAgg.avgImportPrice", 0] }, 0] }, "$quantity"] },
+          profit: {
+            $subtract: [
+              "$netRevenue",
+              { $multiply: [{ $ifNull: [{ $arrayElemAt: ["$supplyAgg.avgImportPrice", 0] }, 0] }, "$quantity"] }
+            ]
+          }
+        }
+      },
+      // Lấy thông tin danh mục từ collection product
+      {
+        $lookup: {
+          from: "product",
+          localField: "productId",
+          foreignField: "_id",
+          as: "productInfo",
+          pipeline: [
+            {
+              $lookup: {
+                from: "category",
+                localField: "category",
+                foreignField: "_id",
+                as: "categoryInfo",
+                pipeline: [{ $project: { _id: 1, name: 1 } }]
+              }
+            },
+            { $project: { _id: 1, categoryName: { $arrayElemAt: ["$categoryInfo.name", 0] } } }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          categoryName: { $ifNull: [{ $arrayElemAt: ["$productInfo.categoryName", 0] }, "Khác"] }
+        }
+      },
+      // Gộp theo tên sản phẩm
+      {
+        $group: {
+          _id: "$productName",
+          productId: { $first: "$productId" },
+          totalQuantity: { $sum: "$quantity" },
+          totalRevenue: { $sum: "$netRevenue" },
+          totalCost: { $sum: "$cost" },
+          totalProfit: { $sum: "$profit" }
+        }
+      }
+    ]
+
+    const itemsByProduct = await databaseServices.order.aggregate(pipeline).toArray()
+    // Thống kê theo danh mục sản phẩm (itemsByCategory) phục vụ vẽ chart
+    const pipelineByCategory: any[] = [
+      { $match: matchStage },
+      { $unwind: "$products" },
+      {
+        $addFields: {
+          sellPerUnit: {
+            $ifNull: ["$products.price", { $ifNull: ["$products.priceAfterDiscount", "$products.priceBeforeDiscount"] }]
+          },
+          lineRevenue: { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          doc: { $first: "$$ROOT" },
+          orderRevenue: { $sum: "$lineRevenue" },
+          discount_amount: { $first: "$discount_amount" }
+        }
+      },
+      {
+        $replaceRoot: {
+          newRoot: { $mergeObjects: ["$doc", { orderRevenue: "$orderRevenue", discount_amount: "$discount_amount" }] }
+        }
+      },
+      { $unwind: "$products" },
+      {
+        $addFields: {
+          sellPerUnit: {
+            $ifNull: ["$products.price", { $ifNull: ["$products.priceAfterDiscount", "$products.priceBeforeDiscount"] }]
+          },
+          lineRevenue: { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] },
+          allocatedDiscount: {
+            $cond: [
+              { $and: [{ $gt: ["$orderRevenue", 0] }, { $gt: [{ $ifNull: ["$discount_amount", 0] }, 0] }] },
+              {
+                $min: [
+                  "$lineRevenue",
+                  { $multiply: [{ $ifNull: ["$discount_amount", 0] }, { $divide: ["$lineRevenue", "$orderRevenue"] }] }
+                ]
+              },
+              0
+            ]
+          },
+          netRevenue: {
+            $cond: [
+              { $gt: ["$orderRevenue", 0] },
+              {
+                $subtract: [
+                  { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] },
+                  "$allocatedDiscount"
+                ]
+              },
+              { $multiply: [{ $ifNull: ["$sellPerUnit", 0] }, "$products.quantity"] }
+            ]
+          },
+          productId: "$products.product_id",
+          quantity: "$products.quantity"
+        }
+      },
+      // Lookup supply for avg cost
+      {
+        $lookup: {
+          from: "supply",
+          localField: "productId",
+          foreignField: "productId",
+          as: "supplyAgg",
+          pipeline: [{ $group: { _id: "$productId", avgImportPrice: { $avg: "$importPrice" } } }]
+        }
+      },
+      {
+        $addFields: {
+          costPerUnit: { $ifNull: [{ $arrayElemAt: ["$supplyAgg.avgImportPrice", 0] }, 0] },
+          cost: { $multiply: [{ $ifNull: [{ $arrayElemAt: ["$supplyAgg.avgImportPrice", 0] }, 0] }, "$quantity"] },
+          profit: {
+            $subtract: [
+              "$netRevenue",
+              { $multiply: [{ $ifNull: [{ $arrayElemAt: ["$supplyAgg.avgImportPrice", 0] }, 0] }, "$quantity"] }
+            ]
+          }
+        }
+      },
+      // Lookup category via product
+      {
+        $lookup: {
+          from: "product",
+          localField: "productId",
+          foreignField: "_id",
+          as: "productInfo",
+          pipeline: [
+            {
+              $lookup: {
+                from: "category",
+                localField: "category",
+                foreignField: "_id",
+                as: "categoryInfo",
+                pipeline: [{ $project: { _id: 1, name: 1 } }]
+              }
+            },
+            { $project: { _id: 1, categoryName: { $arrayElemAt: ["$categoryInfo.name", 0] } } }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          categoryName: { $ifNull: [{ $arrayElemAt: ["$productInfo.categoryName", 0] }, "Khác"] }
+        }
+      },
+      {
+        $group: {
+          _id: "$categoryName",
+          totalQuantity: { $sum: "$quantity" },
+          totalRevenue: { $sum: "$netRevenue" },
+          totalCost: { $sum: "$cost" },
+          totalProfit: { $sum: "$profit" }
+        }
+      }
+    ]
+
+    const itemsByCategory = await databaseServices.order.aggregate(pipelineByCategory).toArray()
+
+    const totals = itemsByProduct.reduce(
+      (acc: any, it: any) => {
+        acc.totalRevenue += it.totalRevenue || 0
+        acc.totalCost += it.totalCost || 0
+        acc.totalProfit += it.totalProfit || 0
+        return acc
+      },
+      { totalRevenue: 0, totalCost: 0, totalProfit: 0 }
+    )
+
+    const marginPercent = totals.totalRevenue
+      ? Math.round(((totals.totalProfit / totals.totalRevenue) * 100 + Number.EPSILON) * 10) / 10
+      : 0
+
+    // Top 10 sản phẩm theo profit
+    const topProductsByProfit = [...itemsByProduct]
+      .sort((a: any, b: any) => (b.totalProfit || 0) - (a.totalProfit || 0))
+      .slice(0, 10)
+
+    return {
+      totalRevenue: totals.totalRevenue,
+      totalCost: totals.totalCost,
+      totalProfit: totals.totalProfit,
+      marginPercent,
+      itemsByProduct,
+      itemsByCategory,
+      topProductsByProfit
+    }
+  }
+
   async getStatisticalProduct() {
     const [countCategory, top10ProductSold, productRunningOutOfStock] = await Promise.all([
       // tính số lượng sản phẩm của mỗi doanh mục
@@ -2285,46 +2574,71 @@ class AdminServices {
     return { message: "UPDATE_RECEIPT_SUCCESS" }
   }
 
-  // // Chuyển trạng thái: DRAFT -> RECEIVED. Khi RECEIVED thì cộng tồn kho theo từng item
-  // async updateReceiptStatus(id: string, status: ReceiptStatus | string) {
-  //   if (status !== ReceiptStatus.RECEIVED) {
-  //     return { message: "INVALID_STATUS_TRANSITION" }
-  //   }
+  // Chuyển trạng thái: DRAFT -> RECEIVED. Khi RECEIVED thì cộng tồn kho theo từng item
+  async updateReceiptStatus(id: string) {
+    // Validate receipt
+    const receipt = await databaseServices.receipt.findOne({ _id: new ObjectId(id) })
+    if (!receipt) {
+      throw new Error("Receipt not found")
+    }
+    if (receipt.status === ReceiptStatus.RECEIVED) {
+      throw new Error("Receipt already received")
+    }
 
-  //   const receipt = await databaseServices.receipt.findOne({ _id: new ObjectId(id) })
-  //   if (!receipt) {
-  //     return { message: "RECEIPT_NOT_FOUND" }
-  //   }
-  //   if (receipt.status === ReceiptStatus.RECEIVED) {
-  //     return { message: "RECEIPT_ALREADY_RECEIVED" }
-  //   }
+    const items = Array.isArray(receipt.items) ? receipt.items : []
+    if (!items.length) {
+      // Không có item để nhận hàng
+      throw new Error("Receipt has no items")
+    }
 
-  //   const bulkOps =
-  //     (receipt.items || []).map((it: any) => ({
-  //       updateOne: {
-  //         filter: { _id: new ObjectId(it.productId) },
-  //         update: {
-  //           $inc: { stock: Number(it.quantity) || 0 },
-  //           $set: { status: ProductStatus.AVAILABLE },
-  //           $currentDate: { updated_at: true }
-  //         }
-  //       }
-  //     })) || []
+    // Chuẩn hóa số lượng, đảm bảo là số dương
+    const normalized = items.map((it: any) => {
+      const quantity = typeof it.quantity === "number" ? it.quantity : Number(it.quantity)
+      if (!it.productId) {
+        throw new Error("Invalid productId in receipt item")
+      }
+      if (!quantity || quantity <= 0 || Number.isNaN(quantity)) {
+        throw new Error("Invalid quantity in receipt item")
+      }
+      return {
+        productId: new ObjectId(it.productId),
+        quantity
+      }
+    })
 
-  //   if (bulkOps.length) {
-  //     await databaseServices.product.bulkWrite(bulkOps)
-  //   }
+    // Sử dụng transaction để đảm bảo tính nhất quán (nếu cluster hỗ trợ)
+    const client = (databaseServices as any).client as import("mongodb").MongoClient
+    const session = client.startSession()
+    try {
+      await session.withTransaction(async () => {
+        // Tăng tồn kho theo từng sản phẩm
+        const bulkOps = normalized.map((it) => ({
+          updateOne: {
+            filter: { _id: it.productId },
+            update: {
+              $inc: { stock: it.quantity },
+              $set: { status: ProductStatus.AVAILABLE, updated_at: new Date() }
+            }
+          }
+        }))
 
-  //   await databaseServices.receipt.updateOne(
-  //     { _id: new ObjectId(id) },
-  //     {
-  //       $set: { status: ReceiptStatus.RECEIVED },
-  //       $currentDate: { updated_at: true }
-  //     }
-  //   )
+        if (bulkOps.length) {
+          await databaseServices.product.bulkWrite(bulkOps, { session })
+        }
 
-  //   return { message: "UPDATE_RECEIPT_STATUS_SUCCESS" }
-  // }
+        // Cập nhật trạng thái phiếu nhập
+        await databaseServices.receipt.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { status: ReceiptStatus.RECEIVED, updated_at: new Date() } },
+          { session }
+        )
+      })
+
+      return { message: "UPDATE_RECEIPT_STATUS_SUCCESS" }
+    } finally {
+      await session.endSession()
+    }
+  }
 
   async deleteReceipt(id: string) {
     const receipt = await databaseServices.receipt.findOne({ _id: new ObjectId(id) })
@@ -2335,7 +2649,7 @@ class AdminServices {
       return { message: "CANNOT_DELETE_RECEIPT_AFTER_RECEIVED" }
     }
 
-    await databaseServices.receipt.deleteOne({ _id: new ObjectId(id) })
+    await databaseServices.receipt.deleteOne({ _id: new ObjectId(id), status: ReceiptStatus.DRAFT })
     return { message: "DELETE_RECEIPT_SUCCESS" }
   }
 

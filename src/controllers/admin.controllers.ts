@@ -49,6 +49,18 @@ export const getStatistical_Sell_Controller = async (req: Request<ParamsDictiona
   })
 }
 
+export const getStatistical_Profit_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const { year, month } = req.query
+  const result = await adminServices.getStatisticalProfit(
+    month != null ? Number(month) : undefined,
+    year != null ? Number(year) : undefined
+  )
+  res.json({
+    message: AdminMessage.GET_STATISTICAL,
+    result
+  })
+}
+
 export const getStatistical_Product_Controller = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
   const { countCategory, top10ProductSold, productRunningOutOfStock } = await adminServices.getStatisticalProduct()
 
@@ -856,18 +868,21 @@ export const updateReceiptController = async (req: Request, res: Response) => {
   res.json(result)
 }
 
-// // Chỉ cho phép chuyển từ DRAFT -> RECEIVED, và chỉ cộng tồn kho một lần
-// export const updateReceiptStatusController = async (req: Request, res: Response) => {
-//   const id = req.params.id
-//   const { status } = req.body as { status: ReceiptStatus | string }
-//   const result = await adminServices.updateReceiptStatus(id, status as ReceiptStatus)
-//   res.json(result)
-// }
+// Chỉ cho phép chuyển từ DRAFT -> RECEIVED, và chỉ cộng tồn kho một lần
+export const updateReceiptStatusController = async (req: Request, res: Response) => {
+  const id = req.params.id
+  const { message } = await adminServices.updateReceiptStatus(id)
+  res.json({
+    message
+  })
+}
 
 export const deleteReceiptController = async (req: Request, res: Response) => {
   const id = req.params.id
-  const result = await adminServices.deleteReceipt(id)
-  res.json(result)
+  const { message } = await adminServices.deleteReceipt(id)
+  res.json({
+    message
+  })
 }
 
 export const getReceiptsController = async (

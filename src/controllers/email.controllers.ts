@@ -19,11 +19,13 @@ export const getEmailResendListController = async (
   const { limit, page } = req.query
 
   const { result, total, totalOfPage, limitRes, pageRes } = await emailService.getEmailLog(Number(limit), Number(page))
+  const domain = await resend.domains.list()
 
   res.json({
     message: EmailMessage.GET_LIST_EMAIL_LOG_IS_SUCCESS,
     result: {
       result,
+      domain: domain.data?.data,
       limit: limitRes,
       page: pageRes,
       total,
