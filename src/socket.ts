@@ -445,11 +445,37 @@ export const initialSocket = (httpSocket: ServerHttp) => {
     })
 
     socket.on("client:order_notification", async (data) => {
-      const userId = data.payload
+      const { dataProduct, userId, type_payment } = data.payload
+      const listProductQuantity = await Promise.all(
+        dataProduct?.map(
+          async (product: {
+            product_id: string
+            name: string
+            price: number
+            quantity: number
+            image: string
+            discount?: number
+          }) => {
+            // logic xử lý khi có đơn hàng mới - cập nhật lại số lượng sản phẩm trong kho
+            return await databaseServices.product
+              .findOne({ _id: new ObjectId(product.product_id) })
+              .then(async (productDoc) => {
+                if (!productDoc) return
+                const newQuantity = type_payment === "vnpay" ? productDoc.stock - product.quantity : productDoc.stock
+                return {
+                  id: productDoc._id,
+                  stock: newQuantity >= 0 ? newQuantity : 0
+                }
+              })
+          }
+        )
+      )
       const findOnlineAdminIds = getOnlineAdminIds()
       const findOnlineCustomerIds = getOnlineCustomerIds()
       findOnlineCustomerIds.forEach((customerIds) => {
-        emitToUser(customerIds, "client:update_quantity_product_display")
+        emitToUser(customerIds, "client:update_quantity_product_display", {
+          payload: { dataProduct: listProductQuantity }
+        })
       })
       findOnlineAdminIds.forEach((adminIds) => {
         emitToUser(adminIds, "admin:order_notification", {

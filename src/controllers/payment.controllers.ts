@@ -96,7 +96,6 @@ function sortObject(obj: Record<string, string>): Record<string, string> {
 }
 
 export const callBackVnpayController = async (req: Request, res: Response, next: NextFunction) => {
-  console.log("callback")
   const { orderId } = req.body
   const findOrder = await databaseServices.order.findOne({ _id: new ObjectId(orderId) })
   if (findOrder) {
